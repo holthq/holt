@@ -1,0 +1,7 @@
+{
+  "fn": {"prefix": "fn", "body": ["function ${1:name}(${2}) {", "\t$0", "}"], "description": "函数"},
+  "afn": {"prefix": "afn", "body": ["const ${1:name} = (${2}) => {", "\t$0", "};"], "description": "箭头函数"},
+  "log": {"prefix": "log", "body": ["console.log(${1});"], "description": "打印到控制台"},
+  "for": {"prefix": "for", "body": ["for (let ${1:i} = 0; $1 < ${2:n}; $1++) {", "\t$0", "}"], "description": "for 循环"},
+  "cl": {"prefix": "cl", "body": ["class ${1:Name} {", "\tconstructor(${2}) {", "\t\t$0", "\t}", "}"], "description": "类"}
+}

@@ -1,0 +1,102 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<style>html, body { margin: 0; background: transparent } #box { position: absolute; left: 0; top: 0; width: 1600px }</style>
+<script>
+// Workbench 的渲染页（internal/render/web.go）：在看不见的 web view 里，Go 那边 Eval wbRender(...) 拿 PNG。
+// mermaid.min.js 和 MathJax 第一次要时才加载。
+window.MathJax = {
+  startup: { typeset: false },
+  options: { enableMenu: false },
+  tex: { formatError: (jax, err) => { throw new Error(err.message || String(err)) } }, // TexError 不是 Error，直接抛出去只剩 [object Object]
+  svg: { fontCache: "none" },
+};
+
+const loaded = {};
+function load(src) {
+  return loaded[src] ||= new Promise((ok, fail) => {
+    const s = document.createElement("script");
+    s.src = src;
+    s.onload = ok;
+    s.onerror = () => { delete loaded[src]; fail(new Error("cannot load " + src)) };
+    document.head.appendChild(s);
+  });
+}
+
+let theme = "", seq = 0;
+
+// svgOf 是一张的 SVG 元素和它的大小（CSS 像素 = DIP；行内公式 depth 是基线以下多少）。
+async function svgOf(kind, src, dark, size, color) {
+  if (kind === "mermaid") {
+    await load("mermaid.min.js");
+    const t = dark ? "dark" : "default";
+    if (theme !== t) {
+      // htmlLabels: false 是关键：有 foreignObject 的 SVG 画到 canvas 上算跨域，canvas 被污染、取不出 PNG
+      mermaid.initialize({
+        startOnLoad: false, theme: t, securityLevel: "strict", suppressErrorRendering: true,
+        htmlLabels: false, flowchart: { htmlLabels: false },
+        fontFamily: "-apple-system, 'PingFang SC', 'Helvetica Neue', sans-serif",
+      });
+      theme = t;
+    }
+    const box = document.getElementById("box");
+    let out;
+    try {
+      out = await mermaid.render("wb" + (++seq), src, box);
+    } finally {
+      box.textContent = "";
+    }
+    const el = new DOMParser().parseFromString(out.svg, "image/svg+xml").documentElement;
+    if (el.nodeName !== "svg") throw new Error("mermaid gave no SVG");
+    const vb = el.viewBox && el.viewBox.baseVal;
+    const w = vb && vb.width || parseFloat(el.getAttribute("width")) || 0;
+    const h = vb && vb.height || parseFloat(el.getAttribute("height")) || 0;
+    el.setAttribute("width", w);
+    el.setAttribute("height", h);
+    el.style.maxWidth = "";
+    return { el, w, h, depth: 0 };
+  }
+  await load("mathjax/tex-svg.js");
+  await MathJax.startup.promise;
+  const node = await MathJax.tex2svgPromise(src, { display: kind === "math" });
+  const el = node.querySelector("svg");
+  if (!el) throw new Error("MathJax gave no SVG");
+  // MathJax 的 SVG 一个 em 是 1000。它的框是排版用的，有的字形伸出去（\int 的左边、CD 左边的标签），四周留一点：
+  // 块级左右半个 em、上下 0.15 em，行内只左右留一丝（不改行高）
+  const b = el.viewBox.baseVal, display = kind === "math";
+  const px = display ? 500 : 60, py = display ? 150 : 0;
+  const vb = { x: b.x - px, y: b.y - py, width: b.width + 2 * px, height: b.height + 2 * py };
+  el.setAttribute("viewBox", `${vb.x} ${vb.y} ${vb.width} ${vb.height}`);
+  const em = size / 1000;
+  const w = vb.width * em, h = vb.height * em, depth = Math.max(0, (vb.height + vb.y) * em);
+  el.removeAttribute("style");
+  el.setAttribute("width", w);
+  el.setAttribute("height", h);
+  el.setAttribute("color", color);
+  el.style.color = color; // 字形是 currentColor
+  return { el, w, h, depth };
+}
+
+// wbRender 渲染一张，画到 canvas 上（scale 倍，最多 maxPixels 个像素），返回 PNG（base64）和大小。
+async function wbRender(kind, src, dark, scale, size, color, maxPixels) {
+  const { el, w, h, depth } = await svgOf(kind, src, dark, size, color);
+  if (!(w > 0 && h > 0)) throw new Error("empty picture");
+  let k = scale;
+  if (w * h * k * k > maxPixels) k = Math.sqrt(maxPixels / (w * h));
+  const cw = Math.max(1, Math.ceil(w * k)), ch = Math.max(1, Math.ceil(h * k));
+  el.setAttribute("xmlns", "http://www.w3.org/2000/svg");
+  const img = new Image();
+  img.src = "data:image/svg+xml;charset=utf-8," + encodeURIComponent(new XMLSerializer().serializeToString(el));
+  await img.decode();
+  const cv = document.createElement("canvas");
+  cv.width = cw;
+  cv.height = ch;
+  cv.getContext("2d").drawImage(img, 0, 0, cw, ch);
+  const url = cv.toDataURL("image/png");
+  return { png: url.slice(url.indexOf(",") + 1), w, h, depth };
+}
+</script>
+</head>
+<body><div id="box"></div></body>
+</html>

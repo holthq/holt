@@ -1,0 +1,10 @@
+{
+  "fori": {"prefix": "fori", "body": ["for ${1:i} := 0; $1 < ${2:n}; $1++ {", "\t$0", "}"], "description": "for 循环"},
+  "forr": {"prefix": "forr", "body": ["for ${1:_}, ${2:v} := range ${3:xs} {", "\t$0", "}"], "description": "for range 循环"},
+  "iferr": {"prefix": "iferr", "body": ["if err != nil {", "\treturn ${1:err}", "}"], "description": "检查错误"},
+  "func": {"prefix": "func", "body": ["func ${1:name}(${2}) ${3:error} {", "\t$0", "}"], "description": "函数"},
+  "meth": {"prefix": "meth", "body": ["func (${1:r} ${2:*T}) ${3:name}(${4}) {", "\t$0", "}"], "description": "方法"},
+  "struct": {"prefix": "struct", "body": ["type ${1:Name} struct {", "\t$0", "}"], "description": "结构体"},
+  "main": {"prefix": "main", "body": ["package main", "", "func main() {", "\t$0", "}"], "description": "main 包和 main 函数"},
+  "test": {"prefix": "test", "body": ["func Test${1:Name}(t *testing.T) {", "\t$0", "}"], "description": "测试函数"}
+}

@@ -1,0 +1,6 @@
+# mygo build 的产物
+/build/
+# 在仓库根 go build ./cmd/workbench 的产物（锚在根，不影响 cmd/workbench/）
+/workbench
+# macOS
+.DS_Store

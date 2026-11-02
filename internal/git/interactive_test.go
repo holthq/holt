@@ -1,0 +1,73 @@
+package git
+
+import "testing"
+
+// 要人输入的 git 命令：命令面板 >git 认出来转到终端去跑。
+func TestNeedsTerminal(t *testing.T) {
+	for _, c := range []struct{ line, want string }{
+		{"commit", "要写提交信息"},
+		{"commit -m x", ""},
+		{"commit -am 修好了", ""},
+		{"commit --message=x", ""},
+		{"commit -F msg.txt", ""},
+		{"commit --amend", "要写提交信息"},
+		{"commit --amend --no-edit", ""},
+		{"commit -C HEAD", ""},
+		{"commit -c HEAD", "要写提交信息"},
+		{"commit -m x -e", "要写提交信息"},
+		{"commit --fixup HEAD~1", ""},
+		{"commit --fixup=amend:HEAD", "要写提交信息"},
+		{"commit --dry-run", ""},
+		{"commit -i a.txt -m x", ""},
+		{"commit -p -m x", "要一块块选"},
+		{"-c core.pager=cat commit", "要写提交信息"},
+		{"-C sub --no-pager commit -m x", ""},
+		{"git commit", "要写提交信息"},
+		{"add -p", "要一块块选"},
+		{"add --interactive", "要一块块选"},
+		{"add -e", "要在编辑器里改信息"},
+		{"add .", ""},
+		{"checkout -p", "要一块块选"},
+		{"checkout -b p", ""},
+		{"reset --patch HEAD", "要一块块选"},
+		{"restore -s HEAD -p a.txt", "要一块块选"},
+		{"stash -p", "要一块块选"},
+		{"stash push -m x -p", "要一块块选"},
+		{"stash push -m x", ""},
+		{"stash show -p", ""},
+		{"rebase -i HEAD~3", "要编辑变基清单"},
+		{"rebase --onto main topic", ""},
+		{"rebase --continue", ""},
+		{"merge --edit topic", "要在编辑器里改信息"},
+		{"merge topic", ""},
+		{"tag -a v1", "要在编辑器里改信息"},
+		{"tag -a v1 -m 发布", ""},
+		{"tag -s v1", "要在编辑器里改信息"},
+		{"tag v1", ""},
+		{"tag -d v1", ""},
+		{"cherry-pick -e abc", "要在编辑器里改信息"},
+		{"cherry-pick abc", ""},
+		{"revert abc", "要在编辑器里改信息"},
+		{"revert --no-edit abc", ""},
+		{"revert -n abc", ""},
+		{"notes add", "要在编辑器里改信息"},
+		{"notes add -m x", ""},
+		{"notes --ref=review append", "要在编辑器里改信息"},
+		{"notes list", ""},
+		{"am -i", "要交互"},
+		{"clean -i", "要交互"},
+		{"clean -fd", ""},
+		{"bisect start", "要交互"},
+		{"bisect run make test", ""},
+		{"mergetool", "要交互"},
+		{"config --edit", "要在编辑器里改信息"},
+		{"config user.name", ""},
+		{"log -p", ""},
+		{"status", ""},
+		{"", ""},
+	} {
+		if got := NeedsTerminal(SplitArgs(c.line)); got != c.want {
+			t.Errorf("%q：%q，要 %q", c.line, got, c.want)
+		}
+	}
+}

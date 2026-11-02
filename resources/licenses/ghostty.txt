@@ -1,0 +1,7 @@
+libghostty-vt（终端的 VT 解析和画面状态）来自 Ghostty：
+https://github.com/ghostty-org/ghostty/tree/befcdfd2c3a1cb24d9ec886e93c95b2b5daa7028
+
+许可证：MIT License（Copyright (c) 2024 Mitchell Hashimoto 和 Ghostty 的贡献者）。
+全文：https://github.com/ghostty-org/ghostty/blob/befcdfd2c3a1cb24d9ec886e93c95b2b5daa7028/LICENSE
+
+（这份文件只记来源；正式发布前把上面链接里的全文贴进来。）

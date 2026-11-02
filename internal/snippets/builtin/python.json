@@ -1,0 +1,7 @@
+{
+  "def": {"prefix": "def", "body": ["def ${1:name}(${2}):", "\t${0:pass}"], "description": "函数"},
+  "class": {"prefix": "class", "body": ["class ${1:Name}:", "\tdef __init__(self${2}):", "\t\t${0:pass}"], "description": "类"},
+  "ifmain": {"prefix": "ifmain", "body": ["if __name__ == \"__main__\":", "\t${0:main()}"], "description": "直接运行时才跑"},
+  "for": {"prefix": "for", "body": ["for ${1:x} in ${2:xs}:", "\t${0:pass}"], "description": "for 循环"},
+  "with": {"prefix": "with", "body": ["with ${1:open(path)} as ${2:f}:", "\t${0:pass}"], "description": "with 语句"}
+}

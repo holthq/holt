@@ -1,0 +1,79 @@
+# Grove 的 CI：macOS 上 vet、测试、构建 .app（ad hoc 签名，不出 DMG、不公证）。
+# 测试只用 t.TempDir() 里 git init 的临时仓库；读真实工作区的只读测试只在设了 WORKBENCH_TEST_WS 时跑，CI 里跳过。
+# 竞态检测（-race）慢一倍多，不在每次推送都跑：手动触发时勾上 race，或者每周一跑一次。
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+    inputs:
+      race:
+        description: "也跑 go test -race"
+        type: boolean
+        default: false
+  schedule:
+    - cron: "0 3 * * 1" # 每周一 03:00 UTC，跑一次带 -race 的
+
+permissions:
+  contents: read
+
+env:
+  GOTOOLCHAIN: auto # go.mod 要 go 1.27.3；mygo 锁在 go.mod 里的版本，不要升级
+
+jobs:
+  test:
+    name: vet / test / build
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: 版本
+        run: |
+          go version
+          go list -m github.com/egoist/mygo
+          git --version
+
+      - name: gofmt
+        run: |
+          out=$(gofmt -l cmd internal)
+          if [ -n "$out" ]; then echo "没 gofmt 的文件："; echo "$out"; exit 1; fi
+
+      - name: go vet
+        run: go vet ./...
+
+      - name: go test
+        run: go test -count=1 ./...
+
+      - name: 构建 Grove.app
+        run: go tool mygo build -skip-dmg -skip-notarize -sign -
+
+      - name: 打包成 zip
+        run: ditto -c -k --keepParent build/darwin-arm64/Grove.app Grove-darwin-arm64.zip
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: Grove-darwin-arm64
+          path: Grove-darwin-arm64.zip
+          retention-days: 14
+
+  race:
+    name: test -race
+    if: github.event_name == 'schedule' || (github.event_name == 'workflow_dispatch' && inputs.race)
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: go test -race
+        run: go test -count=1 -race ./internal/...

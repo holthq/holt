@@ -1,0 +1,32 @@
+{
+ "version": 4,
+ "appVersion": "@VERSION@",
+ "sidebar": true,
+ "rightBar": true,
+ "bottomBar": true,
+ "sidebarMode": "files",
+ "settings": {},
+ "sessions": {
+  "@WS@": {
+   "active": 1,
+   "repo": "@REPO3@",
+   "open": ["@ALL@"],
+   "tabs": [
+    {"path": "@REPO3@/package.json"},
+    {"path": "@REPO3@/src/components/ListManage/ListManage.vue"},
+    {"path": "@REPO3@/src/untils/city.js"},
+    {"path": "@REPO1@/app/utils/pdf_utils_v2.py"},
+    {"path": "@REPO2@/apps/realtime/realtime/main.py"},
+    {"path": "@REPO4@/run.py"},
+    {"path": "@REPO0@/AGENTS.md"},
+    {"path": "@REPO0@/README.md", "preview": true},
+    {"path": "@REPO3@", "kind": "diff", "repo": "@REPO3@", "change": "@LAST:3@"},
+    {"path": "@REPO1@", "kind": "diff", "repo": "@REPO1@", "change": "@LAST:1@"}
+   ],
+   "terms": {
+    "@REPO3@": {"tabs": [{}, {}, {}]}
+   }
+  }
+ },
+ "windows": ["@WS@"]
+}

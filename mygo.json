@@ -1,0 +1,27 @@
+{
+  "name": "Grove",
+  "identifier": "io.github.lemoeade.grove",
+  "version": "0.1.0",
+  "icon": "assets/icon.png",
+  "main": "./cmd/workbench",
+  "out": "build",
+  "macos": {
+    "minimumSystemVersion": "13.0",
+    "infoPlist": {
+      "CFBundleDocumentTypes": [
+        {
+          "CFBundleTypeName": "Folder",
+          "CFBundleTypeRole": "Viewer",
+          "LSHandlerRank": "Alternate",
+          "LSItemContentTypes": ["public.folder"]
+        },
+        {
+          "CFBundleTypeName": "Document",
+          "CFBundleTypeRole": "Editor",
+          "LSHandlerRank": "Alternate",
+          "LSItemContentTypes": ["public.item"]
+        }
+      ]
+    }
+  }
+}

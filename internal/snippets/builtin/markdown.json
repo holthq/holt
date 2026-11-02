@@ -1,0 +1,6 @@
+{
+  "link": {"prefix": "link", "body": ["[${1:text}](${2:url})"], "description": "链接"},
+  "img": {"prefix": "img", "body": ["![${1:alt}](${2:path})"], "description": "图片"},
+  "code": {"prefix": "code", "body": ["```${1:go}", "$0", "```"], "description": "代码块"},
+  "table": {"prefix": "table", "body": ["| ${1:A} | ${2:B} |", "| --- | --- |", "| $3 | $4 |"], "description": "表格"}
+}
