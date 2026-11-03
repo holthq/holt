@@ -12,6 +12,8 @@ api="repos/$REPO/issues/$num"
 
 # 先回一条，告诉人收到了（别在里面写 @ 某某，免得又触发一次）
 cid=$(gh api "$api/comments" -f body="Claude 在处理…… [运行日志]($RUN_URL)" --jq .id)
+# 下面哪一步出错，就把这条改成"没跑起来"，不让它一直挂着"在处理"
+trap 'gh api -X PATCH "repos/$REPO/issues/comments/$cid" -f body="Claude 没跑起来（准备这一步出错）。[运行日志]($RUN_URL)" >/dev/null' ERR
 
 git config user.name "github-actions[bot]"
 git config user.email "41898182+github-actions[bot]@users.noreply.github.com"
@@ -19,6 +21,7 @@ git config user.email "41898182+github-actions[bot]@users.noreply.github.com"
 if [ -n "$is_pr" ]; then
   read -r head cross < <(gh pr view "$num" -R "$REPO" --json headRefName,isCrossRepository --jq '"\(.headRefName) \(.isCrossRepository)"')
   if [ "$cross" = true ]; then
+    trap - ERR
     gh api -X PATCH "repos/$REPO/issues/comments/$cid" -f body="Claude 不处理来自 fork 的 PR（推不回去）。[运行日志]($RUN_URL)" >/dev/null
     exit 1
   fi
@@ -37,7 +40,7 @@ fi
 prompt=$RUNNER_TEMP/claude-prompt.md
 {
   cat <<EOF
-你在 GitHub Actions 的 macOS 机器上替仓库 $REPO 的维护者处理 $kind #$num。工作目录是仓库根目录，当前分支是 \`$branch\`。
+你在 GitHub Actions 的 macOS 机器上替仓库 ${REPO} 的维护者处理 ${kind} #${num}。工作目录是仓库根目录，当前分支是 \`$branch\`。
 
 - 先读 AGENTS.md，按里面的约定做（中文注释和文档、gofmt、相关包的 go test、改了行为同步文档）。
 - 要改代码就改，改完用 git add / git commit 提交，提交信息说清改了什么，末尾加一行 \`Co-Authored-By: Claude <noreply@anthropic.com>\`。
