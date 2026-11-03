@@ -225,7 +225,7 @@ type Rest struct {
 	Sel     editor.Selection
 	NSel    int
 	Side    editor.DiffSide
-	Keyed   bool // 编辑器最近一次收到的输入是键盘（按键、文字、命令），不是指针：光标因它而动时多留几行余量（caretMargin）
+	Keyed   bool // 上一帧之后编辑器收到的最后一个输入是键盘（按键、文字、命令），不是指针：光标因它而动时多留几行余量（caretMargin），每帧清掉
 }
 
 // Jump 是要跳去的地方：行、列（字节）从 0 起；Len > 0 时选中这么多字节（搜索结果）。

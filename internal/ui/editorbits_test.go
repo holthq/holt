@@ -232,7 +232,7 @@ func snippetOf(t *testing.T, a *app.App, name string) snippets.Snippet {
 
 // 光标的余量：键盘挪光标（↓、↑、⌘↓、在文件末尾回车）后，光标上下各留 min(5 行, 视图高的 1/5)，
 // 文件末尾也是（scroll past end，最后一行上来后下面是空白）；mygo 自己只留 3 行。点击不补：
-// 点在离下边不到 5 行的地方，视图不动。
+// 点在离下边不到 5 行的地方，视图不动；没挪光标的按键之后，内容从外面变了也不补。
 func TestCaretMargin(t *testing.T) {
 	root, ws := testutil.TempRepo(t)
 	var b strings.Builder
@@ -323,5 +323,15 @@ func TestCaretMargin(t *testing.T) {
 	}
 	if st.ScrollY() != y0 {
 		t.Errorf("点击后视图滚了：%v → %v", y0, st.ScrollY())
+	}
+
+	// 没挪光标的按键不留尾巴：按 Esc，再滚走（滚轮不经过 OnInput），内容从外面变了，视图不拽回光标
+	key(0, wui.KeyEscape)
+	st.SetScrollY(0)
+	frames()
+	st.Buffer.Edit(editor.Edit{Start: 0, End: 0, Text: "x"})
+	frames()
+	if y := st.ScrollY(); y != 0 {
+		t.Errorf("Esc、滚走、外面改了内容以后视图被拽回光标：ScrollY %v", y)
 	}
 }

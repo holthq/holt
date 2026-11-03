@@ -50,9 +50,12 @@ func restingEditor(c *wui.Context, key any, st *editor.State, r *docs.Rest, keys
 	if r.Resting {
 		ed.Focus()
 	}
-	// 编辑器建的时候已经按自己的余量（3 行）把光标滚进来了，这里键盘挪的光标再补到 caretMargin
-	if moved && r.Keyed {
-		r.Keyed = false
+	// 编辑器建的时候已经按自己的余量（3 行）把光标滚进来了，这里键盘挪的光标再补到 caretMargin。
+	// 按键在两帧之间到，挪了光标紧接着的这一帧就看得到；Keyed 每帧用完就清，免得没挪光标的按键（Esc、⌘S）
+	// 留下来，之后滚轮滚走、内容从外面变了（重新载入、另一个分屏改的）时把视图拽回光标。
+	keyed := r.Keyed
+	r.Keyed = false
+	if moved && keyed {
 		if caretMargin(st, float64(ed.Bounds().H)) {
 			c.Invalidate()
 		}

@@ -170,7 +170,7 @@
 - 有焦点的编辑器会持续绘制：mygo 的 `ui/editor` 只要建的那一刻 `Focused()` 为真，就每 500 ms 排一帧闪光标，没有开关；帧内存 2 秒没有新帧才放，
   因此会额外占用一两百 MB 内存，并持续消耗 CPU。新加的编辑器 / Diff 视图要走 `ui/caret.go` 的 `restingEditor` / `restingDiff`（停手 30 s 不闪），别直接用 `editor.View` / `editor.DiffView`。
 - mygo 编辑器在光标移动后自动滚动，只给光标上下留 min(3 行, 半屏)，没有选项可以改（像 VS Code 的 cursorSurroundingLines 那样的选项它没有）。
-  `restingEditor` 先让 mygo 滚完，然后由 `caretMargin` 补到 min(5 行, 视图高 1/5)。只有键盘移动了光标才补，靠 `Rest.Keyed`，`OnInput` 里最近一次是按键 / 文字 / 命令时为真，指针按下时为假。
+  `restingEditor` 先让 mygo 滚完，然后由 `caretMargin` 补到 min(5 行, 视图高 1/5)。只有键盘移动了光标才补，靠 `Rest.Keyed`：`OnInput` 里收到按键 / 文字 / 命令时为真，指针按下时为假，每帧用完就清（不然没挪光标的 Esc、⌘S 留下来，之后内容从外面变了会把滚走的视图拽回光标）。
   这样点击、滚轮、拖滚动条都不受影响，程序里调的 `GoTo` 本来就滚到正中，也够余量。光标所在行被软换行折成几行时不补，因为公开接口拿不到光标落在第几折。
 - `DiffState.GoToHunk(i)` 把光标放到那块开头，不在视图里才滚、滚到正中（等视图排过版才滚）。mygo 没有公开的滚动 API，所以"第一处改动"在视图正中，不是上三分之一。
   `ExpandAll` / `CollapseAll`（局部 ↔ 全文）不保留改动的位置，之后再 `GoToHunk` 一次（`Doc.ToHunk`）。
