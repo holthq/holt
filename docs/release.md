@@ -132,10 +132,14 @@ env 中设置了 `GOTOOLCHAIN=auto`（go.mod 要求 1.27.3）；mygo 使用 go.m
 UI 测试和终端测试在 GitHub runner 上运行不稳定时，先检查环境差异：runner 没有登录会话，shell 为 `/bin/zsh`。
 CI 未设置 `WORKBENCH_TEST_WS`，因此会跳过读取真实工作区的只读测试。
 
-`.github/workflows/claude.yml`：仓库的 owner、成员或协作者在 issue 或 PR 评论里写 `@claude`，就会在 `macos-latest` 上运行 Claude
-（`anthropics/claude-code-action@v1`）。Claude 可以运行 `go`、`gofmt`、`git`，改完后推送分支并创建 PR。
-需要在仓库安装 Claude GitHub App（github.com/apps/claude），并把 Anthropic API 密钥保存为 Secret `ANTHROPIC_API_KEY`。
-这类事件只读取默认分支上的工作流文件，所以要合并到 main 后才生效。每次最多 30 轮（`--max-turns`）、60 分钟。
+`.github/workflows/claude.yml`：仓库的 owner、成员或协作者在 issue 或 PR 评论里写 `@claude`，就会在 `macos-latest` 上运行 Claude。
+用的是 Claude Agent SDK（`.github/claude/agent.mjs`，版本锁在同目录的 `package-lock.json`），不是 `claude-code-action`：
+后者按 Claude Code 计费，console 里的赠送额度不能用。Claude 能读写文件，能运行 `go`、`gofmt` 和不碰远程的 `git`（status、diff、log、add、commit）；
+推送和开 PR 由 `finish.sh` 做：issue 上开新分支 `claude/issue-<号>-<时间>` 并开 PR，同仓库的 PR 上推到 PR 的分支，fork 的 PR 不处理。
+仓库设置里没开 "Allow GitHub Actions to create and approve pull requests" 时开不了 PR，评论里会给一个手动开 PR 的链接。
+需要把 Anthropic API 密钥保存为 Secret `ANTHROPIC_API_KEY`（只给 Claude 那一步；GitHub token 只给准备和收尾两步，`persist-credentials: false`）。
+这类事件只读取默认分支上的工作流文件和脚本，所以要合并到 main 后才生效。每次最多 30 轮、约 5 美元（`agent.mjs` 的 `maxTurns`、`maxBudgetUsd`）、60 分钟。
+仓库公开，运行日志里只打工具名，Claude 的回复贴回 issue / PR 的评论。
 Claude 会跑 `go test`，等于执行 PR 里的代码，所以别在不认识的人提的 PR 上 `@claude`。
 
 ## 许可
