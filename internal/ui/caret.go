@@ -28,7 +28,8 @@ func restingEditor(c *wui.Context, key any, st *editor.State, r *docs.Rest, keys
 	// 键盘落在 sink 上只会是歇着时 ⇧Tab 从只读的编辑器退出来，当它还在编辑器里
 	focused := c.Focused(r.H) || sink.Focused()
 	ver, sel, n := st.Buffer.Version(), st.Selection(), len(st.Selections())
-	rest(c, r, focused, ver != r.Ver || sel != r.Sel || n != r.NSel)
+	moved := ver != r.Ver || sel != r.Sel
+	rest(c, r, focused, moved || n != r.NSel)
 	r.Ver, r.Sel, r.NSel = ver, sel, n
 	st.OnInput = func(ev wui.InputEvent) bool {
 		switch ev.Kind {
@@ -36,6 +37,7 @@ func restingEditor(c *wui.Context, key any, st *editor.State, r *docs.Rest, keys
 			if r.Resting {
 				r.Woke = true
 			}
+			r.Keyed = ev.Kind != wui.InputPointerDown
 		}
 		return keys != nil && keys(ev)
 	}
@@ -48,7 +50,51 @@ func restingEditor(c *wui.Context, key any, st *editor.State, r *docs.Rest, keys
 	if r.Resting {
 		ed.Focus()
 	}
+	// 编辑器建的时候已经按自己的余量（3 行）把光标滚进来了，这里键盘挪的光标再补到 caretMargin
+	if moved && r.Keyed {
+		r.Keyed = false
+		if caretMargin(st, float64(ed.Bounds().H)) {
+			c.Invalidate()
+		}
+	}
 	return ed
+}
+
+// caretMargin 让光标上下各留 min(5 行, 视图高的 1/5) 的余量，像 VS Code 的 cursorSurroundingLines、Vim 的 scrolloff。
+// mygo 的编辑器挪了光标只滚到留 3 行、没有选项改它，所以键盘挪了光标、它滚完以后，在这里再看一遍：
+// 离下边不够就往下滚（文件末尾靠 scroll past end，最后一行上来后下面是空白），离上边不够就往上滚。
+// 只在键盘挪光标后调（restingEditor 里按 Rest.Keyed），点击、滚轮、拖滚动条不走这里。
+// 光标那一行软换行折成了几行时不管（看不出光标在第几折，交给 mygo）。返回滚了没有。
+func caretMargin(st *editor.State, viewH float64) bool {
+	if viewH <= 0 || st.FitContent || st.Buffer == nil {
+		return false
+	}
+	n := st.Buffer.LineCount()
+	line := st.CursorPos().Line
+	if line < 0 || line >= n {
+		return false
+	}
+	// 一行多高：看得见的行里最矮的（软换行折了的行更高、折叠藏起来的行高 0）
+	lh := 0.0
+	first, last := st.VisibleLines()
+	for i := max(first, 0); i < min(last+1, first+64, n); i++ {
+		if h := st.LineTop(i+1) - st.LineTop(i); h > 0.5 && (lh == 0 || h < lh) {
+			lh = h
+		}
+	}
+	top, bottom := st.LineTop(line), st.LineTop(line+1)
+	if lh == 0 || bottom-top > lh*1.5 {
+		return false
+	}
+	margin := min(5*lh, viewH/5, max(0, (viewH-lh)/2))
+	y := st.ScrollY()
+	switch {
+	case top-margin < y:
+		st.SetScrollY(top - margin)
+	case bottom+margin > y+viewH:
+		st.SetScrollY(bottom + margin - viewH)
+	}
+	return st.ScrollY() != y
 }
 
 // restingDiff 建 Diff 视图（editor.DiffView），停手 CaretRest 后光标不再闪（歇着时不画光标，选区还在）。

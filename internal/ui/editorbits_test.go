@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"fmt"
 	"os"
 	"path/filepath"
 	"strings"
@@ -227,4 +228,100 @@ func snippetOf(t *testing.T, a *app.App, name string) snippets.Snippet {
 	}
 	t.Fatalf("没有 go/%s", name)
 	return snippets.Snippet{}
+}
+
+// 光标的余量：键盘挪光标（↓、↑、⌘↓、在文件末尾回车）后，光标上下各留 min(5 行, 视图高的 1/5)，
+// 文件末尾也是（scroll past end，最后一行上来后下面是空白）；mygo 自己只留 3 行。点击不补：
+// 点在离下边不到 5 行的地方，视图不动。
+func TestCaretMargin(t *testing.T) {
+	root, ws := testutil.TempRepo(t)
+	var b strings.Builder
+	for i := range 200 {
+		fmt.Fprintf(&b, "line %d\n", i)
+	}
+	os.WriteFile(filepath.Join(root, "margin.txt"), []byte(b.String()), 0o644)
+	a, tt, wait := newUI(t, ws, "")
+	r := a.Repos[0]
+	d := a.OpenFile(r, "margin.txt", true)
+	wait("读好", func() bool { return d.Buf != nil && !d.Loading })
+	a.FocusDoc = true
+	tt.Frame()
+	tt.Frame()
+	st := &d.St
+	lh := st.LineTop(1) - st.LineTop(0)
+	tab, ok := tt.Find("标签 margin.txt")
+	if !ok || lh <= 0 {
+		t.Fatalf("没排好：标签 %v，行高 %v", ok, lh)
+	}
+	frames := func() { tt.Frame(); tt.Frame() }
+	key := func(mods wui.Modifiers, k wui.Key) { tt.Key(mods, k); frames() }
+	// 视图多高：GoTo 把光标那一行滚到正中（mygo 的 revealCenter：滚到 top - (h-lh)/2），倒推出 h
+	st.GoTo(editor.Pos{Line: 100})
+	frames()
+	viewH := 2*(st.LineTop(100)-st.ScrollY()) + lh
+	want := min(5*lh, viewH/5)
+	if want <= 3*lh {
+		t.Fatalf("视图太矮（%v），看不出比 mygo 的 3 行多", viewH)
+	}
+	// 光标那一行离视图上边、下边各多远
+	gaps := func() (above, below float64) {
+		line := st.CursorPos().Line
+		y := st.ScrollY()
+		return st.LineTop(line) - y, y + viewH - st.LineTop(line+1)
+	}
+	const eps = 0.5
+
+	// ↓ 一路往下：滚起来以后光标下面一直留 want
+	st.GoTo(editor.Pos{Line: 0})
+	frames()
+	scrolled := false
+	for range 60 {
+		key(0, wui.KeyDown)
+		above, below := gaps()
+		if below < want-eps {
+			t.Fatalf("↓ 到第 %d 行：下面只留 %v，应至少 %v", st.CursorPos().Line+1, below, want)
+		}
+		if st.ScrollY() > 0 {
+			scrolled = true
+			if below > want+eps {
+				t.Fatalf("↓ 到第 %d 行：滚多了，下面留 %v（应 %v），上面 %v", st.CursorPos().Line+1, below, want, above)
+			}
+		}
+	}
+	if !scrolled {
+		t.Fatal("↓ 60 次都没滚")
+	}
+	// ↑ 往回：上面也留 want
+	for range 60 {
+		key(0, wui.KeyUp)
+		if above, _ := gaps(); st.ScrollY() > 0 && above < want-eps {
+			t.Fatalf("↑ 到第 %d 行：上面只留 %v，应至少 %v", st.CursorPos().Line+1, above, want)
+		}
+	}
+	// ⌘↓ 到文件末尾、再回车几次：最后一行下面是空白，也留 want
+	key(wui.Cmd, wui.KeyDown)
+	if _, below := gaps(); below < want-eps {
+		t.Fatalf("⌘↓ 后光标下面只留 %v，应至少 %v", below, want)
+	}
+	for range 3 {
+		key(0, wui.KeyEnter)
+		if _, below := gaps(); below < want-eps {
+			t.Fatalf("文件末尾回车后光标下面只留 %v，应至少 %v", below, want)
+		}
+	}
+
+	// 点击不补：滚到中间，点离下边两行的那一行，光标过去、视图不动
+	st.SetScrollY(st.LineTop(50))
+	frames()
+	y0 := st.ScrollY()
+	target := st.LineTop(50) + viewH - 2.5*lh // 屏幕上离下边两行半，那一行的中间
+	line := 50 + int((viewH-2.5*lh)/lh)
+	tt.ClickAt(700, tab.Y+tab.H+float32(target-y0)+float32(lh/2))
+	frames()
+	if got := st.CursorPos().Line; got != line {
+		t.Fatalf("点到了第 %d 行，想点第 %d 行", got+1, line+1)
+	}
+	if st.ScrollY() != y0 {
+		t.Errorf("点击后视图滚了：%v → %v", y0, st.ScrollY())
+	}
 }

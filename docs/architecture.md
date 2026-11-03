@@ -408,6 +408,7 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 - 状态栏的语言、缩进、换行、编码都能点（`app/docstatus.go`），改了的语言和缩进只对这个文件、记进会话。
 - 代码片段（`internal/snippets`）：内置的加状态目录里的，Tab 展开，Tab / ⇧Tab 跳位。
 - 图片：预览、和 HEAD 的图片 Diff；Markdown 和 SVG 用 ⇧⌘V 在源码和预览之间切（`TogglePreview`）；`app/image.go` 的 `ToggleHex` 切十六进制视图，也能用默认应用打开。
+- 键盘移动光标后，编辑器让光标上下各留 min(5 行, 视图高 1/5)（`ui/caret.go` 的 `caretMargin`）。mygo 自己只留 3 行；点击和滚轮不受影响。
 - 编辑器和 Diff 中的光标在停止操作一段时间后不再闪烁（`ui/caret.go`，`WORKBENCH_CARET_REST=off` 关掉）。mygo 的编辑器有键盘时每 500 ms 排一帧闪光标，而 mygo 要 2 秒没有新帧才放掉整窗的帧内存，因此持续闪烁会额外占用一两百 MB 内存，并持续消耗 CPU。
 - Diff 有并排和统一两种，全文 / 只看改动两种（`unified` / `fullDiff`）。
 - 两个磁盘文件、或文件和剪贴板比较：`app/filecompare.go`（先“选择以比较”，再“与已选的比较”）。
