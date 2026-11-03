@@ -132,10 +132,11 @@ env 中设置了 `GOTOOLCHAIN=auto`（go.mod 要求 1.27.3）；mygo 使用 go.m
 UI 测试和终端测试在 GitHub runner 上运行不稳定时，先检查环境差异：runner 没有登录会话，shell 为 `/bin/zsh`。
 CI 未设置 `WORKBENCH_TEST_WS`，因此会跳过读取真实工作区的只读测试。
 
-`.github/workflows/claude.yml`：有写权限的人在 issue 或 PR 评论里写 `@claude`，就会在 `macos-latest` 上运行 Claude
+`.github/workflows/claude.yml`：仓库的 owner、成员或协作者在 issue 或 PR 评论里写 `@claude`，就会在 `macos-latest` 上运行 Claude
 （`anthropics/claude-code-action@v1`）。Claude 可以运行 `go`、`gofmt`、`git`，改完后推送分支并创建 PR。
 需要在仓库安装 Claude GitHub App（github.com/apps/claude），并把 Anthropic API 密钥保存为 Secret `ANTHROPIC_API_KEY`。
-这类事件只读取默认分支上的工作流文件，所以要合并到 main 后才生效。
+这类事件只读取默认分支上的工作流文件，所以要合并到 main 后才生效。每次最多 30 轮（`--max-turns`）、60 分钟。
+Claude 会跑 `go test`，等于执行 PR 里的代码，所以别在不认识的人提的 PR 上 `@claude`。
 
 ## 许可
 

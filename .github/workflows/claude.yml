@@ -1,5 +1,5 @@
 # 在 issue / PR 的评论里写 @claude，Claude 读代码、回答、改代码（推分支、开 PR）。
-# 只有对仓库有写权限的人 @ 才会跑（claude-code-action 自己查）。用 Anthropic API，密钥在仓库的 Secret ANTHROPIC_API_KEY。
+# 只有仓库的 owner、成员、协作者写的才启动（下面的 if；陌生人的评论连机器都不开），claude-code-action 还会再查写权限。用 Anthropic API，密钥在仓库的 Secret ANTHROPIC_API_KEY。
 # 跑在 macOS 上：Grove 只能在 macOS 上编译和测试，Claude 改完可以自己 go vet / go test。
 # 这类事件只认默认分支上的这份文件，改了要合进 main 才生效。
 name: Claude
@@ -20,10 +20,14 @@ env:
 jobs:
   claude:
     if: |
-      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude')) ||
-      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude')) ||
-      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')))
+      (github.event_name == 'issue_comment' && contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review_comment' && contains(github.event.comment.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.comment.author_association)) ||
+      (github.event_name == 'pull_request_review' && contains(github.event.review.body, '@claude') &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.review.author_association)) ||
+      (github.event_name == 'issues' && (contains(github.event.issue.body, '@claude') || contains(github.event.issue.title, '@claude')) &&
+        contains(fromJSON('["OWNER","MEMBER","COLLABORATOR"]'), github.event.issue.author_association))
     runs-on: macos-latest
     timeout-minutes: 60
     permissions:
@@ -45,5 +49,7 @@ jobs:
       - uses: anthropics/claude-code-action@v1
         with:
           anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          # --max-turns 限每次来回的轮数，防止跑飞；花费上限在 console.anthropic.com 设
           claude_args: |
+            --max-turns 30
             --allowedTools "Bash(go:*),Bash(gofmt:*),Bash(git:*)"
