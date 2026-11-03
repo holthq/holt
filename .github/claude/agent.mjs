@@ -10,23 +10,9 @@ if (!metaFile) {
   process.exit(2);
 }
 
-// 能读能改；Bash 只给 go、gofmt 和不碰远程的 git（推送、开 PR 由 finish.sh 做）。别的工具一律拒绝（dontAsk）。
-const allowedTools = [
-  "Read",
-  "Glob",
-  "Grep",
-  "Edit",
-  "Write",
-  "Bash(go:*)",
-  "Bash(gofmt:*)",
-  "Bash(ls:*)",
-  "Bash(git status:*)",
-  "Bash(git diff:*)",
-  "Bash(git log:*)",
-  "Bash(git show:*)",
-  "Bash(git add:*)",
-  "Bash(git commit:*)",
-];
+// 能读能改能跑命令。Bash 不细分：Claude 本来就能 go run 任意代码，按命令名拦挡不住什么，只会白耗轮数；
+// 这一步拿不到 GitHub token（checkout 不留凭据），推送和开 PR 由 finish.sh 做。没列的工具一律拒绝（dontAsk）。
+const allowedTools = ["Read", "Glob", "Grep", "Edit", "Write", "Bash"];
 
 // brief 是工具参数的一行摘要（日志用）。
 function brief(input) {
@@ -34,7 +20,7 @@ function brief(input) {
   return String(s).replace(/\s+/g, " ").slice(0, 120);
 }
 
-let result;
+let result, err;
 try {
   for await (const m of query({
     prompt: readFileSync(promptFile, "utf8"),
@@ -44,7 +30,7 @@ try {
       settingSources: ["project"],
       allowedTools,
       permissionMode: "dontAsk",
-      maxTurns: 30, // 一次最多 30 轮，防止跑飞
+      maxTurns: 100, // 一次最多 100 轮（一次工具调用算一轮），防止跑飞
       maxBudgetUsd: 5, // 一次最多花约 5 美元
     },
   })) {
@@ -57,11 +43,12 @@ try {
     }
   }
 } catch (e) {
-  result = { subtype: "exception", is_error: true, errors: [String(e?.message ?? e)] };
+  err = String(e?.message ?? e); // 到轮数 / 花费上限时 SDK 可能先给了 result 再抛错：有就留着，里面有轮数和花费
 }
+result ??= { subtype: "exception", is_error: true, errors: [err] };
 
 const ok = !!result && result.subtype === "success" && !result.is_error;
-const reply = result?.result || result?.errors?.join("\n") || "（没有结果）";
+const reply = result.result || result.errors?.join("\n") || err || "（没有结果）";
 const meta = {
   ok,
   subtype: result?.subtype ?? "none",
