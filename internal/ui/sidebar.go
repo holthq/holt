@@ -797,7 +797,7 @@ func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 		}
 	}
 	t := c.Theme()
-	low := 0 // 底边最低的那层（一样低的取外面的，它画在上面）画分隔线
+	low := 0 // 底边最低的那层（一样低的取外面的，它画在上面）往下投阴影
 	for k, l := range layers {
 		if l.y+l.h > layers[low].y+layers[low].h {
 			low = k
@@ -808,9 +808,10 @@ func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 		tr := rows[l.i]
 		pin := wui.Box(c.Key(tr.Key())).Absolute().Top(l.y).Left(0).Right(0).PaddingX(4).Background(cardBg(t))
 		if k == low {
-			pin.DrawOver(func(p *wui.Painter, r wui.Rect) {
-				p.Fill(wui.Rect{X: r.X, Y: r.Y + r.H - 1, W: r.W, H: 1}, p.Theme().Border, 0)
-			})
+			// 和编辑器的粘性滚动一样是柔和的阴影、不画硬边线：被顶住一半的那行读起来是从栈底下滚过去的。
+			// 往上、往两边的那点被上面的层和列表的 Clip 盖住
+			x, y, blur, col := stickyShadow(t)
+			pin.Shadow(x, y, blur, 0, col)
 		}
 		pin.Children(func() {
 			var el wui.Element
@@ -826,6 +827,15 @@ func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 			}
 		})
 	}
+}
+
+// stickyShadow 是吸顶栈底下的阴影（x、y 偏移、模糊、颜色）：浅色同编辑器的粘性滚动（sticky.go）；
+// 深色底本来就暗，黑 12% 看不出来，加深到 45%。
+func stickyShadow(t *wui.Theme) (x, y, blur float32, col wui.Color) {
+	if t.Dark {
+		return 0, 2, 6, wui.RGBA(0, 0, 0, 0.45)
+	}
+	return 0, 2, 6, wui.RGBA(0, 0, 0, 0.12)
 }
 
 // stickyLayers 算吸顶栈。栈满（仓库 + 两级目录）时见 stickyFull；没满时和 VS Code 的一样：列表顶往下、栈底下那条线上的那行，

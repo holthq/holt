@@ -306,7 +306,7 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 
 - 筛选：输入框里打字按模糊匹配筛（`Files.Match`，`fuzzy.ScorePath`），只留最好的 500 个（`topHits` 用堆），命中的祖先目录自动展开。
 - 跟随：切标签时在树里展开到那个文件、选中、滚到（`FollowCurrent`，设置 `TreeNoFollow` 关掉）；⌥⇧⌘E 手动定位（`RevealCurrent`）。
-- 吸顶：滚动时仓库段头和最多 `maxSticky` 3 层祖先目录贴在顶上（`stickyStack`）。缩进参考线由 `Draw` 画。
+- 吸顶：滚动时仓库段头和最多 `maxSticky` 3 层祖先目录贴在顶上（`stickyStack`），最底下那层往下投阴影（`stickyShadow`，浅色同编辑器的粘性滚动，深色加深），不画边线。缩进参考线由 `Draw` 画。
 - 多选（`FileChosen`）：⌘ 点、⇧ 点；拖动在 `TreeDrag` 里：同仓库是移动，别的仓库来的是复制（先问），按着 ⌥ 是复制；目录、多项、有没保存的标签时先问，写盘只在松手之后。悬停在收起的目录上一会儿会展开（`DwellTree`）。从访达拖到目录行上是复制进来（本来就在这个仓库里的是移动，`DropFiles`），拖到窗口别处是打开。复制逻辑由 `copyIn` / `copyDir` / `copyNode` 实现：`os.CopyFS` 遇到符号链接直接报错，这里链接照原样复制一个、普通文件保留权限位。
 - 复制 / 粘贴 / 创建副本（`app/treeclip.go`）：重名时用 `freeName` 起“名字 副本”“名字 副本 2”。
 - 新建、重命名、移到废纸篓在 `app/fileops.go`。文件树的 ⌘Z（`app/fileundo.go`）：重命名 / 移动改回去，新建 / 复制进来的移到废纸篓；移到废纸篓的不记（放回靠访达），没有重做；`undoStale` 发现磁盘在那之后变了就不撤。
