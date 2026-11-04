@@ -11,6 +11,8 @@ import (
 	"testing"
 	"time"
 
+	"github.com/egoist/mygo/ui/editor"
+
 	"github.com/lemoeade/grove/internal/git"
 	"github.com/lemoeade/grove/internal/testutil"
 )
@@ -193,5 +195,44 @@ func TestHumanSize(t *testing.T) {
 		if got := HumanSize(n); got != want {
 			t.Errorf("HumanSize(%d) = %q，要 %q", n, got, want)
 		}
+	}
+}
+
+// Modified 按缓冲区、版本、存盘次数缓存（#12）：不变时不再问 Buffer.Modified；
+// 撤回到原样、MarkSaved（设置文档内容没变时只记已保存）、Reset、换缓冲区都让缓存失效。
+func TestModifiedCache(t *testing.T) {
+	d := NewSettingsDoc("{}\n")
+	if d.Modified() {
+		t.Fatal("刚建的设置文档算改过")
+	}
+	d.Buf.Set("{ }\n")
+	if !d.Modified() {
+		t.Fatal("改了却不是 Modified")
+	}
+	n := d.ModifiedChecks()
+	for range 100 {
+		d.Modified()
+	}
+	if got := d.ModifiedChecks() - n; got != 0 {
+		t.Errorf("版本没变问了 %d 次 Buffer.Modified", got)
+	}
+	d.Buf.Undo()
+	if d.Modified() {
+		t.Error("撤回到原样还算改过")
+	}
+	d.Buf.Set("{ }\n")
+	d.SetSettingsText("{ }\n") // 内容就是它：只 MarkSaved，版本不动
+	if d.Modified() {
+		t.Error("记成已保存后还算改过")
+	}
+	d.Buf.Set("{\"a\": 1}\n")
+	d.SetSettingsText("{}\n") // Reset
+	if d.Modified() {
+		t.Error("Reset 后还算改过")
+	}
+	d.Buf.Set("x")
+	d.Buf = editor.NewBuffer("y")
+	if d.Modified() {
+		t.Error("换了缓冲区还用旧结果")
 	}
 }

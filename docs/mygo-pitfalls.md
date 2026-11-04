@@ -179,6 +179,9 @@
   `ExpandAll` / `CollapseAll`（局部 ↔ 全文）不保留改动的位置，之后再 `GoToHunk` 一次（`Doc.ToHunk`）。
 - `editor.State.LineBackgrounds` / `GutterMarks` 记的是设的时候的行号，不会随编辑自动移动：插一行之后底色还留在原来那几行。冲突块的染色（`ui/merge.go` 的 `conflictMarks`）
   所以每帧照现在的块重设，没有块就置 nil；块本身按 `Buf.Version()` 缓存（`Doc.ConflictBlocks`），每帧重设不会增加大量计算。别的地方要按内容染色也照这个来，别只在打开时设一次。
+- `editor.Buffer.Modified()` 只要当前文本和存盘文本不是同一棵 rope（改过，哪怕又撤回到一样），就把两份都拼成整串再比较，大文件一次几 MB 分配。
+  每帧要问的地方（标签圆点、状态栏、菜单）一律走 `Doc.Modified`，它按缓冲区指针、`Version()`、存盘次数缓存。`Buffer.MarkSaved()` 不动 `Version()`，
+  所以 Grove 里只经 `Doc.markSaved` 调它（顺带让缓存失效），别直接 `d.Buf.MarkSaved()`。
 - `GutterMarks` 归冲突块，诊断只走 `SetDiagnostics`（`app/lint.go`）：`conflictMarks` 每帧整个重设 `GutterMarks`，别的东西往里放下一帧就没了。
   检查报的问题交给 mygo 编辑器自带的诊断（`st.SetDiagnostics`：波浪线、悬停、滚动条标记），装订线不画点。
 - `SetDiagnostics(version, ds)` 的 version 是 ds 按哪一版文字算的，编辑器沿那一版之后的编辑历史把位置挪到现在。缓冲区未保留那段历史（重读过、版本对不上）时什么都不设，也不报错。

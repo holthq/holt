@@ -120,6 +120,14 @@ type Doc struct {
 	// savedEOL 是状态栏换了换行（SetEOL）之前磁盘上那份的换行，"" 为没换过：SetLineEnding 不动内容版本，Modified 看它
 	savedEOL string
 	cursor   cursorInfo // CursorInfo 上次算的
+	// 文字改没改（Modified 每帧都问）：缓冲区、内容版本、存盘次数都没变就用上次的结果。
+	// mygo 的 Buffer.Modified 在改过之后每次都把当前文本和存盘文本各拼成整串比较，大文件每帧几 MB 分配。
+	// MarkSaved 不动内容版本，所以自己数存盘次数（markSaved，全局的：镜像标签共用一个缓冲区）；Reset、换缓冲区分别动版本和指针。
+	modBuf    *editor.Buffer
+	modVer    uint64
+	modSaves  uint64
+	modVal    bool
+	modChecks int // 真去问了几次 Buffer.Modified（ModifiedChecks）
 	// Big 是超过 MaxEditBytes 的文本（文件、历史版本）：只读，不和 HEAD 对比，没有大纲、冲突检查和 blame，
 	// 重读最多每 2 s 一次（app.syncFile）
 	Big bool
@@ -464,7 +472,7 @@ func (d *Doc) SetSettingsText(text string) {
 		d.Buf = editor.NewBuffer(text)
 		d.Buf.SetLanguage(d.language())
 	case d.Buf.String() == text:
-		d.Buf.MarkSaved()
+		d.markSaved()
 		return
 	default:
 		line = d.St.CursorPos().Line
@@ -708,9 +716,34 @@ func (d *Doc) outlineName() string {
 	return "x" + outline.Ext(d.Lang)
 }
 
-// Modified 是有没保存的改动：文字改了，或状态栏换了换行。
+// Modified 是有没保存的改动：文字改了，或状态栏换了换行。每帧都问（标签的圆点、状态栏），
+// 文字那半按缓冲区、内容版本、存盘次数缓存（textModified）。
 func (d *Doc) Modified() bool {
-	return (d.Kind == File || d.Kind == SettingsDoc) && d.Buf != nil && !d.Hex && (d.Buf.Modified() || d.savedEOL != "" && d.Buf.LineEnding() != d.savedEOL)
+	return (d.Kind == File || d.Kind == SettingsDoc) && d.Buf != nil && !d.Hex && (d.textModified() || d.savedEOL != "" && d.Buf.LineEnding() != d.savedEOL)
+}
+
+// ModifiedChecks 是 textModified 真去问了几次 Buffer.Modified（测试用：画 N 帧只该问常数次）。
+func (d *Doc) ModifiedChecks() int { return d.modChecks }
+
+// textModified 是 d.Buf.Modified()，缓冲区、版本、存盘次数都和上次一样时直接用上次的结果。
+// 版本只增不减，撤回到和存盘一样也是新版本，会重新比一次，圆点照样消失。
+func (d *Doc) textModified() bool {
+	v := d.Buf.Version()
+	if d.modBuf != d.Buf || d.modVer != v || d.modSaves != saves.Load() {
+		d.modChecks++
+		d.modBuf, d.modVer, d.modSaves, d.modVal = d.Buf, v, saves.Load(), d.Buf.Modified()
+	}
+	return d.modVal
+}
+
+// saves 是调过几次 markSaved。按全局数而不按 Doc 数：镜像标签（分屏里同一个文件的两份）共用一个缓冲区，
+// 一份存了另一份的缓存也得失效。存盘很少，每次让所有标签各重新比一次不碍事。
+var saves atomic.Uint64
+
+// markSaved 把当前文字记成存盘的那份（Buffer.MarkSaved 不动内容版本，这里让 Modified 的缓存失效）。
+func (d *Doc) markSaved() {
+	d.Buf.MarkSaved()
+	saves.Add(1)
 }
 
 // SetEOL 把换行换成 eol（"\n" / "\r\n"，状态栏换行那项选的）：内容没变，保存前算改过。
@@ -1209,7 +1242,7 @@ func (d *Doc) write(enc Encoding) error {
 	if err := os.WriteFile(d.Abs, data, mode); err != nil {
 		return err
 	}
-	d.Buf.MarkSaved()
+	d.markSaved()
 	d.Conflict, d.savedEOL = false, ""
 	if mt, size, err := Stat(d.Abs); err == nil {
 		d.Mtime, d.Size = mt, size
