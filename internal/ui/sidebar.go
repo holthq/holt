@@ -476,9 +476,6 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 		} else if tr.Code != 0 && !a.St.Settings.TreeNoStatusColors {
 			statusName(t, name, tr.Code, sel)
 		}
-		if d := a.CurrentDoc(); d != nil && d.Root == r.Root && d.Rel == tr.Path && d.Commit == "" {
-			name.FontWeight(600)
-		}
 		if l, ok := r.Files.Link(tr.Path); ok { // 符号链接：名字后面一个链接图标，悬停看指向哪（双击打开的还是链接本身）
 			wui.Icon(c, iconLink).FontSize(iconRow).TextColor(muted).Shrink(0).Tooltip(app.LinkTip(l))
 		}
