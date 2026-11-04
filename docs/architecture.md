@@ -314,6 +314,8 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 
 ### 外观
 
+侧栏（文件树、Git 栏、搜索、大纲、打开的编辑器）的字号统一用 `ui/sidebar.go` 的常量：正文 `sideFont` 14（文件名、仓库名、变更、结果），次要信息 `sideSub` 12（分支、计数、目录、分组标题、说明），搜索结果的代码行 `sideMono` 12.5。文件树的目录 / 文件行至少 `treeRowH` 24 高，吸顶层和“打开的编辑器”的行跟它对齐；Git 栏的仓库段头 32、分组标题和贮藏行 26、工作树块头 30。界面整体大小走界面缩放（⌘= / ⌘-），没有单独的侧栏字号设置。
+
 文件按状态上色（改了、新加、冲突、被忽略），`TreeNoStatusColors` 关掉。图标默认是 `ui/fileicons.go` 的彩色小方块（按扩展名），`TreeIconsPlain` 换成线条图标；目录图标按里面有没有改动淡淡上色（`folderTint`）。
 
 侧栏顶上可以加一段“打开的编辑器”（`ShowOpenEditors`，默认关，`app/openeditors.go`）：按组列出所有标签，最多显示 `OpenEditorsMax` 9 行高，多了滚；收起状态在 `Panels` 里。这一段不另存列表，每帧从 `AllDocs()` 现算。

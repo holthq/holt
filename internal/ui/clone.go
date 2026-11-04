@@ -82,7 +82,7 @@ func cloneRows(a *app.App, c *wui.Context) {
 			}).Tooltip(cl.URL).Children(func() {
 				wui.Row(kc).Padding(5, 6, 5, 8).Gap(6).AlignItems(wui.Center).MinWidth(0).Children(func() {
 					wui.Spinner(kc)
-					wui.Text(kc, cl.Name).FontSize(treeFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+					wui.Text(kc, cl.Name).FontSize(13).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 					wui.Text(kc, cl.Text).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
 					wui.Spacer(kc).Grow(1)
 					iconButton(kc, iconClose, i18n.Tf("取消克隆 %s", cl.Name), func() { a.CancelClone(cl) })

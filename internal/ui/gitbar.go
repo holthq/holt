@@ -24,9 +24,9 @@ func gitView(a *app.App, c *wui.Context) {
 	}
 	wui.Column(c).Grow(1).MinWidth(0).MinHeight(0).Children(func() {
 		wui.Row(c).Padding(0, 8, 2, 14).Gap(2).AlignItems(wui.Center).Shrink(0).Children(func() {
-			wui.Text(c, i18n.T("变更")).FontSize(11).FontWeight(600).TextColor(t.TextMuted)
+			wui.Text(c, i18n.T("变更")).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted)
 			if n := a.TotalChanges(); n > 0 {
-				wui.Text(c, strconv.Itoa(n)).FontSize(11).TextColor(t.TextMuted.Alpha(0.7)).Margin(0, 0, 0, 4)
+				wui.Text(c, strconv.Itoa(n)).FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.7)).Margin(0, 0, 0, 4)
 			}
 			wui.Spacer(c).Grow(1)
 			if a.AllGitOpen() {
@@ -148,7 +148,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 	if !c.Vibrancy() {
 		bg = windowBg(t)
 	}
-	el := wui.Row(c).Height(30).Padding(0, 4, 0, 2).Gap(6).AlignItems(wui.Center).Background(bg).Cursor(wui.CursorPointer).
+	el := wui.Row(c).Height(32).Padding(0, 4, 0, 2).Gap(6).AlignItems(wui.Center).Background(bg).Cursor(wui.CursorPointer).
 		BorderWidth(1, 0, 0, 0).BorderColor(t.Border.Alpha(0.6)).ContextMenu(func(m *wui.Menu) { repoMenu(a, m, r, false) })
 	underBackdrop(a, c, el)
 	hover := el.Hovered()
@@ -162,7 +162,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		} else {
 			chevron(c, iconRow, open, r.Name, t.TextMuted, func() { a.ToggleGitRepo(r) })
 		}
-		name := wui.Text(c, r.Name).FontSize(12.5).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		name := wui.Text(c, r.Name).FontSize(sideFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		switch {
 		case r.Plain:
 			name.TextColor(t.TextMuted)
@@ -172,7 +172,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		if r.Loaded && r.Err == nil && !r.Plain {
 			wui.Row(c).Gap(3).AlignItems(wui.Center).MinWidth(0).Shrink(2).Children(func() {
 				wui.Icon(c, iconBranch).FontSize(iconInline).TextColor(t.TextMuted)
-				wui.Text(c, r.Status.Branch).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
+				wui.Text(c, r.Status.Branch).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 			})
 		}
 		if r.Linked {
@@ -186,14 +186,14 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 			tip := i18n.Tf("%s 条贮藏", strconv.Itoa(n))
 			wui.Row(c).Gap(2).AlignItems(wui.Center).Shrink(0).Tooltip(tip).Label(tip).Children(func() {
 				wui.Icon(c, iconArchive).FontSize(iconInline).TextColor(t.TextMuted)
-				wui.Text(c, strconv.Itoa(n)).FontSize(10.5).TextColor(t.TextMuted).SingleLine()
+				wui.Text(c, strconv.Itoa(n)).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 			})
 		}
 		if n := len(r.Worktrees); n > 0 && !open {
 			tip := i18n.Tf("%s 个工作树", strconv.Itoa(n))
 			wui.Row(c).Gap(2).AlignItems(wui.Center).Shrink(0).Tooltip(tip).Label(tip).Children(func() {
 				wui.Icon(c, iconWorktree).FontSize(iconInline).TextColor(t.TextMuted)
-				wui.Text(c, strconv.Itoa(n)).FontSize(10.5).TextColor(t.TextMuted).SingleLine()
+				wui.Text(c, strconv.Itoa(n)).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 			})
 		}
 		wui.Spacer(c).Grow(1)
@@ -207,11 +207,11 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 			pill(c, "!", t.Danger, false).Tooltip(r.Err.Error())
 		case !r.Loaded:
 		case r.Plain:
-			wui.Text(c, i18n.T("不是 Git 仓库")).FontSize(10.5).TextColor(t.TextMuted).SingleLine()
+			wui.Text(c, i18n.T("不是 Git 仓库")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 		case st.Count == 0:
 			wui.Row(c).Gap(3).AlignItems(wui.Center).Shrink(0).Children(func() {
 				wui.Icon(c, iconCheck).FontSize(iconInline).TextColor(t.Success.Alpha(0.8))
-				wui.Text(c, i18n.T("工作区干净")).FontSize(10.5).TextColor(t.TextMuted).SingleLine()
+				wui.Text(c, i18n.T("工作区干净")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 			})
 		default:
 			counts(c, st)
@@ -252,7 +252,7 @@ func syncButton(c *wui.Context, key string, ic *wui.SVG, label, tip, arrow strin
 			wui.Icon(c, ic).FontSize(iconRow).TextColor(fg)
 		}
 		if n > 0 {
-			wui.Text(c, arrow+strconv.Itoa(n)).FontSize(10.5).FontWeight(600).TextColor(fg).SingleLine().Margin(0, 0, textNudge, 0)
+			wui.Text(c, arrow+strconv.Itoa(n)).FontSize(sideSub).FontWeight(600).TextColor(fg).SingleLine().Margin(0, 0, textNudge, 0)
 		}
 	})
 	if b.Clicked() && !off { // 灰着也要接住这一下，不然落到段头上，把这一段收起来了
@@ -276,10 +276,10 @@ func counts(c *wui.Context, st git.Status) {
 				continue
 			}
 			if !first {
-				wui.Text(c, "·").FontSize(10.5).TextColor(t.TextMuted.Alpha(0.6))
+				wui.Text(c, "·").FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.6))
 			}
 			first = false
-			wui.Text(c, strconv.Itoa(g.n)).FontSize(11).FontWeight(600).TextColor(kindColor(t, g.k)).SingleLine()
+			wui.Text(c, strconv.Itoa(g.n)).FontSize(sideSub).FontWeight(600).TextColor(kindColor(t, g.k)).SingleLine()
 		}
 	})
 }
@@ -321,7 +321,7 @@ func stashGroupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 // groupHeader 是分组标题的一行：箭头、mark（颜色点或图标）、组名、条数，actions 画在右边。点整行收起 / 展开。
 func groupHeader(a *app.App, row wui.ListRow, cr app.ChangeRow, mark, actions func()) {
 	r := cr.Repo
-	foldHeader(a, row, 24, cr.Title, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions)
+	foldHeader(a, row, 26, cr.Title, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions)
 }
 
 // foldHeader 是能收起的标题行（分组标题、工作树块头）：h 高，箭头、mark、标题、count（条数，可以带说明），
@@ -339,8 +339,8 @@ func foldHeader(a *app.App, row wui.ListRow, h float32, title, count string, ope
 	el.Children(func() {
 		chevron(c, iconRow, open, title, t.TextMuted.Alpha(0.8), toggle)
 		mark()
-		wui.Text(c, title).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(0)
-		wui.Text(c, count).FontSize(11).TextColor(t.TextMuted.Alpha(0.7)).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		wui.Text(c, title).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(0)
+		wui.Text(c, count).FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.7)).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		wui.Spacer(c).Grow(1)
 		if actions != nil {
 			actions()
@@ -359,7 +359,7 @@ func stashRow(a *app.App, row wui.ListRow, r *app.Repo, s git.Stash) {
 	}
 	open := r.StashOpen == s.Hash
 	toggle := func() { a.ToggleStash(r, s) }
-	el := wui.Row(c).Height(24).Padding(0, 4, 0, 16).Gap(6).AlignItems(wui.Center).
+	el := wui.Row(c).Height(26).Padding(0, 4, 0, 16).Gap(6).AlignItems(wui.Center).
 		Tooltip(s.Ref + "  " + s.Message + "\n" + s.Date.Local().Format("2006-01-02 15:04")).
 		ContextMenu(func(m *wui.Menu) { stashMenu(a, m, r, s) })
 	hover := el.Hovered()
@@ -371,10 +371,10 @@ func stashRow(a *app.App, row wui.ListRow, r *app.Repo, s git.Stash) {
 	}
 	el.Children(func() {
 		chevron(c, iconRow, open, s.Ref, muted, toggle)
-		wui.Text(c, strings.TrimPrefix(s.Ref, "stash")).Font(mono()).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
-		wui.Text(c, stashTitle(s.Message)).FontSize(12.5).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
+		wui.Text(c, strings.TrimPrefix(s.Ref, "stash")).Font(mono()).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
+		wui.Text(c, stashTitle(s.Message)).FontSize(sideFont).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
 		if !hover {
-			wui.Text(c, git.Ago(s.Date)).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
+			wui.Text(c, git.Ago(s.Date)).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 			return
 		}
 		rowButton(c, iconStashApply, i18n.T("应用改动"), i18n.Tf("应用改动（git stash apply %s，贮藏留着）", s.Ref), func() { a.StashApply(r, s) })
@@ -413,7 +413,7 @@ func stashFileRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		a.OnChangeSelected(true)
 	}
 	el.Children(func() {
-		changeLabel(c, ch, sel, muted, 12.5)
+		changeLabel(c, ch, sel, muted, sideFont)
 		wui.Spacer(c).Grow(1)
 		lineCounts(c, ch, sel, muted)
 	})
@@ -461,7 +461,7 @@ func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		a.OnChangeSelected(true)
 	}
 	el.Children(func() {
-		changeLabel(c, shown, sel, muted, 13)
+		changeLabel(c, shown, sel, muted, sideFont)
 		if ch.Kind != git.Conflict {
 			return
 		}
@@ -520,9 +520,9 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			wui.Box(c).Size(18, 18).Radius(4).Background(bg).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Children(func() {
 				wui.Icon(c, iconFolder).FontSize(iconInline).TextColor(fg)
 			})
-			pathLabel(c, ch, sel, muted, 13)
+			pathLabel(c, ch, sel, muted, sideFont)
 			wui.Spacer(c).Grow(1)
-			wui.Text(c, dirCount(r, ch.Path)).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
+			wui.Text(c, dirCount(r, ch.Path)).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 		})
 	})
 }
@@ -559,7 +559,7 @@ func noteRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		a.GitHover = row.Index
 	}
 	el.Children(func() {
-		wui.Text(c, cr.Title).FontSize(11).TextColor(color).MinWidth(0)
+		wui.Text(c, cr.Title).FontSize(sideSub).TextColor(color).MinWidth(0)
 	})
 }
 
@@ -578,13 +578,13 @@ func ongoingRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	el.Children(func() {
 		wui.Row(c).Gap(6).AlignItems(wui.Center).Children(func() {
 			wui.Icon(c, iconAlert).FontSize(iconRow).TextColor(t.Warning)
-			wui.Text(c, cr.Title).FontSize(11.5).FontWeight(600).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
+			wui.Text(c, cr.Title).FontSize(sideFont).FontWeight(600).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
 		})
 		wui.Row(c).Gap(6).Wrap().Padding(0, 0, 0, indent).Children(func() {
 			if op == git.Rebasing && p.Branch != "" && p.Onto != "" {
-				wui.Text(c, p.Branch+" → "+p.Onto).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Shrink(0)
+				wui.Text(c, p.Branch+" → "+p.Onto).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Shrink(0)
 			}
-			wui.Text(c, app.OngoingNote(r)).FontSize(10.5).TextColor(t.TextMuted).MinWidth(0)
+			wui.Text(c, app.OngoingNote(r)).FontSize(sideSub).TextColor(t.TextMuted).MinWidth(0)
 		})
 		wui.Row(c).Gap(6).Padding(2, 0, 0, indent).AlignItems(wui.Center).Children(func() {
 			n := r.Status.Conflicts
@@ -632,9 +632,9 @@ func pathLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color, size fl
 	}
 	switch {
 	case ch.Orig != "":
-		wui.Text(c, "← "+ch.Orig).FontSize(11).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
+		wui.Text(c, "← "+ch.Orig).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
 	case dir != "":
-		wui.Text(c, strings.TrimSuffix(dir, "/")).FontSize(11).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
+		wui.Text(c, strings.TrimSuffix(dir, "/")).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
 	}
 }
 
@@ -642,7 +642,7 @@ func pathLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color, size fl
 func lineCounts(c *wui.Context, ch git.Change, onAccent bool, muted wui.Color) {
 	t := c.Theme()
 	if ch.Binary {
-		wui.Text(c, i18n.T("二进制")).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
+		wui.Text(c, i18n.T("二进制")).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 		return
 	}
 	add, del := t.Success, t.Danger
@@ -650,16 +650,16 @@ func lineCounts(c *wui.Context, ch git.Change, onAccent bool, muted wui.Color) {
 		add, del = t.AccentText, t.AccentText
 	}
 	if ch.Add > 0 {
-		wui.Textf(c, "+%d", ch.Add).Font(mono()).FontSize(10.5).FontWeight(600).TextColor(add).SingleLine().Shrink(0)
+		wui.Textf(c, "+%d", ch.Add).Font(mono()).FontSize(sideSub).FontWeight(600).TextColor(add).SingleLine().Shrink(0)
 	}
 	if ch.Del > 0 {
-		wui.Textf(c, "−%d", ch.Del).Font(mono()).FontSize(10.5).FontWeight(600).TextColor(del).SingleLine().Shrink(0)
+		wui.Textf(c, "−%d", ch.Del).Font(mono()).FontSize(sideSub).FontWeight(600).TextColor(del).SingleLine().Shrink(0)
 	}
 }
 
 // commitFileLabel 是提交里的一个文件：changeLabel，右边是行数。
 func commitFileLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color) {
-	changeLabel(c, ch, sel, muted, 12.5)
+	changeLabel(c, ch, sel, muted, sideFont)
 	wui.Spacer(c).Grow(1)
 	lineCounts(c, ch, sel, muted)
 }
@@ -691,7 +691,7 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 			}
 			b.Children(func() {
 				wui.Icon(c, iconPencil).FontSize(iconInline).TextColor(t.TextMuted)
-				wui.Text(c, i18n.T("提交…")).FontSize(11.5).TextColor(t.TextMuted).SingleLine()
+				wui.Text(c, i18n.T("提交…")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 			})
 			if r.Extra.Head != "" && app.UndoWhy(r) == "" {
 				undoButton(a, c, r, "")
@@ -710,7 +710,7 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 			ph = i18n.Tf("提交信息（%s 提交）", k)
 		}
 		ta := wui.TextArea(c.Key("msg"), &r.CommitMsg).Lines(1, 4).MinHeight(0).Placeholder(ph).
-			Label(i18n.T("提交信息")).FontSize(12.5).TextColor(t.Text).OnTextKey(func(k wui.TextKey) bool {
+			Label(i18n.T("提交信息")).FontSize(sideFont).TextColor(t.Text).OnTextKey(func(k wui.TextKey) bool {
 			switch {
 			case (k.Key == wui.KeyUp || k.Key == wui.KeyDown) && k.Mods == 0:
 				dir := 1
@@ -758,12 +758,12 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 			hint = i18n.T("没有可提交的改动")
 		}
 		if hint != "" {
-			wui.Text(c, hint).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
+			wui.Text(c, hint).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 		}
 		wui.Row(c).Gap(8).AlignItems(wui.Center).Children(func() {
 			if r.Extra.Head != "" {
 				amend := r.Amend
-				cb := wui.Checkbox(c, &amend, i18n.T("修改上一次提交")).FontSize(11).Disabled(r.Committing()).
+				cb := wui.Checkbox(c, &amend, i18n.T("修改上一次提交")).FontSize(sideSub).Disabled(r.Committing()).
 					Tooltip(app.Tip(i18n.T("git commit --amend：信息换成上一次的，可以改；已暂存的改动并进去"), "git.amend"))
 				if cb.Changed() {
 					a.SetAmend(r, amend)

@@ -90,7 +90,7 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 			openEditors(a, c.Key("open"), tools)
 		}
 		wui.Row(c).Padding(0, 8, 2, 14).Gap(2).AlignItems(wui.Center).Shrink(0).Children(func() {
-			wui.Text(c, i18n.T("仓库")).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Grow(1)
+			wui.Text(c, i18n.T("仓库")).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).Grow(1)
 			if !tools {
 				wui.Box(c).Size(0, toolSize).Shrink(0)
 				if a.AnyLoading() {
@@ -212,7 +212,7 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 				a.FocusTree = false
 			}
 			if a.TreeTruncated() {
-				wui.Textf(c, i18n.T("匹配太多，只显示前 %d 个"), files.FilterCap).FontSize(10.5).TextColor(t.TextMuted).
+				wui.Textf(c, i18n.T("匹配太多，只显示前 %d 个"), files.FilterCap).FontSize(sideSub).TextColor(t.TextMuted).
 					Padding(4, 12).Shrink(0)
 			}
 		}
@@ -299,9 +299,19 @@ func guidesFor(a *app.App) treeGuides {
 	return g
 }
 
-// 文件树的字号、每级缩进、图标到名字的间距（照 VS Code：13 / 8 / 6，缩进取 10，参考线不挤）。
+// 侧栏（文件树、Git、搜索、大纲、打开的编辑器）的字号：sideFont 是正文（文件名、仓库名、变更、结果），
+// sideSub 是次要的（分支、计数、目录、分组标题、说明），sideMono 是搜索结果里的等宽代码行。
+// 次要的只比正文小两号，层级还在、又不至于小得费眼（#5：原来是 13 / 10.5–11）。
 const (
-	treeFont = 13
+	sideFont = 14
+	sideSub  = 12
+	sideMono = 12.5
+)
+
+// 文件树每级缩进、图标到名字的间距（照 VS Code 8 / 6，缩进取 10，参考线不挤），
+// 目录 / 文件行的高（14 号字一行 16.5，上下各 3 再凑成整数，行和吸顶层都按它对齐）。
+const (
+	treeRowH = 24
 	treeStep = 10
 	treeGap  = 6
 )
@@ -355,8 +365,8 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 		return
 	}
 	if tr.Note != "" {
-		span(a, row, wui.Row(c).Padding(3, 8, 3, 30).Children(func() {
-			wui.Text(c, tr.Note).FontSize(11).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
+		span(a, row, wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, 30).AlignItems(wui.Center).Children(func() {
+			wui.Text(c, tr.Note).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
 		}))
 		return
 	}
@@ -368,7 +378,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if filtering {
 		indent = 22
 	}
-	el := wui.Row(c).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) { rowMenu(a, m, row.Index, tr, tr.Row) })
+	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) { rowMenu(a, m, row.Index, tr, tr.Row) })
 	drawGuides(el, tr, g)
 	if b := span(a, row, el); b.H > 0 {
 		a.TreeRowH = b.H
@@ -415,7 +425,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			nameCol := dirNameColor(a, t, tr, muted, sel)
 			if len(tr.Chain) > 0 {
 				chainName(c, tr, muted, nameCol, func(m *wui.Menu, seg files.Row) { rowMenu(a, m, row.Index, tr, seg) })
-			} else if name := wui.Text(c, tr.Name).FontSize(treeFont).SingleLine().Ellipsis("…").MinWidth(0); nameCol != nil {
+			} else if name := wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0); nameCol != nil {
 				name.TextColor(*nameCol)
 			}
 			if tr.Mark {
@@ -455,7 +465,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 		} else {
 			name = wui.Text(c, tr.Name)
 		}
-		name.FontSize(treeFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		name.FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		if dim {
 			name.TextColor(muted)
 		} else if tr.Code != 0 && !a.St.Settings.TreeNoStatusColors {
@@ -468,7 +478,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			wui.Icon(c, iconLink).FontSize(iconRow).TextColor(muted).Shrink(0).Tooltip(app.LinkTip(l))
 		}
 		if dir := files.DirOf(tr.Path); filtering && dir != "" {
-			hitText(c, dir, tr.Hits, 0, hl).FontSize(11).TextColor(muted).MinWidth(0).Shrink(2)
+			hitText(c, dir, tr.Hits, 0, hl).FontSize(sideSub).TextColor(muted).MinWidth(0).Shrink(2)
 		}
 		if tr.Sub != 0 || tr.Code != 0 {
 			wui.Spacer(c).Grow(1)
@@ -478,7 +488,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			if tr.Sub == '-' {
 				label = i18n.T("未初始化")
 			}
-			wui.Text(c, label).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
+			wui.Text(c, label).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 		}
 		if tr.Code != 0 {
 			codeLetter(c, t, tr.Code, sel)
@@ -492,7 +502,7 @@ func codeLetter(c *wui.Context, t *wui.Theme, code byte, sel bool) {
 	if sel {
 		col = t.AccentText
 	}
-	wui.Text(c, string(code)).Font(mono()).FontSize(11).FontWeight(700).TextColor(col).Shrink(0)
+	wui.Text(c, string(code)).Font(mono()).FontSize(sideSub).FontWeight(700).TextColor(col).Shrink(0)
 }
 
 // rowMenu 是文件树里文件 / 目录行的右键菜单：选了好几行、右键的是其中一行时对选中的全部（chosenMenu），
@@ -515,11 +525,11 @@ func chainName(c *wui.Context, tr app.TreeRow, muted wui.Color, col *wui.Color, 
 	wui.Row(c).AlignItems(wui.Center).Gap(3).MinWidth(0).Shrink(1).Children(func() {
 		for i, p := range tr.Chain {
 			if i > 0 {
-				wui.Text(c, "/").FontSize(treeFont).TextColor(muted).SingleLine().Shrink(0)
+				wui.Text(c, "/").FontSize(sideFont).TextColor(muted).SingleLine().Shrink(0)
 			}
 			seg := tr.Row
 			seg.Path, seg.Name, seg.Chain = p, files.BaseName(p), nil
-			name := wui.Text(c.Key(i), seg.Name).FontSize(treeFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1).
+			name := wui.Text(c.Key(i), seg.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1).
 				ContextMenu(func(m *wui.Menu) { menu(m, seg) })
 			if col != nil && i == len(tr.Chain)-1 {
 				name.TextColor(*col)
@@ -617,7 +627,7 @@ func editRow(a *app.App, c *wui.Context, tr app.TreeRow, icon wui.Color, sel boo
 			default:
 				fileGlyphSize(a, c, e.Name, sel, false, iconTool)
 			}
-			in := wui.TextInput(c, &e.Name).Label(e.Label()).Placeholder(e.Placeholder()).FontSize(treeFont).TextColor(t.Text).Grow(1).MinWidth(0).
+			in := wui.TextInput(c, &e.Name).Label(e.Label()).Placeholder(e.Placeholder()).FontSize(sideFont).TextColor(t.Text).Grow(1).MinWidth(0).
 				OnTextKey(func(k wui.TextKey) bool {
 					if k.Key != wui.KeyEscape || k.Mods != 0 {
 						return false
@@ -650,7 +660,7 @@ func editRow(a *app.App, c *wui.Context, tr app.TreeRow, icon wui.Color, sel boo
 			}
 		})
 		if e.Err != "" {
-			wui.Text(c, e.Err).FontSize(11).TextColor(t.Danger).Padding(0, 0, 0, 16+treeGap) // 和图标左边齐
+			wui.Text(c, e.Err).FontSize(sideSub).TextColor(t.Danger).Padding(0, 0, 0, 16+treeGap) // 和图标左边齐
 		}
 	})
 }
@@ -823,7 +833,7 @@ func stickyLayers(a *app.App, rows []app.TreeRow, box wui.Rect, first, last int)
 	const pad = 2 // 列表上下的 PaddingY
 	rowH := a.TreeRowH
 	if rowH <= 0 {
-		rowH = 22
+		rowH = treeRowH
 	}
 	var layers []stickyLayer
 	bottom := func() float32 {
@@ -1000,7 +1010,7 @@ func stickyTarget(a *app.App, rows []app.TreeRow, l stickyLayer) int {
 func stickyDir(a *app.App, c *wui.Context, tr app.TreeRow) wui.Element {
 	t := c.Theme()
 	muted := t.TextMuted
-	el := wui.Row(c).Padding(3, 8, 3, treeIndent(tr.Depth)).Gap(treeGap).AlignItems(wui.Center).
+	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, treeIndent(tr.Depth)).Gap(treeGap).AlignItems(wui.Center).
 		ContextMenu(func(m *wui.Menu) { fileMenu(a, m, tr.Repo, tr.Row) }).Label(i18n.Tf("%s（钉在顶上）", tr.Label()))
 	el.Children(func() {
 		chevron(c, iconTool, true, tr.Label(), muted, func() { a.ToggleDir(tr.Repo, tr.Path) })
@@ -1008,7 +1018,7 @@ func stickyDir(a *app.App, c *wui.Context, tr app.TreeRow) wui.Element {
 		col := dirNameColor(a, t, tr, muted, false)
 		if len(tr.Chain) > 0 {
 			chainName(c, tr, muted, col, func(m *wui.Menu, seg files.Row) { fileMenu(a, m, tr.Repo, seg) })
-		} else if name := wui.Text(c, tr.Name).FontSize(treeFont).SingleLine().Ellipsis("…").MinWidth(0); col != nil {
+		} else if name := wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0); col != nil {
 			name.TextColor(*col)
 		}
 		if tr.Mark {
@@ -1034,15 +1044,15 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 		} else {
 			chevron(c, iconTool, open, r.Name, muted, func() { a.ToggleRepo(r) })
 		}
-		name := wui.Text(c, r.Name).FontSize(treeFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		name := wui.Text(c, r.Name).FontSize(sideFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		if !current && !sel {
 			name.TextColor(t.Text.Alpha(0.85))
 		}
 		switch {
 		case r.Err != nil:
-			wui.Text(c, i18n.T("git status 失败")).FontSize(10.5).TextColor(muted).SingleLine().MinWidth(0)
+			wui.Text(c, i18n.T("git status 失败")).FontSize(sideSub).TextColor(muted).SingleLine().MinWidth(0)
 		case r.Plain:
-			wui.Text(c, i18n.T("不是 Git 仓库")).FontSize(10.5).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
+			wui.Text(c, i18n.T("不是 Git 仓库")).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
 		case r.Loaded:
 			wui.Row(c).Gap(3).AlignItems(wui.Center).MinWidth(0).Shrink(2).Children(func() {
 				wui.Icon(c, iconBranch).FontSize(iconInline).TextColor(muted)
@@ -1050,7 +1060,7 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 				if s := app.UpDown(r.Status); s != "" {
 					b += " " + s
 				}
-				wui.Text(c, b).FontSize(10.5).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
+				wui.Text(c, b).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
 			})
 		}
 		if r.Linked {

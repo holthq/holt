@@ -180,8 +180,8 @@ func TestTreeSizes(t *testing.T) {
 			t.Errorf("每级缩进 %.1f，应该是 10", d)
 		}
 	}
-	if d := r2.Y - r3.Y; d != 22 || r0.H != 22 {
-		t.Errorf("行距 %.1f、行高 %.1f，应该都是 22", d, r0.H)
+	if d := r2.Y - r3.Y; d != treeRowH || r0.H != treeRowH {
+		t.Errorf("行距 %.1f、行高 %.1f，应该都是 %d", d, r0.H, treeRowH)
 	}
 	if w := b3[1] - b3[0]; w < 13.5 || w > 15 {
 		t.Errorf("徽章宽 %.1f，应该是 14", w)

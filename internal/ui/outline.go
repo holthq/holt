@@ -24,12 +24,12 @@ func outlineView(a *app.App, c *wui.Context) {
 	}
 	wui.Column(c).Grow(1).MinWidth(0).MinHeight(0).Children(func() {
 		wui.Row(c).Padding(0, 8, 2, 14).Gap(6).AlignItems(wui.Center).Shrink(0).MinHeight(24).Children(func() {
-			wui.Text(c, i18n.T("大纲")).FontSize(11).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
+			wui.Text(c, i18n.T("大纲")).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).Shrink(0)
 			title := ""
 			if d != nil {
 				title = d.Title
 			}
-			wui.Text(c, title).FontSize(11).TextColor(t.TextMuted.Alpha(0.8)).SingleLine().Ellipsis("…").MinWidth(0).Grow(1)
+			wui.Text(c, title).FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.8)).SingleLine().Ellipsis("…").MinWidth(0).Grow(1)
 			if tree != nil && len(tree.Kids) > 0 {
 				st := &d.OutlineSt
 				iconButton(c, iconExpandAll, i18n.T("展开所有符号"), func() {
@@ -54,7 +54,7 @@ func outlineView(a *app.App, c *wui.Context) {
 		default:
 			outlineTree(a, c.Key(outlineKey{d}), d, tree)
 			if tree.More != "" {
-				wui.Text(c, tree.More).FontSize(10.5).TextColor(t.TextMuted).Padding(4, 12).Shrink(0)
+				wui.Text(c, tree.More).FontSize(sideSub).TextColor(t.TextMuted).Padding(4, 12).Shrink(0)
 			}
 		}
 	})
@@ -163,10 +163,10 @@ func outlineRow(c *wui.Context, f *outline.Flat, sel bool) bool {
 	el := wui.Row(c).Gap(6).AlignItems(wui.Center).MinWidth(0).Grow(1).Label(symbolLabel(f)).Cursor(wui.CursorPointer)
 	clicked := el.Clicked()
 	el.Children(func() {
-		wui.Text(c, symbolGlyph(f.Kind)).FontSize(11).FontWeight(600).TextColor(glyph).Width(12).Shrink(0)
-		wui.Text(c, f.Name).FontSize(12.5).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0)
+		wui.Text(c, symbolGlyph(f.Kind)).FontSize(sideSub).FontWeight(600).TextColor(glyph).Width(13).Shrink(0)
+		wui.Text(c, f.Name).FontSize(sideFont).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0)
 		if f.Detail != "" {
-			wui.Text(c, f.Detail).FontSize(11).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
+			wui.Text(c, f.Detail).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0)
 		}
 	})
 	return clicked

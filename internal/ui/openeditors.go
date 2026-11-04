@@ -29,7 +29,7 @@ func openEditors(a *app.App, c *wui.Context, tools bool) {
 					ic.Rotate(90)
 				}
 			})
-			wui.Text(c, name).FontSize(11).FontWeight(600).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
+			wui.Text(c, name).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 		})
 		if h.Clicked() {
 			a.ToggleOpenEditorsFolded()
@@ -46,7 +46,7 @@ func openEditors(a *app.App, c *wui.Context, tools bool) {
 	}
 	rowH := a.TreeRowH // 和文件树的行一样高（树还没画过的第一帧用估计的）
 	if rowH <= 0 {
-		rowH = 24
+		rowH = treeRowH
 	}
 	indent := treeIndent(0)
 	if rows[0].Head() { // 拆分了：标签比“第 N 组”再缩一级
@@ -56,7 +56,7 @@ func openEditors(a *app.App, c *wui.Context, tools bool) {
 		for i, r := range rows {
 			if r.Head() {
 				wui.Row(c.Key(i)).Height(rowH).Padding(0, 8, 0, treeIndent(0)).AlignItems(wui.Center).Children(func() {
-					wui.Text(c, i18n.Tf("第 %d 组", r.N)).FontSize(11).TextColor(t.TextMuted).SingleLine()
+					wui.Text(c, i18n.Tf("第 %d 组", r.N)).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 				})
 				continue
 			}
@@ -95,7 +95,7 @@ func openEditorRow(a *app.App, c *wui.Context, r app.OpenEditorRow, indent float
 			wui.Box(c.Key("bar")).Absolute().Left(0).Top(softBarInset).Bottom(softBarInset).Width(2).Radius(1).Background(t.Accent)
 		}
 		docGlyph(a, c, d, on)
-		title := wui.Text(c, d.Title).FontSize(treeFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		title := wui.Text(c, d.Title).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		if !d.Pinned {
 			title.Italic()
 		}
@@ -108,7 +108,7 @@ func openEditorRow(a *app.App, c *wui.Context, r app.OpenEditorRow, indent float
 				muted = t.AccentText.Alpha(0.75)
 			}
 			// 地方不够先缩它
-			wui.Text(c, s).FontSize(11).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(100).Margin(0, 0, textNudge, 0)
+			wui.Text(c, s).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(100).Margin(0, 0, textNudge, 0)
 		}
 		wui.Spacer(c).Grow(1)
 		tabClose(a, c, d, hover)

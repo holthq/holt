@@ -30,7 +30,7 @@ func worktreesHeader(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	if prunable > 0 {
 		count += " · " + i18n.Tf("%s 可清理", strconv.Itoa(prunable))
 	}
-	foldHeader(a, row, 28, cr.Title, count, r.WtOpen, func() { a.ToggleWorktrees(r) }, func() {
+	foldHeader(a, row, 30, cr.Title, count, r.WtOpen, func() { a.ToggleWorktrees(r) }, func() {
 		wui.Icon(c, iconWorktree).FontSize(iconInline).TextColor(t.TextMuted).Shrink(0)
 	}, func() {
 		if r.WtLoading {
@@ -89,12 +89,12 @@ func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree) {
 	}
 	info := r.WtInfo[w.Path]
 	el.Children(func() {
-		name := wui.Text(c, wtTitle(w)).FontSize(12.5).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		name := wui.Text(c, wtTitle(w)).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		if w.Prunable {
 			name.TextColor(muted)
 		}
 		if d := wtDir(w); d != "" {
-			wui.Text(c, d).FontSize(11).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
+			wui.Text(c, d).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
 		}
 		wui.Spacer(c).Grow(1)
 		if w.Main {
@@ -117,7 +117,7 @@ func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree) {
 		case w.Prunable || w.Bare:
 		case info == nil:
 			if r.WtLoading {
-				wui.Text(c, "…").FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
+				wui.Text(c, "…").FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 			}
 		case info.Err != nil:
 			pill(c, "!", t.Danger, sel).Tooltip(info.Err.Error())
@@ -127,11 +127,11 @@ func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree) {
 				tip := i18n.Tf("%s 处未提交的改动", n)
 				wui.Row(c).Gap(4).AlignItems(wui.Center).Shrink(0).Tooltip(tip).Label(tip).Children(func() {
 					wui.Box(c).Size(6, 6).Radius(3).Background(dot).Shrink(0)
-					wui.Text(c, n).FontSize(10.5).TextColor(muted).SingleLine()
+					wui.Text(c, n).FontSize(sideSub).TextColor(muted).SingleLine()
 				})
 			}
 			if s := wtUpDown(info); s != "" {
-				wui.Text(c, s).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0).
+				wui.Text(c, s).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0).
 					Tooltip(i18n.T("和主工作树的 HEAD 比：↑ 领先、↓ 落后"))
 			}
 		}

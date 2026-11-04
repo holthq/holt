@@ -40,7 +40,7 @@ func searchView(a *app.App, c *wui.Context) {
 				})
 			}
 			row.Children(func() {
-				st := wui.Text(c, text).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).Tooltip(text)
+				st := wui.Text(c, text).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).Tooltip(text)
 				if failed {
 					st.TextColor(t.Danger)
 				}
@@ -51,7 +51,7 @@ func searchView(a *app.App, c *wui.Context) {
 						a.SearchMore()
 					}
 				case s.AtMaxLimit():
-					wui.Text(c, i18n.T("最多 50 000 处")).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Shrink(0)
+					wui.Text(c, i18n.T("最多 50 000 处")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Shrink(0)
 				}
 				if s.Done && !s.Running && summaryLink(c, i18n.T("重新搜索"), i18n.T("按同样的条件再搜一遍：结果里的文件改了会自己跟着变，新配上的文件要重新搜")).Clicked() {
 					a.Research()
@@ -147,7 +147,7 @@ func searchInputs(a *app.App, c *wui.Context) {
 // summaryLink 是摘要那一行后面的链接样子的按钮（"再读 5000""重新搜索"那些）：次级色，悬停正文色。
 func summaryLink(c *wui.Context, text, tip string) wui.Element {
 	t := c.Theme()
-	l := wui.Text(c, text).FontSize(10.5).FontWeight(500).TextColor(t.TextMuted).SingleLine().Shrink(0).Cursor(wui.CursorPointer).Label(text).Tooltip(tip)
+	l := wui.Text(c, text).FontSize(sideSub).FontWeight(500).TextColor(t.TextMuted).SingleLine().Shrink(0).Cursor(wui.CursorPointer).Label(text).Tooltip(tip)
 	if l.Hovered() {
 		l.TextColor(t.Text)
 	}
@@ -445,8 +445,8 @@ func searchTail(e workspace.SearchEntry) string {
 func recentSearches(a *app.App, c *wui.Context) {
 	t := c.Theme()
 	wui.Row(c).Padding(4, 12, 4, 12).Gap(6).AlignItems(wui.Center).Shrink(0).Children(func() {
-		wui.Text(c, i18n.T("最近搜索")).FontSize(10.5).FontWeight(600).TextColor(t.TextMuted).SingleLine().Grow(1)
-		b := wui.Text(c, i18n.T("清除")).FontSize(10.5).FontWeight(500).TextColor(t.TextMuted).Cursor(wui.CursorPointer).
+		wui.Text(c, i18n.T("最近搜索")).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).SingleLine().Grow(1)
+		b := wui.Text(c, i18n.T("清除")).FontSize(sideSub).FontWeight(500).TextColor(t.TextMuted).Cursor(wui.CursorPointer).
 			Label(i18n.T("清除最近搜索")).Tooltip(i18n.T("清除最近搜索"))
 		if b.Hovered() {
 			b.TextColor(t.Text)
@@ -470,9 +470,9 @@ func recentSearches(a *app.App, c *wui.Context) {
 			}
 			el.Children(func() {
 				wui.Icon(c, iconHistory).FontSize(iconRow).TextColor(t.TextMuted).Shrink(0)
-				wui.Text(c, q).Font(mono()).FontSize(11.5).SingleLine().Ellipsis("…").MinWidth(0).Shrink(0).MaxWidth(320)
+				wui.Text(c, q).Font(mono()).FontSize(sideMono).SingleLine().Ellipsis("…").MinWidth(0).Shrink(0).MaxWidth(320)
 				if tail != "" {
-					wui.Text(c, tail).Font(mono()).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+					wui.Text(c, tail).Font(mono()).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 				}
 				wui.Spacer(c).Grow(1)
 				if hover {
@@ -582,7 +582,7 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 				ic.Rotate(90)
 			}
 			fileGlyph(a, c, m.Path, sel).Shrink(0)
-			wui.Text(c, path.Base(m.Path)).FontSize(12.5).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+			wui.Text(c, path.Base(m.Path)).FontSize(sideFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 			where := m.Repo
 			if dir := path.Dir(m.Path); dir != "." {
 				where += " · " + dir
@@ -590,7 +590,7 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 			if m.Enc != "" && m.Enc != docs.UTF8BOM { // 不是 UTF-8、按认出的编码解了再搜的
 				where += " · " + m.Enc.Label()
 			}
-			wui.Text(c, where).FontSize(10.5).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
+			wui.Text(c, where).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
 			wui.Spacer(c).Grow(1)
 			if !hover {
 				pill(c, strconv.Itoa(sr.Count), t.TextMuted, sel)
@@ -611,19 +611,19 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 		s.Hover = row.Index
 	}
 	el.Children(func() {
-		wui.Text(c, strconv.Itoa(m.Line+1)).Font(mono()).FontSize(10.5).TextColor(muted).SingleLine().Shrink(0)
+		wui.Text(c, strconv.Itoa(m.Line+1)).Font(mono()).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 		before, hit, after := previewParts(m)
 		font := mono()
-		spans := []wui.Span{{Text: before, Font: font, Size: 11.5}}
+		spans := []wui.Span{{Text: before, Font: font, Size: sideMono}}
 		if s.Replacing {
-			spans = append(spans, wui.Span{Text: hit, Font: font, Size: 11.5, Background: del, Radius: 3, Strikethrough: true})
+			spans = append(spans, wui.Span{Text: hit, Font: font, Size: sideMono, Background: del, Radius: 3, Strikethrough: true})
 			if repl := s.Preview(sr.Match); repl != "" {
-				spans = append(spans, wui.Span{Text: repl, Font: font, Size: 11.5, Background: add, Radius: 3})
+				spans = append(spans, wui.Span{Text: repl, Font: font, Size: sideMono, Background: add, Radius: 3})
 			}
 		} else {
-			spans = append(spans, wui.Span{Text: hit, Font: font, Size: 11.5, Background: hl, Radius: 3})
+			spans = append(spans, wui.Span{Text: hit, Font: font, Size: sideMono, Background: hl, Radius: 3})
 		}
-		spans = append(spans, wui.Span{Text: after, Font: font, Size: 11.5})
+		spans = append(spans, wui.Span{Text: after, Font: font, Size: sideMono})
 		wui.RichText(c, spans...).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).Shrink(1)
 		if !hover {
 			return
