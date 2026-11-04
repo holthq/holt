@@ -88,7 +88,7 @@ func TestBigFileBar(t *testing.T) {
 	repo.Write("mid.go", mid+"// 改过\n")
 	a2, tt2, wait2 := newUI(t, testutil.Workspace(t, repo.Root), "")
 	m := a2.OpenFile(a2.Repos[0], "mid.go", true)
-	wait2("读好", func() bool { return m.Buf != nil && !m.Loading })
+	wait2("读好", func() bool { return m.Buf != nil && !m.Loading && !m.BasePending }) // 基准在文字之后补上（#22）
 	tt2.Frame()
 	mustText(t, tt2, "文件较大，不和 HEAD 对比")
 	if m.St.ReadOnly || m.St.DiffBase != nil || tt2.HasText(i18n.Tf("大文件（%s），只读：不和 HEAD 对比，没有大纲、冲突检查和 blame", docs.HumanSize(m.Size))) {

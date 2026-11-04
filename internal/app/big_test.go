@@ -120,7 +120,9 @@ func TestNoBaseSync(t *testing.T) {
 	wait("仓库读完", idle(repo))
 	b := a.OpenFile(repo, "big.go", true)
 	s := a.OpenFile(repo, "small.go", true)
-	wait("读好", func() bool { return !b.Loading && !s.Loading && b.Buf != nil && s.Buf != nil })
+	wait("读好", func() bool {
+		return !b.Loading && !s.Loading && !b.BasePending && !s.BasePending && b.Buf != nil && s.Buf != nil
+	})
 	if !b.NoBase || b.St.DiffBase != nil || s.NoBase || s.St.DiffBase == nil {
 		t.Fatalf("打开：big noBase=%v，small noBase=%v", b.NoBase, s.NoBase)
 	}

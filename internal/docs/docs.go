@@ -77,6 +77,11 @@ type Doc struct {
 	HexTotal int64
 	Info     string // 不能显示时的说明（二进制、过大、读失败）
 	Loading  bool
+	// SlowLoad 是这次读已经超过 app 的 loadingDelay（约 150 ms）还没读完：这时才画"读取中…"，在那之前只露编辑区的底
+	SlowLoad bool
+	// BasePending 是文字已经放上了、HEAD（历史版本：父提交）里的那份还在后台读（ApplyBase 时清掉）：
+	// 重读时槽里先留着原来的基准
+	BasePending bool
 	// Gone 是要看的提交已经不在仓库里了（被变基后清理掉了、贮藏丢掉后 gc）：Info 写着 CommitGoneNote，下次会话不记
 	Gone bool
 	// Submodule 是 Diff 标签里的那一项是子模块：Info 写着两个提交（git.DiffContent.Submodule），下面有打开它的按钮
@@ -612,6 +617,7 @@ func (d *Doc) Share(o *Doc) {
 	}
 	d.Root, d.Rel, d.Abs, d.Title = o.Root, o.Rel, o.Abs, o.Title
 	d.Bitmap, d.Info, d.Loading, d.Conflict, d.Hex, d.HexTotal = o.Bitmap, o.Info, o.Loading, o.Conflict, o.Hex, o.HexTotal
+	d.SlowLoad, d.BasePending = o.SlowLoad, o.BasePending
 	d.Mtime, d.Size, d.Mode, d.Enc, d.ForcedEnc = o.Mtime, o.Size, o.Mode, o.Enc, o.ForcedEnc
 	d.Lossy, d.Broken, d.Big, d.savedEOL, d.Lang, d.Indent = o.Lossy, o.Broken, o.Big, o.savedEOL, o.Lang, o.Indent
 	d.Base, d.BaseSum, d.NoBase = o.Base, o.BaseSum, o.NoBase
@@ -837,6 +843,45 @@ type Loaded struct {
 	BaseSum  Sum            // HEAD 里那份原始字节的摘要（超过 MaxDiffBaseBytes 没建 Base 也记）
 	Gone     string         // 历史版本：读不出来是因为这个提交不在了（GoneCommit）
 	Err      error
+	// base 是还没读的对比基准在哪（ReadFileText / ReadVersionText 留下的）：rev 为 "" 是不用读
+	base struct{ root, rev, rel string }
+}
+
+// BasePending 是这份文字的对比基准还没读：先 Apply 文字，再在后台 LoadBase、主线程上 ApplyBase。
+func (l *Loaded) BasePending() bool { return l.base.rev != "" }
+
+// LoadBase 读 BasePending 记下的 HEAD（历史版本：父提交）里的那份，建成对比基准；不改 l，可以在后台和主线程读 l 同时调。
+// 文件和那份有一个超过 MaxDiffBaseBytes 的只给摘要。
+func (l *Loaded) LoadBase() (*editor.Buffer, Sum) {
+	if !l.BasePending() {
+		return nil, Sum{}
+	}
+	blob := readBlob(l.base.root, l.base.rev, l.base.rel)
+	sum := SumOf(blob)
+	if !DiffBaseFits(l.Size, len(blob)) {
+		return nil, sum
+	}
+	return BaseBufferAs(blob, l.Enc), sum
+}
+
+// blobReader 是读 HEAD 版本用的（git.Blob）；测试换成慢的，看文字是不是先出来（SetBlobReader）。
+var blobReader atomic.Pointer[func(root, rev, rel string) []byte]
+
+func readBlob(root, rev, rel string) []byte {
+	if f := blobReader.Load(); f != nil {
+		return (*f)(root, rev, rel)
+	}
+	return git.Blob(root, rev, rel)
+}
+
+// SetBlobReader 把读 HEAD 版本换成 f（nil 换回 git.Blob），返回换回原来的函数。只给测试用。
+func SetBlobReader(f func(root, rev, rel string) []byte) (restore func()) {
+	var p *func(root, rev, rel string) []byte
+	if f != nil {
+		p = &f
+	}
+	old := blobReader.Swap(p)
+	return func() { blobReader.Store(old) }
 }
 
 // sizeNote 是 n 字节的文件不打开时的说明，开得了为空：文本最大 MaxViewBytes，图片最大 MaxEditBytes；
@@ -869,12 +914,10 @@ func (l *Loaded) decode(data []byte, fresh bool, enc Encoding) {
 	}
 }
 
-// readBase 读 HEAD（历史版本：父提交）里的那份：按文件的编码建成对比基准；文件和那份有一个超过 MaxDiffBaseBytes 的只记摘要。
-func (l *Loaded) readBase(root, rev, rel string) {
-	blob := git.Blob(root, rev, rel)
-	if l.BaseSum = SumOf(blob); DiffBaseFits(l.Size, len(blob)) {
-		l.Base = BaseBufferAs(blob, l.Enc)
-	}
+// readBase 当场读完 BasePending 记下的对比基准，放进 l.Base / l.BaseSum（ReadFileAs / ReadVersionAs 一步读完时用）。
+func (l *Loaded) readBase() {
+	l.Base, l.BaseSum = l.LoadBase()
+	l.base.rev = ""
 }
 
 // DiffBaseFits 是 size 字节的文件和 base 字节的 HEAD 版本能不能对比：两份都不超过 MaxDiffBaseBytes
@@ -889,6 +932,14 @@ func ReadFile(abs, root, rel string, fresh bool) Loaded { return ReadFileAs(abs,
 
 // ReadFileAs 和 ReadFile 一样，但按 enc 解码（Doc.ForcedEnc；"" 为自动认）。
 func ReadFileAs(abs, root, rel string, fresh bool, enc Encoding) Loaded {
+	l := ReadFileText(abs, root, rel, fresh, enc)
+	l.readBase()
+	return l
+}
+
+// ReadFileText 和 ReadFileAs 一样，但不读 HEAD 里的版本，只记下要读（BasePending）：文字先放上，
+// 基准在后台另读（LoadBase → ApplyBase），点文件不用等一个 git 进程。
+func ReadFileText(abs, root, rel string, fresh bool, enc Encoding) Loaded {
 	var l Loaded
 	l.Info, l.Err = os.Stat(abs)
 	if l.Err != nil {
@@ -912,7 +963,7 @@ func ReadFileAs(abs, root, rel string, fresh bool, enc Encoding) Loaded {
 	}
 	l.decode(data, fresh, enc)
 	if !l.Big && l.Enc != Binary && root != "" {
-		l.readBase(root, "HEAD", rel)
+		l.base.root, l.base.rev, l.base.rel = root, "HEAD", rel
 	}
 	return l
 }
@@ -921,6 +972,7 @@ func ReadFileAs(abs, root, rel string, fresh bool, enc Encoding) Loaded {
 func (d *Doc) Start() int {
 	d.Gen++
 	d.Loading = d.Buf == nil && d.Bitmap == nil && d.DiffSt == nil && d.ImgDiff == nil
+	d.SlowLoad, d.BasePending = false, false
 	d.Info = ""
 	return d.Gen
 }
@@ -968,6 +1020,13 @@ func ReadVersion(root string, ch git.Change, fresh bool) Loaded {
 
 // ReadVersionAs 和 ReadVersion 一样，但按 enc 解码（"" 为自动认）。
 func ReadVersionAs(root string, ch git.Change, fresh bool, enc Encoding) Loaded {
+	l := ReadVersionText(root, ch, fresh, enc)
+	l.readBase()
+	return l
+}
+
+// ReadVersionText 和 ReadVersionAs 一样，但父提交里的那份只记下要读（BasePending），同 ReadFileText。
+func ReadVersionText(root string, ch git.Change, fresh bool, enc Encoding) Loaded {
 	var l Loaded
 	data, err := git.Run(root, "cat-file", "blob", ch.Commit+":"+ch.Path)
 	if err != nil {
@@ -984,7 +1043,7 @@ func ReadVersionAs(root string, ch git.Change, fresh bool, enc Encoding) Loaded 
 	}
 	l.decode(data, fresh, enc)
 	if !l.Big && l.Enc != Binary && ch.Parent != "" && ch.Code != 'A' {
-		l.readBase(root, ch.Parent, ch.Path)
+		l.base.root, l.base.rev, l.base.rel = root, ch.Parent, ch.Path
 	}
 	return l
 }
@@ -1112,7 +1171,9 @@ func (d *Doc) setText(l Loaded) {
 	}
 	d.savedEOL = "" // 重读了：换行是文件里的
 	d.St.Buffer, d.St.Label = d.Buf, i18n.Tf("编辑 %s", d.Title)
-	d.SetBase(l.Base, l.BaseSum)
+	if d.BasePending = l.BasePending(); !d.BasePending {
+		d.SetBase(l.Base, l.BaseSum)
+	} // 基准还在后台读：重读的先留着原来的（HEAD 多半没变，改动标记不闪），新标签本来就没有
 	if swap {
 		d.St.GoTo(at)
 		d.St.SetScrollY(y)
@@ -1128,6 +1189,17 @@ func (d *Doc) SetBase(base *editor.Buffer, sum Sum) {
 	d.Base, d.BaseSum = base, sum
 	d.NoBase = base == nil && sum.OK
 	d.St.DiffBase = base
+}
+
+// ApplyBase 把后台读好的对比基准（Loaded.LoadBase）放上：这次读（gen）过期了（重读、改名重开）、
+// 文字没放上（读失败、图片、十六进制）、已经不在等基准的什么都不做并返回 false。标签关掉了也没事：只改它自己。
+func (d *Doc) ApplyBase(gen int, base *editor.Buffer, sum Sum) bool {
+	if d.Gen != gen || !d.BasePending || d.Buf == nil {
+		return false
+	}
+	d.BasePending = false
+	d.SetBase(base, sum)
+	return true
 }
 
 // language 是按标题认的语言（手动选了的用选的）；大文件的高亮在后台算（highlight.Wrap），别的照 mygo 的在主线程上每帧追一点。

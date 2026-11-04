@@ -273,6 +273,29 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 	abs, root, rel, ch, enc, hex := d.Abs, d.Root, d.Rel, d.Change, d.ForcedEnc, d.Hex // 后台只读拷贝：标签可能同时在主线程上改名（Moved）
 	d.ReloadAt = time.Now()
 	up := a.Update
+	if d.Loading { // 读得快的不画"读取中…"：过了 loadingDelay 还没读完才画（SlowLoad），在那之前只露编辑区的底
+		time.AfterFunc(loadingDelay, func() {
+			up(func() {
+				if d.Gen == gen && d.Loading {
+					d.SlowLoad = true
+					a.relink(d)
+				}
+			})
+		})
+	}
+	// base 在文字放上之后接着在同一个 goroutine 里读对比基准（HEAD / 父提交里的那份），读好再放上：
+	// 点文件不用等一个 git 进程；放的时候这次读过期了（重读、关掉又开）ApplyBase 什么都不做。
+	base := func(l *docs.Loaded) {
+		if !l.BasePending() {
+			return
+		}
+		b, sum := l.LoadBase()
+		up(func() {
+			if d.ApplyBase(gen, b, sum) {
+				a.relink(d)
+			}
+		})
+	}
 	switch d.Kind {
 	case docs.File:
 		go func() {
@@ -280,13 +303,14 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 			if hex { // 十六进制视图：只读前 HexMax 字节
 				l = docs.ReadHexFile(abs)
 			} else {
-				l = docs.ReadFileAs(abs, root, rel, fresh, enc)
+				l = docs.ReadFileText(abs, root, rel, fresh, enc)
 			}
 			up(func() {
 				if d.ApplyFile(gen, l) {
 					a.relink(d) // 镜像：重读换了缓冲区，别的几份跟上
 				}
 			})
+			base(&l)
 		}()
 	case docs.Version:
 		go func() {
@@ -294,9 +318,10 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 			if hex {
 				l = docs.ReadHexVersion(root, ch)
 			} else {
-				l = docs.ReadVersionAs(root, ch, fresh, enc)
+				l = docs.ReadVersionText(root, ch, fresh, enc)
 			}
 			up(func() { d.ApplyVersion(gen, l) })
+			base(&l)
 		}()
 	case docs.Compare:
 		right, clip, snap := d.Right, d.RightText, d.Snapshot != 0
@@ -756,6 +781,9 @@ func (a *App) syncFile(r *Repo, d *docs.Doc) {
 		})
 	}()
 }
+
+// loadingDelay 是标签读了多久还没读完才画"读取中…"（Doc.SlowLoad）：读得快的（绝大多数）不闪转圈。
+var loadingDelay = 150 * time.Millisecond
 
 // bigReloadGap 是一直在变的大文件（日志）两次重读之间至少隔多久：期间的变化合并，到点读最新的。
 var bigReloadGap = 2 * time.Second

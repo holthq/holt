@@ -436,8 +436,7 @@ func docContent(a *app.App, c *wui.Context, d *docs.Doc, focused bool) {
 	t := c.Theme()
 	switch {
 	case d.Loading:
-		loading(c)
-		wui.Spacer(c).Grow(1)
+		loadingSlow(c, d)
 	case d.Info != "":
 		message(c, iconAlert, d.Info, d.Where(), t.TextMuted)
 	case d.Bitmap != nil:
@@ -827,13 +826,21 @@ func searchDocKeys(a *app.App, c *wui.Context, d *docs.Doc, next func(wui.InputE
 	}
 }
 
+// loadingSlow 是标签读着时的内容：读了 app 的 loadingDelay 还没读完（d.SlowLoad）才画"读取中…"，
+// 在那之前只占满、露出编辑区的底（预览标签换文件时不先闪转圈）。
+func loadingSlow(c *wui.Context, d *docs.Doc) {
+	if d.SlowLoad {
+		loading(c)
+	}
+	wui.Spacer(c).Grow(1)
+}
+
 // diffContent 是 Diff 标签的内容和它底部的一行。
 func diffContent(a *app.App, c *wui.Context, d *docs.Doc) {
 	t := c.Theme()
 	switch {
 	case d.Loading:
-		loading(c)
-		wui.Spacer(c).Grow(1)
+		loadingSlow(c, d)
 	case d.Info == app.GoneNote:
 		message(c, iconCheck, i18n.T(d.Info), d.Where(), t.TextMuted)
 	case d.Info != "" && d.Submodule:

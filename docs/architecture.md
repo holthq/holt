@@ -350,7 +350,7 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 | 到 `MaxViewBytes` 64 MB | 只读打开（`Doc.Big`），后台高亮 |
 | 更大 | 不打开，显示原因说明 |
 
-读文件在后台（`docs.Loaded`，`fresh` 判断读回来时标签还是不是那一版），读好了 `setText` 换上。只读的大文件外部改了，过 2 秒再重读（`reloadBig`），避免日志持续写入时频繁重读。
+读文件在后台（`docs.Loaded`，`fresh` 判断读回来时标签还是不是那一版），读好了 `setText` 换上。读分两步，在同一个后台 goroutine 里：先 `ReadFileText` / `ReadVersionText` 读文字、`a.Update` 放上（这时 `Doc.BasePending`），再 `Loaded.LoadBase` 读 HEAD（历史版本：父提交）里的那份、`ApplyBase` 放上；`Gen` 变了（重读了）的基准丢掉，重读时槽里先留着原来的基准。标签读了 `loadingDelay`（150 ms）还没读完才置 `Doc.SlowLoad`、画"读取中…"，在那之前只露编辑区的底。只读的大文件外部改了，过 2 秒再重读（`reloadBig`），避免日志持续写入时频繁重读。
 
 大文件的高亮在 `internal/highlight`：mygo 自带的高亮器在主线程上每帧追 4 ms，64 MB 要追两三秒。这里一个 goroutine 从头分词、记下每行开头的状态，主线程只按记好的状态分看得见的几行；没算到的行先按状态 0 猜一份（`final` 为假）。`Highlight` 总是返回 true；编辑时停掉旧的 goroutine，从改动那行接着算。
 

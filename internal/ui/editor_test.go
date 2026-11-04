@@ -92,7 +92,10 @@ func TestFilesAndEditor(t *testing.T) {
 		t.Fatalf("筛选结果不对: %v", got)
 	}
 	tt.Key(0, wui.KeyEnter)
-	wait("a.txt 打开", func() bool { d := a.CurrentDoc(); return d != nil && d.Rel == "a.txt" && d.Buf != nil })
+	wait("a.txt 打开", func() bool {
+		d := a.CurrentDoc()
+		return d != nil && d.Rel == "a.txt" && d.Buf != nil && !d.BasePending
+	})
 	d := a.CurrentDoc()
 	if !d.Pinned || len(a.Docs) != 2 {
 		t.Errorf("回车应固定打开: pinned=%v docs=%d", d.Pinned, len(a.Docs))

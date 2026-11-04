@@ -44,7 +44,9 @@ func outlineView(a *app.App, c *wui.Context) {
 		case d == nil:
 			message(c, iconOutline, i18n.T("没有打开的文件"), "", t.TextMuted)
 		case d.Loading:
-			loading(c)
+			if d.SlowLoad {
+				loading(c)
+			}
 		case d.Buf == nil || !outline.Supported(d.Name()):
 			message(c, iconOutline, i18n.Tf("%s 没有大纲", d.Title), i18n.T("支持 Markdown、Go、Python、JS / TS、Rust、C / C++、Java、Kotlin、Swift、C#、Shell 和 YAML"), t.TextMuted)
 		case d.Buf.Len() > outline.MaxBytes:
