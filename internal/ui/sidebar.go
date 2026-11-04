@@ -165,6 +165,9 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 					HandleInput(treeCommands(a))
 				stickyStack(a, c, rows, box.Bounds())
 			})
+			if a.FileHover < 0 {
+				a.TreeTip.Leave() // 指针不在任何一行上：下回停在哪行都从头等
+			}
 			if a.EndTreeDrop() {
 				c.AnimationFrame() // 拖着停够了展开的目录：指针不动也画出来
 			}
@@ -175,6 +178,7 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 				a.ClearTreeSel() // 点在行下面的空白处（行自己接点击，列表只接到空白处的）
 			}
 			if list.Changed() {
+				a.TreeTip.Dismiss()              // 点了一行：它的提示收掉，指针离开前不再出
 				a.TreeListChanged(c.Modifiers()) // ⇧点时锚点可能是应用记的
 				// ⌥点在侧边打开。⌥点已经单独选中的那行列表不报 Changed，那时用 ⌥回车或右键
 				if c.Modifiers()&(wui.Cmd|wui.Shift) == 0 && a.FileHover == a.FileSel {
@@ -388,7 +392,8 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if b := span(a, row, el); b.H > 0 {
 		a.TreeRowH = b.H
 	}
-	if el.Hovered() {
+	hov := el.Hovered()
+	if hov {
 		a.FileHover = row.Index
 	}
 	if !filtering && a.FileChosen.Has(tr.Key()) {
@@ -396,6 +401,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 		el.Drag(dragOf(tr))
 		if el.Clicked() || el.DoubleClicked() {
 			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.DoubleClicked(), c.Now())
+			a.TreeTip.Dismiss()
 		}
 		if el.Dragging() {
 			el.Opacity(0.5)
@@ -409,20 +415,37 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 		}
 	} else if tr.Sub != 0 && el.RowDoubleClicked() {
 		a.OpenSubmodule(r, tr.Path)
+		a.TreeTip.Dismiss()
 	} else if !tr.Dir && el.RowDoubleClicked() {
 		a.OpenFile(r, tr.Path, true)
+		a.TreeTip.Dismiss()
 	}
 	if tr.Dir && !filtering && !tr.Linked && !tr.DirLink() { // 不往链接指的地方放
 		treeDropTarget(a, c, el, tr)
 	}
-	switch {
-	case tr.Sub == '-':
-		el.Tooltip(i18n.T("子模块还没初始化：双击初始化并更新"))
-	case tr.Sub != 0:
-		el.Tooltip(subTip(r, tr.Path))
-	case el.Hovered(): // 文件要 stat 一次：只在悬停时算（RowTip 记着）
-		el.Tooltip(a.RowTip(tr))
-	}
+	var nameEl wui.Element // 名字（截断了的话提示里带全名）；合并行没有（hasName 为假）
+	hasName := false
+	var inner []wui.Element // 行里自己带提示的小图标：指针在它们上面时不出行的提示
+	defer func() {
+		if !hov {
+			return
+		}
+		var tip string
+		switch {
+		case tr.Sub == '-':
+			tip = i18n.T("子模块还没初始化：双击初始化并更新")
+		case tr.Sub != 0:
+			tip = subTip(r, tr.Path)
+		default: // 文件要 stat 一次：只在悬停时算（RowTip 记着）
+			tip = a.RowTip(tr)
+		}
+		full := ""
+		if hasName {
+			full = cutName(c, nameEl, tr.Name, sideFont)
+		}
+		skip := a.TreeDragging || slices.ContainsFunc(inner, wui.Element.Hovered)
+		treeTip(a, c, el, tr.Key(), full, tip, indent, skip)
+	}()
 	el.Children(func() {
 		if tr.Dir {
 			chevron(c, iconTool, tr.Open, tr.Label(), muted, func() { a.ToggleDir(r, tr.Path) })
@@ -430,14 +453,17 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			nameCol := dirNameColor(a, t, tr, muted, sel)
 			if len(tr.Chain) > 0 {
 				chainName(c, tr, muted, nameCol, func(m *wui.Menu, seg files.Row) { rowMenu(a, m, row.Index, tr, seg) })
-			} else if name := wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0); nameCol != nil {
-				name.TextColor(*nameCol)
+			} else {
+				nameEl, hasName = wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0), true
+				if nameCol != nil {
+					nameEl.TextColor(*nameCol)
+				}
 			}
 			if tr.Mark {
-				wui.Box(c).Size(6, 6).Radius(3).Background(codeColor(t, 'M')).Shrink(0).Tooltip(i18n.T("里面有未提交的改动"))
+				inner = append(inner, wui.Box(c).Size(6, 6).Radius(3).Background(codeColor(t, 'M')).Shrink(0).Tooltip(i18n.T("里面有未提交的改动")))
 			}
 			if l, ok := r.Files.Link(tr.Path); ok { // 指向目录的链接：展开看里面，git 状态照文件那样跟在后面
-				wui.Icon(c, iconLink).FontSize(iconRow).TextColor(muted).Shrink(0).Tooltip(app.LinkTip(l))
+				inner = append(inner, wui.Icon(c, iconLink).FontSize(iconRow).TextColor(muted).Shrink(0).Tooltip(app.LinkTip(l)))
 				if tr.Code != 0 {
 					wui.Spacer(c).Grow(1)
 					codeLetter(c, t, tr.Code, sel)
@@ -471,13 +497,14 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			name = wui.Text(c, tr.Name)
 		}
 		name.FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		nameEl, hasName = name, true
 		if dim {
 			name.TextColor(muted)
 		} else if tr.Code != 0 && !a.St.Settings.TreeNoStatusColors {
 			statusName(t, name, tr.Code, sel)
 		}
 		if l, ok := r.Files.Link(tr.Path); ok { // 符号链接：名字后面一个链接图标，悬停看指向哪（双击打开的还是链接本身）
-			wui.Icon(c, iconLink).FontSize(iconRow).TextColor(muted).Shrink(0).Tooltip(app.LinkTip(l))
+			inner = append(inner, wui.Icon(c, iconLink).FontSize(iconRow).TextColor(muted).Shrink(0).Tooltip(app.LinkTip(l)))
 		}
 		if dir := files.DirOf(tr.Path); filtering && dir != "" {
 			hitText(c, dir, tr.Hits, 0, hl).FontSize(sideSub).TextColor(muted).MinWidth(0).Shrink(2)
@@ -707,14 +734,13 @@ func repoRow(a *app.App, c *wui.Context, row wui.ListRow, tr app.TreeRow, filter
 	}
 	if el.Hovered() {
 		a.FileHover = row.Index
-		if tip := a.RepoTip(r); tip != "" {
-			el.Tooltip(tip)
-		}
+		treeTip(a, c, el, tr.Key(), "", a.RepoTip(r), treeIndent(0), a.TreeDragging)
 	}
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		el.Drag(app.RepoDrag{Repo: r}) // 和文件行一样：按下归这一行，点击转给 ApplyTreeClick
 		if el.Clicked() || el.DoubleClicked() {
 			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.DoubleClicked(), c.Now())
+			a.TreeTip.Dismiss()
 		}
 		if el.Dragging() {
 			el.Opacity(0.5)

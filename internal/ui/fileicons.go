@@ -206,6 +206,14 @@ const (
 	tileOnAccent  = 0.22
 )
 
+// 文件树（iconTool 那档：文件树、打开的编辑器）里的彩色图标是"安静"的（#20）：一屏几十个同色底块太重，
+// 所以不画底块，图形照旧按类别取色、往次级字色混 quietMix（饱和度和亮度都降下来），字母徽章不用粗体。
+// 类别还是靠颜色和图形分得开；标签、快速打开、面包屑这些一行一两个的地方（iconRow）照旧画底块。
+const (
+	quietMix    = 0.35
+	quietWeight = 600
+)
+
 // glyph 是一个类型图标怎么画（彩色底块）：size 见方的底块（圆角 radius，颜色 tile），上面 ink 色的线性图标（icon 大）
 // 或字母（font 大、字距 spacing）。
 type glyph struct {
@@ -213,12 +221,13 @@ type glyph struct {
 	size, radius        float32
 	tile, ink           wui.Color
 	icon, font, spacing float32
+	weight              int
 }
 
 // glyphOf 是文件 name 在主题 t 下 size 见方的彩色底块：on 为画在实心选中块上，dim 为灰显的行（被忽略的、没初始化的子模块）。
 func glyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 	k := fileKindOf(name)
-	g := glyph{kind: k, size: size, radius: size * tileRadius, ink: k.tint.color(t), spacing: -0.25}
+	g := glyph{kind: k, size: size, radius: size * tileRadius, ink: k.tint.color(t), spacing: -0.25, weight: 700}
 	alpha := float32(tileAlpha)
 	if t.Dark {
 		alpha = tileAlphaDark
@@ -242,6 +251,17 @@ func glyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 	g.font = size * tileFont2
 	if len(k.badge) > 2 {
 		g.font, g.spacing = size*tileFont3, -0.5
+	}
+	return g
+}
+
+// quietGlyphOf 是文件树里的彩色图标（见 quietMix）：glyphOf 去掉底块，图形的类别色往次级字色混一些；
+// 选中块上、灰显的行和 glyphOf 一样（本来就是单色的）。
+func quietGlyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
+	g := glyphOf(t, name, on, dim, size)
+	g.tile, g.weight = wui.Transparent, quietWeight
+	if !on && !dim && g.kind.tint.of == nil {
+		g.ink = g.ink.Mix(t.TextMuted, quietMix)
 	}
 	return g
 }
@@ -277,6 +297,9 @@ func fileGlyphSize(a *app.App, c *wui.Context, name string, on, dim bool, size f
 		return plainGlyph(c, fileKindOf(name), color, size)
 	}
 	g := glyphOf(t, name, on, dim, size)
+	if size >= iconTool {
+		g = quietGlyphOf(t, name, on, dim, size)
+	}
 	return wui.Row(c).Size(size, size).Shrink(0).Radius(g.radius).Background(g.tile).
 		AlignItems(wui.Center).Justify(wui.Center).Children(func() {
 		if g.kind.badge == "" {
@@ -284,7 +307,7 @@ func fileGlyphSize(a *app.App, c *wui.Context, name string, on, dim bool, size f
 			return
 		}
 		// 字母是装饰：读屏读后面的文件名
-		wui.Text(c, g.kind.badge).Font(mono()).FontSize(g.font).FontWeight(700).LetterSpacing(g.spacing).
+		wui.Text(c, g.kind.badge).Font(mono()).FontSize(g.font).FontWeight(g.weight).LetterSpacing(g.spacing).
 			TextColor(g.ink).SingleLine().Shrink(0).Role(wui.RoleNone)
 	})
 }

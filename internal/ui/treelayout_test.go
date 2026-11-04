@@ -147,20 +147,20 @@ func TestTreeSizes(t *testing.T) {
 			t.Fatalf("%s 那行的墨迹不是徽章、名字两块：%v", name, runs)
 		}
 		span := func(r inkRun) [2]float32 { return [2]float32{float32(r.x0) / scale, float32(r.x1+1) / scale} }
-		// 彩色底块（默认）的块和底色只差 30–80：名字前面那一截按差过 20 量（不扫参考线）
+		// 彩色的（默认，树里没有底块，图形往次级色混过）：名字前面那一截按差过 20 量（不扫参考线）
 		if !a.St.Settings.TreeIconsPlain {
 			text := span(runs[1])
 			tile := inkRunsOver(img, wui.Rect{X: text[0] - 28, Y: row.Y + 1, W: 27, H: row.H - 2}, scale, bg, 1, 20)
 			if len(tile) != 1 {
-				t.Fatalf("%s 名字前面不是一块底块：%v", name, tile)
+				t.Fatalf("%s 名字前面不是一块图标：%v", name, tile)
 			}
 			return row, span(tile[0]), text
 		}
 		return row, span(runs[0]), span(runs[1])
 	}
-	// 彩色底块：16 见方的块贴着格子，离名字 Gap 6（加上字形左边那一点）
-	if _, b, n := ink("n3.go"); b[1]-b[0] < 15.5 || b[1]-b[0] > 16.5 || n[0]-b[1] < 6 || n[0]-b[1] > 7 {
-		t.Errorf("彩色底块 %.1f–%.1f、名字从 %.1f 起：要 16 宽、离名字 6", b[0], b[1], n[0])
+	// 彩色的（树里没有底块）："Go" 两个字母在 16 宽的格子里居中，格子离名字 Gap 6（加上字形左边那一点）
+	if _, b, n := ink("n3.go"); b[1]-b[0] > 15 || n[0]-b[1] < 6 || n[0]-b[1] > 6+(16-(b[1]-b[0]))/2+1.5 {
+		t.Errorf("彩色图标 %.1f–%.1f、名字从 %.1f 起：要在 16 宽的格子里居中、格子离名字 6", b[0], b[1], n[0])
 	}
 	// 下面量的是线形（徽章）
 	a.St.Settings.TreeIconsPlain = true

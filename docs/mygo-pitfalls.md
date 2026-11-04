@@ -9,6 +9,8 @@
 
 - `Grow(1)` 的 flex 基准是 0：带 Grow 的文字旁再放 `Spacer().Grow(1)`，两者平分空间，文字被省略号截断。需要文字占满空间时，只给文字设置 Grow。
 - `TextArea` 要 `.MinHeight(0)`，否则会撑开面板。
+- `PassThrough()` 只管这个元素自己，不管子元素：自己在 Overlay 里画的提示盖在别的元素上时，里面的 `Text` 也要 `PassThrough()`，
+  不然按在提示下面那一行上的点击落到字上（文件树的行提示盖着下一行，⌘点下一行加选不上，见 `TestTreeRowTip`）。mygo 自己的 `Tooltip` 按下就收掉，碰不到这个。
 - `wui.SplitPercent` 取 0–100，`wui.Split` / `SplitVertical` 取 DIP。
 - `Row` 默认把子元素竖直居中。要子元素撑满行高（分隔条、整行可点的区域），给 Row 加 `.AlignItems(wui.Stretch)`。
 - Row 里的子节点用了 `Fill()` 又没给宽度，会超出行宽，导致元素移出窗口、无法点击。侧栏这类定宽的用 `Width(w).Shrink(0)`。

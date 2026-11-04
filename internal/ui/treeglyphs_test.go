@@ -12,7 +12,7 @@ import (
 
 // 彩色底块：glyphOf 在浅色、深色主题，13 和 16 两档下的底块大小、圆角、淡色和图形——
 // 代码文件两个、三个字母，线性图标的几类，不认识的和点文件是更淡的灰底块；实心选中块上是 AccentText；灰显的行是灰的。
-// 文件树里画出来：彩色底块是 16 见方的淡色块（和底色差得不多，不过饱和），线形没有块。
+// 文件树里画出来：彩色那种在树里没有底块（见 TestQuietGlyph），线形也没有块。
 func TestFileGlyph(t *testing.T) {
 	for _, th := range []*wui.Theme{wui.LightTheme(), wui.DarkTheme()} {
 		alpha := float32(tileAlpha)
@@ -105,13 +105,9 @@ func TestFileGlyph(t *testing.T) {
 		return w, h, inkDist(img.RGBAAt(b.x0+scale, (b.top+b.bottom)/2), bg)
 	}
 	for _, name := range []string{"main.go", "run.sh", "a.xyz"} {
-		w, h, mid := box(name)
-		if w < 15.5 || w > 16.5 || h < 15.5 || h > 16.5 {
-			t.Errorf("%s 的底块 %.1f × %.1f，要 16 见方", name, w, h)
-		}
-		// 底块是淡色：看得出来，但比字淡得多（字和底色差 90 以上）
-		if mid < 20 || mid > 85 {
-			t.Errorf("%s 的底块和底色差 %d，要在 20–85 之间", name, mid)
+		// 文件树里不画底块（quietGlyphOf）：墨迹只有图形，比 16 见方的块小
+		if w, h, _ := box(name); w > 15 || h > 15 {
+			t.Errorf("%s 的图标 %.1f × %.1f：文件树里不该有 16 见方的底块", name, w, h)
 		}
 	}
 	a.St.Settings.TreeIconsPlain = true
@@ -226,5 +222,37 @@ func TestFolderTint(t *testing.T) {
 	a.SettingsChanged()
 	if px, bg := fill("src"); inkDist(px, bg) > 25 {
 		t.Errorf("线形的目录正中是 %v，底色 %v：应该是空心的", px, bg)
+	}
+}
+
+// 文件树里的彩色图标是"安静"的（#20）：没有底块，图形是类别色往次级字色混 quietMix、字母不用粗体；
+// Go / Markdown / JSON / 图片几类还是各是各的颜色。选中块上、灰显的和 glyphOf 一样。标签那一档（iconRow）照旧有底块。
+func TestQuietGlyph(t *testing.T) {
+	for _, th := range []*wui.Theme{wui.LightTheme(), wui.DarkTheme()} {
+		dark := th.Dark
+		seen := map[wui.Color]string{}
+		for _, name := range []string{"main.go", "data.json", "logo.png", "style.css", "lib.rs"} {
+			g, loud := quietGlyphOf(th, name, false, false, iconTool), glyphOf(th, name, false, false, iconTool)
+			if g.tile != wui.Transparent {
+				t.Errorf("dark=%v %s：树里的图标还有底块 %v", dark, name, g.tile)
+			}
+			if want := loud.ink.Mix(th.TextMuted, quietMix); g.ink != want {
+				t.Errorf("dark=%v %s：图形 %v，要 %v（类别色混次级字色）", dark, name, g.ink, want)
+			}
+			if prev, ok := seen[g.ink]; ok {
+				t.Errorf("dark=%v %s 和 %s 一个颜色，分不开类型", dark, name, prev)
+			}
+			seen[g.ink] = name
+		}
+		if g := quietGlyphOf(th, "main.go", false, false, iconTool); g.kind.badge != "Go" || g.weight != quietWeight {
+			t.Errorf("dark=%v main.go：徽章 %q、字重 %d", dark, g.kind.badge, g.weight)
+		}
+		if g := quietGlyphOf(th, "README.md", false, false, iconTool); g.ink != glyphOf(th, "README.md", false, false, iconTool).ink {
+			t.Errorf("dark=%v README.md：文档本来是正文灰，不该再混", dark)
+		}
+		on := quietGlyphOf(th, "main.go", true, false, iconTool)
+		if on.ink != th.AccentText || on.tile != wui.Transparent {
+			t.Errorf("dark=%v 选中块上：图形 %v、底块 %v", dark, on.ink, on.tile)
+		}
 	}
 }

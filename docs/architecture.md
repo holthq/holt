@@ -311,6 +311,9 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 - 复制 / 粘贴 / 创建副本（`app/treeclip.go`）：重名时用 `freeName` 起“名字 副本”“名字 副本 2”。
 - 新建、重命名、移到废纸篓在 `app/fileops.go`。文件树的 ⌘Z（`app/fileundo.go`）：重命名 / 移动改回去，新建 / 复制进来的移到废纸篓；移到废纸篓的不记（放回靠访达），没有重做；`undoStale` 发现磁盘在那之后变了就不撤。
 - 悬停目录显示大小和最近改动（`app/dirtip.go`）：只 `Lstat` 树里列着的文件，第一次悬停时在后台算，有上限。
+- 行的悬停提示不用 mygo 的 `Tooltip`（0.6 s、有"热身"，都写死在 mygo 里）：`app.TreeTip` 记指针从什么时候起停在哪一行，停满 `TreeTipDelay`（1 s）
+  `ui/treetip.go` 才在 Overlay 里画，贴在行的下方（`AttachTo`，底下放不下自己翻上去）；换一行重新等，点了那行（`Dismiss`）指针离开前不再出，
+  行里自己带提示的小图标（改动的点、链接图标）悬停时让给它们。名字被截断（`cutName` 量字宽）时提示第一行是全名。
 - 仓库段头能拖动排序（`RepoDrag`），改的是工作区文件里 `folders` 的顺序（`workspace.Reorder`）。拖动和移除仓库在界面里只发请求（`MoveReq` / `RemoveReq`），`pending()` 在帧外统一处理，避免在一帧绘制过程中修改列表。
 - 树里的行拖到编辑器组上是在那组打开（`OpenDropped`），拖到终端上是贴绝对路径，都不写盘、不问。别的应用拖进来的（`app/datadrop.go`）：拖到编辑器里插入文字或打开文件（`DropOnDoc`），拖到终端里插入路径（`DropOnTerm` / `ShellFiles`）。
 
@@ -318,7 +321,7 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 
 侧栏（文件树、Git 栏、搜索、大纲、打开的编辑器）的字号统一用 `ui/sidebar.go` 的常量：正文 `sideFont` 14（文件名、仓库名、变更、结果），次要信息 `sideSub` 12（分支、计数、目录、分组标题、说明），搜索结果的代码行 `sideMono` 12.5。文件树的目录 / 文件行至少 `treeRowH` 24 高，吸顶层和“打开的编辑器”的行跟它对齐；Git 栏的仓库段头 32、分组标题和贮藏行 26、工作树块头 30。界面整体大小走界面缩放（⌘= / ⌘-），没有单独的侧栏字号设置。
 
-文件按状态上色（改了、新加、冲突、被忽略），`TreeNoStatusColors` 关掉。图标默认是 `ui/fileicons.go` 的彩色小方块（按扩展名），`TreeIconsPlain` 换成线条图标；目录图标按里面有没有改动淡淡上色（`folderTint`）。
+文件按状态上色（改了、新加、冲突、被忽略），`TreeNoStatusColors` 关掉。图标默认是 `ui/fileicons.go` 的彩色小方块（按扩展名；文件树和"打开的编辑器"那一档 `iconTool` 用 `quietGlyphOf`：不画底块、颜色往次级字色混 `quietMix`，一屏几十个不那么重），`TreeIconsPlain` 换成线条图标；目录图标按里面有没有改动淡淡上色（`folderTint`）。
 
 侧栏顶上可以加一段“打开的编辑器”（`ShowOpenEditors`，默认关，`app/openeditors.go`）：按组列出所有标签，最多显示 `OpenEditorsMax` 9 行高，多了滚；收起状态在 `Panels` 里。这一段不另存列表，每帧从 `AllDocs()` 现算。
 

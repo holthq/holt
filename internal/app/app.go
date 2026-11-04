@@ -239,6 +239,7 @@ type App struct {
 	TreeRowH     float32              // 上一帧目录 / 文件行的高
 	TreeClip     []string             // 文件树里 ⌘C 复制的文件 / 目录（绝对路径），⌘V 粘贴它们；应用里记着，不读系统剪贴板
 	rowTips      map[FileKey]rowTip   // 文件树行的悬停提示，仓库刷新之后重算（RowTip）
+	TreeTip      TreeTip              // 文件树行的悬停提示停了多久（treetip.go；界面写）
 	dirInfos     map[FileKey]*dirInfo // 目录行悬停提示的大小、最近改动（dirtip.go）
 	Edit         *TreeEdit            // 文件树里正在输入的名字（新建 / 重命名），nil 为没有
 	TreeFocused  bool                 // 这一帧文件树有焦点（界面每帧写；⌘N 据此决定建在哪）
