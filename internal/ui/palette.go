@@ -95,6 +95,7 @@ func paletteList(a *app.App, c *wui.Context) {
 	clicked := -1
 	h := float32(min(len(p.Items), paletteRows) * paletteRowH)
 	l := newListLook(a, c, 0)
+	l.active = true // 键盘在输入框里，上下键移的是这个列表
 	l.build(c, func() {
 		wui.List(c, &p.List, len(p.Items)).Height(h).Shrink(0).Rows(l.rows(func(row wui.ListRow) {
 			if paletteRow(a, row, p.Items[row.Index]) {

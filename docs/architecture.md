@@ -530,7 +530,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 各区域是圆角卡片（`ui/widgets.go` 的 `card`），卡片之间 6 pt 的缝就是拖条（`resizer`）。标题栏 38 pt 高，按红绿灯的位置排（`TitleBarInset`）。
 
-强调色在 `ui/accent.go`：默认 `steel`（`DefaultAccent`），`applyAccent` 换整套；列表选中默认是强调色淡淡的一层加左边一道竖条（`SolidSelection` 换成实心块），`onAccent` 是强调色上的字色。尽量减少视觉装饰：横幅、悬停这些用很淡的填充（`quietFill` / `bannerFill`），不加边框。
+强调色在 `ui/accent.go`：默认 `steel`（`DefaultAccent`），`applyAccent` 换整套；列表选中默认是强调色淡淡的一层加左边一道竖条，列表没有键盘时换成中性的灰、不加竖条，悬停更淡（`listLook` / `softFills`：建列表的主题里 Accent 透明，选中块的底由行自己按 `ListFocused` 画；`SolidSelection` 换成实心块），`onAccent` 是强调色上的字色。尽量减少视觉装饰：横幅、悬停这些用很淡的填充（`quietFill` / `bannerFill`），不加边框。
 
 界面缩放（`Settings.Zoom`，按 `ZoomSteps` 一档档走）是每个窗口每帧 `c.SetZoom`，设置窗口、关于窗口也跟着。终端自带的字号键（⌘= ⇧⌘= ⌘- ⌘0）让给界面缩放（`termZoomKeyFor`），终端字号只在设置里改。
 

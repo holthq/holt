@@ -165,13 +165,14 @@ func TestSelectedRowLook(t *testing.T) {
 		t.Errorf("实心时选中行的字该是白的，最深的像素 %d", m)
 	}
 
-	// 默认的淡底：侧栏底色上叠 14% 的青绿，字是深的，左边一道竖条
+	// 默认的淡底，列表没有键盘（焦点在编辑器）：非活动选中，侧栏底色上叠一层中性的灰（字色 8%），字是深的，没有竖条
 	a.St.Settings.SolidSelection = false
+	a.FocusTree = false
 	s = frame()
 	sel, bg := rowBg(s)
-	want := wui.Color{R: bg.R, G: bg.G, B: bg.B, A: 255}.Mix(teal, 0.14)
-	if !near(sel, want, 3) || near(sel, wui.Color{R: bg.R, G: bg.G, B: bg.B}, 3) {
-		t.Errorf("淡底的选中行是 %v，侧栏底色 %v，应是 %v", sel, bg, want)
+	opaque := func(c color.RGBA) wui.Color { return wui.Color{R: c.R, G: c.G, B: c.B, A: 255} }
+	if want := opaque(bg).Mix(lightTheme().Text, 0.08); !near(sel, want, 3) {
+		t.Errorf("非活动选中的行是 %v，侧栏底色 %v，应是 %v", sel, bg, want)
 	}
 	if m := darkest(s, s.name); m > 200 {
 		t.Errorf("淡底时选中行的字该是正文的深色，最深的像素 %d", m)
@@ -185,16 +186,46 @@ func TestSelectedRowLook(t *testing.T) {
 				n++
 			}
 		}
-		if n == 0 {
-			t.Fatal("淡底的选中行左边没有竖条")
-		}
 		return float32(n) / scale
 	}
-	w := bar(s)
+	if w := bar(s); w != 0 {
+		t.Errorf("非活动选中不该有强调色的竖条：%.1f pt", w)
+	}
+	inactive := sel
+
+	// 列表有键盘：活动选中，侧栏底色上叠 20% 的青绿，左边一道 3 pt 的竖条
 	a.FocusTree = true
 	tt.Frame()
-	if w2 := bar(frame()); w < 1.5 || w > 3.5 || w2 <= w {
-		t.Errorf("竖条 %.1f pt，列表有键盘时 %.1f pt", w, w2)
+	s = frame()
+	sel, bg = rowBg(s)
+	if want := opaque(bg).Mix(teal, softAlpha(lightTheme())); !near(sel, want, 3) || near(sel, opaque(inactive), 3) {
+		t.Errorf("活动选中的行是 %v，侧栏底色 %v，应是 %v（非活动 %v）", sel, bg, want, inactive)
+	}
+	if w := bar(s); w < 2 || w > 4 {
+		t.Errorf("活动选中的竖条 %.1f pt", w)
+	}
+
+	// 悬停的行：比非活动选中还淡，和三者都分得开
+	tt.Move(s.other.X+s.other.W-20, s.other.Y+s.other.H/2)
+	s = frame()
+	_, hov := rowBg(s)
+	if want := opaque(bg).Mix(lightTheme().Text, 0.04); !near(hov, want, 3) || near(hov, opaque(inactive), 3) || near(hov, opaque(sel), 3) || near(hov, opaque(bg), 2) {
+		t.Errorf("悬停的行是 %v，应是 %v（非活动选中 %v、活动选中 %v、底 %v）", hov, want, inactive, sel, bg)
+	}
+
+	// 点进编辑器：树上的选中变灰；焦点回到树：又是强调色
+	active := sel
+	d := a.OpenFile(r, "main.go", true)
+	wait("读好", func() bool { return d.Buf != nil && !d.Loading })
+	a.FocusDoc = true
+	tt.Frame()
+	if got, _ := rowBg(frame()); !near(got, opaque(inactive), 3) {
+		t.Errorf("编辑器有键盘时选中行是 %v，应是非活动选中 %v", got, inactive)
+	}
+	a.FocusTree = true
+	tt.Frame()
+	if got, _ := rowBg(frame()); !near(got, opaque(active), 3) {
+		t.Errorf("焦点回到树时选中行是 %v，应是活动选中 %v", got, active)
 	}
 }
 
