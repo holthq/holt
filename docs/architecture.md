@@ -162,7 +162,8 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 ### Git 栏
 
-`GitRows` 将所有仓库整理为一张表：每个仓库一个段头（`Header`，贴顶），下面是进行中操作的横幅（`RowOngoing`）、各组的标题（冲突 / 已暂存 / 未暂存 / 未跟踪 / 贮藏）、每个变更、说明行、提交框。段的收放是 `GitFold`：`FoldAuto`（有改动展开、干净的收成一行；有工作树、合并 / 变基停在一半的也展开，让工作树块和横幅看得见）、`FoldOpen`、`FoldClosed`，点过箭头就按用户的，存进会话的 `git`。
+`GitRows` 将所有仓库整理为一张表：每个仓库一个段头（`Header`，贴顶），下面是进行中操作的横幅（`RowOngoing`）、各组的标题（冲突 / 已暂存 / 未暂存 / 未跟踪 / 贮藏）、每个变更、说明行、提交框。段头右边是这个仓库的拉取 / 推送按钮（`syncButton`），和标题栏的同步按钮共用 `syncOf`（提示文字、没上游时灰着、
+`Repo.Pulling` / `Pushing` 在跑或排队时转圈），点了走 `App.Pull` / `Push`，没有另一套 git 调用。段的收放是 `GitFold`：`FoldAuto`（有改动展开、干净的收成一行；有工作树、合并 / 变基停在一半的也展开，让工作树块和横幅看得见）、`FoldOpen`、`FoldClosed`，点过箭头就按用户的，存进会话的 `git`。
 
 行的身份是 `ChangeRow.Key()`（仓库 + 组 + 路径），选中 `GitSel`、悬停 `GitHover`、多选 `GitChosen` 都按键记，因此刷新后即使行的位置变化，仍会保持选中原来的项目。多选的操作（`StageChanges` / `UnstageChanges` / `DiscardChanges` / `OpenDiffs`）先按仓库分组（`byRepo`），再加入各自的队列；一次打开超过 20 个 Diff 时先要求确认。
 

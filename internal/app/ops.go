@@ -182,3 +182,11 @@ func (a *App) Push(r *Repo) {
 	}
 	a.RunOp(r, i18n.T("推送"), "push")
 }
+
+// Pulling 是仓库里有拉取在跑或在排队（Pull、同步的前一半、全部拉取排进来的）：按钮转圈、不能再点。
+func (r *Repo) Pulling() bool { return r.Queued(i18n.T("拉取")) }
+
+// Pushing 是仓库里有推送（含"推送并设置上游"）在跑或在排队。
+func (r *Repo) Pushing() bool {
+	return r.Queued(i18n.T("推送")) || r.Queued(i18n.T("推送（设置上游 origin）"))
+}

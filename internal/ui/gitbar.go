@@ -172,11 +172,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		if r.Loaded && r.Err == nil && !r.Plain {
 			wui.Row(c).Gap(3).AlignItems(wui.Center).MinWidth(0).Shrink(2).Children(func() {
 				wui.Icon(c, iconBranch).FontSize(iconInline).TextColor(t.TextMuted)
-				b := r.Status.Branch
-				if s := app.UpDown(r.Status); s != "" {
-					b += " " + s
-				}
-				wui.Text(c, b).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
+				wui.Text(c, r.Status.Branch).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 			})
 		}
 		if r.Linked {
@@ -224,7 +220,45 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 			tip := app.Tip(i18n.T("全部暂存（git add -A）"), "git.stageAll")
 			rowButton(c, iconPlus, tip, tip, func() { a.StageAll(r) })
 		}
+		if r.Loaded && r.Err == nil && !r.Plain {
+			s := syncOf(a, r)
+			syncButton(c, "pull", iconPull, i18n.Tf("拉取 %s", r.Name), s.pullTip, "↓", s.behind, s.pullOff, s.pulling, func() {
+				a.UseRepo(r)
+				a.Pull(r)
+			})
+			syncButton(c, "push", iconPush, i18n.Tf("推送 %s", r.Name), s.pushTip, "↑", s.ahead, s.pushOff, s.pushing, func() {
+				a.UseRepo(r)
+				a.Push(r)
+			}).ContextMenu(func(m *wui.Menu) { pushMenu(a, m, r) })
+		}
 	})
+}
+
+// syncButton 是段头右边的拉取 / 推送按钮（rowToolSize 高）：图标，n 不为 0 时后面跟着"↓n" / "↑n"；
+// busy（这个仓库的这条在跑或在排队）时图标换成转圈、点不了。label 带仓库名（每个仓库一组，读屏和测试按它找），
+// tip 和标题栏的同一个按钮一样（syncOf）。带 key：指针移上段头时前面会多出"全部暂存"，不带 key 的话
+// 按下和松开时不是同一个元素，点不着。
+func syncButton(c *wui.Context, key string, ic *wui.SVG, label, tip, arrow string, n int, off, busy bool, fn func()) wui.Element {
+	b := wui.Row(c.Key(key)).Height(rowToolSize).MinWidth(rowToolSize).Gap(2).Label(label)
+	tooltip(c, b, tip)
+	fg := toolStyle(c, b, false, off)
+	if n > 0 {
+		b.Padding(0, 4)
+	}
+	b.Children(func() {
+		if busy {
+			wui.Spinner(c).Size(iconInline, iconInline)
+		} else {
+			wui.Icon(c, ic).FontSize(iconRow).TextColor(fg)
+		}
+		if n > 0 {
+			wui.Text(c, arrow+strconv.Itoa(n)).FontSize(10.5).FontWeight(600).TextColor(fg).SingleLine().Margin(0, 0, textNudge, 0)
+		}
+	})
+	if b.Clicked() && !off { // 灰着也要接住这一下，不然落到段头上，把这一段收起来了
+		fn()
+	}
+	return b
 }
 
 // counts 是段头右边的计数胶囊：冲突 / 已暂存 / 未暂存 / 未跟踪，只列不为 0 的，颜色和分组标题前的点一样。

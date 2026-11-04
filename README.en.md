@@ -35,7 +35,8 @@ about 79 MiB of memory when idle.
   or checks like go vet and eslint, on save.
 - **Git**: stage changes by hunk or line and resolve conflicts in the editor. View a commit graph for one repo or all
   repos together. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
-  are available in the UI.
+  are available in the UI. Each repo's header in the Git panel has its own Pull and Push buttons, with ahead / behind
+  commit counts.
 - **Terminals**: each repo has its own set of terminals, built on Ghostty's libghostty-vt, with split panes. Layout
   and output are saved when you close the window.
 - **Search and navigation**: search and replace across repos. Use ⌘P to find files, ⇧⌘P to open the command palette

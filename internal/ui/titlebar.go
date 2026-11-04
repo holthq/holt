@@ -374,34 +374,67 @@ func repoControls(a *app.App, c *wui.Context, r *app.Repo) {
 		return
 	}
 	branchButton(a, c, r)
-	up := app.Upstream(r)
-	pullTip, pushTip := i18n.Tf("拉取（git %s）", strings.Join(app.PullArgs(a.St.Settings.PullMode), " ")), i18n.T("推送（git push）")
-	if up == "" {
-		pullTip = i18n.T("当前分支没有上游，不能拉取")
-		pushTip = i18n.T("推送并设置上游（git push -u origin）")
-	}
-	if r.Status.Behind > 0 {
-		pullTip += i18n.Tf("，落后 %s", strconv.Itoa(r.Status.Behind))
-	}
-	if r.Status.Ahead > 0 {
-		pushTip += i18n.Tf("，领先 %s", strconv.Itoa(r.Status.Ahead))
-	}
+	s := syncOf(a, r)
 	toolButton(c, iconFetch, i18n.T("抓取（git fetch --prune）"), false, func() { a.Fetch(r) })
-	toolButton(c, iconPull, pullTip, up == "", func() { a.Pull(r) })
-	toolButton(c, iconPush, pushTip, false, func() { a.Push(r) }).ContextMenu(func(m *wui.Menu) {
-		if why := app.PushForceWhy(r); m.Item(withWhy(i18n.T("强制推送（--force-with-lease）…"), why)).Disabled(why != "").Chosen() {
-			a.PushForce(r)
-		}
-		if m.Item(i18n.T("同步（拉取再推送）")).Chosen() {
-			a.Sync(r)
-		}
-	})
+	toolButton(c, iconPull, s.pullTip, s.pullOff, func() { a.Pull(r) })
+	toolButton(c, iconPush, s.pushTip, s.pushOff, func() { a.Push(r) }).ContextMenu(func(m *wui.Menu) { pushMenu(a, m, r) })
 	more := wui.ButtonBase(c).Label(i18n.T("Git 操作")).Size(toolSize, toolSize).Tooltip(i18n.T("更多 git 操作"))
 	fg := toolStyle(c, more, false, false)
 	more.Children(func() {
 		wui.Icon(c, iconMore).FontSize(iconTool).TextColor(fg)
 	})
 	more.Menu(func(m *wui.Menu) { gitMenu(a, m, r) })
+}
+
+// syncState 是一个仓库的拉取 / 推送按钮该怎么画：悬停提示（带 git 命令和领先 / 落后的数）、灰不灰。
+// 标题栏的同步按钮和 Git 栏段头的那一组共用它，两处的说法和规矩一样。
+type syncState struct {
+	pullTip, pushTip string
+	pullOff, pushOff bool // 灰着、点了没反应
+	pulling, pushing bool // 这个仓库的拉取 / 推送在跑或在排队
+	noUpstream       bool
+	ahead, behind    int
+}
+
+func syncOf(a *app.App, r *app.Repo) syncState {
+	s := syncState{
+		pullTip:    i18n.Tf("拉取（git %s）", strings.Join(app.PullArgs(a.St.Settings.PullMode), " ")),
+		pushTip:    i18n.T("推送（git push）"),
+		noUpstream: app.Upstream(r) == "",
+		ahead:      r.Status.Ahead,
+		behind:     r.Status.Behind,
+		pulling:    r.Pulling(),
+		pushing:    r.Pushing(),
+	}
+	if s.noUpstream {
+		s.pullTip = i18n.T("当前分支没有上游，不能拉取")
+		s.pushTip = i18n.T("推送并设置上游（git push -u origin）")
+	}
+	if s.behind > 0 {
+		s.pullTip += i18n.Tf("，落后 %s", strconv.Itoa(s.behind))
+	}
+	if s.ahead > 0 {
+		s.pushTip += i18n.Tf("，领先 %s", strconv.Itoa(s.ahead))
+	}
+	if s.pulling {
+		s.pullTip = i18n.Tf("正在%s…", i18n.T("拉取"))
+	}
+	if s.pushing {
+		s.pushTip = i18n.Tf("正在%s…", i18n.T("推送"))
+	}
+	s.pullOff = s.noUpstream || s.pulling
+	s.pushOff = s.pushing
+	return s
+}
+
+// pushMenu 是推送按钮的右键菜单：强制推送、同步。
+func pushMenu(a *app.App, m *wui.Menu, r *app.Repo) {
+	if why := app.PushForceWhy(r); m.Item(withWhy(i18n.T("强制推送（--force-with-lease）…"), why)).Disabled(why != "").Chosen() {
+		a.PushForce(r)
+	}
+	if m.Item(i18n.T("同步（拉取再推送）")).Chosen() {
+		a.Sync(r)
+	}
 }
 
 // branchButton 是分支名的胶囊，点开是本地分支和远程分支的菜单，可以切换和新建。
