@@ -40,7 +40,7 @@ about 79 MiB of memory when idle.
 - **Terminals**: each repo has its own set of terminals, built on Ghostty's libghostty-vt, with split panes. Layout
   and output are saved when you close the window.
 - **Search and navigation**: search and replace across repos. Use ⌘P to find files, ⇧⌘P to open the command palette
-  and ⌘T to jump to symbols.
+  and ⌘T to jump to symbols; ⇧⌘[ / ⇧⌘] switch to the previous / next tab and ⌃Tab goes back to the last used tab.
 - **Local history**: each save keeps a snapshot to help recover content you changed or deleted by mistake.
 - **Other features**: Chinese and English UI (Chinese by default; change it in Settings), light and dark themes, and
   customizable shortcuts.

@@ -175,6 +175,7 @@ type App struct {
 	closed []closedDoc
 	nav    []navPoint // 看过的标签和位置，‹ › 在里面走
 	navPos int
+	tabMRU []docs.Key // 切到过的标签，最近的在前（⌃Tab 按它走，tabswitch.go）
 
 	olCache   olCache       // 快速打开"名字@符号"读的没开着的文件的大纲（palettesym.go）
 	syms      symIndex      // 工作区符号的索引（"#"，symindex.go）

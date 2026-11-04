@@ -122,7 +122,8 @@ func buildCommands() []*Command {
 	cmd, shift, alt, ctrl := ui.Cmd, ui.Shift, ui.Alt, ui.Ctrl
 	cs := []*Command{
 		// 终端：键盘在终端里时这几个键归终端。排在最前，RunKey 先看到它们，⌘W / ⌘K / ⌘F / ⌘G / ⇧⌘G 就盖过同键的
-		// 全局和编辑器命令；⌘D、⇧⌘D、⇧⌘[ / ⇧⌘] 窗口不登记（编辑器自己要 ⌘D），由终端视图的 OnKey 交过来（terminals.go）。
+		// 全局和编辑器命令；⌘D、⇧⌘D 窗口不登记（编辑器自己要 ⌘D），由终端视图的 OnKey 交过来（terminals.go）。
+		// ⇧⌘[ / ⇧⌘]、⌥⌘← / ⌥⌘→ 窗口上登记的是切编辑器标签（view.prevTab 等），键盘在终端里时终端的 OnKey 先接、RunKey 也先看到这里的。
 		{ID: "term.closePane", Title: "关闭终端", Mods: cmd, Key: ui.KeyW, Context: Terminal, Run: withTermRepo((*App).CloseActivePane)},
 		{ID: "term.clear", Title: "清屏", Mods: cmd, Key: ui.KeyK, Context: Terminal, Run: (*App).ClearTerm},
 		{ID: "term.find", Title: "在终端里查找…", Mods: cmd, Key: ui.KeyF, Context: Terminal, Run: (*App).FindInTerm},
@@ -134,6 +135,8 @@ func buildCommands() []*Command {
 			Run: withTermRepo(func(a *App, r *Repo) { a.SplitTerm(r, false) })},
 		{ID: "term.prevTab", Title: "上一个终端标签", Mods: shift | cmd, Key: ui.KeyBracketLeft, Context: Terminal, Run: func(a *App) { a.StepTermTab(-1) }},
 		{ID: "term.nextTab", Title: "下一个终端标签", Mods: shift | cmd, Key: ui.KeyBracketRight, Context: Terminal, Run: func(a *App) { a.StepTermTab(1) }},
+		{ID: "term.prevTabAlt", Title: "上一个终端标签", Mods: alt | cmd, Key: ui.KeyLeft, Context: Terminal, Run: func(a *App) { a.StepTermTab(-1) }},
+		{ID: "term.nextTabAlt", Title: "下一个终端标签", Mods: alt | cmd, Key: ui.KeyRight, Context: Terminal, Run: func(a *App) { a.StepTermTab(1) }},
 		{ID: "term.openText", Title: "把终端内容开成标签", Mods: shift | cmd, Key: ui.KeyC, Context: Terminal, Run: (*App).OpenTermText},
 
 		// 文件
@@ -207,6 +210,19 @@ func buildCommands() []*Command {
 			Enabled: (*App).CanBack, Run: (*App).Back},
 		{ID: "nav.forward", Title: "前进", Group: "视图", Mods: ctrl | shift, Key: ui.KeyMinus,
 			Enabled: (*App).CanForward, Run: (*App).Forward},
+		{ID: "view.prevTab", Title: "上一个标签", Group: "视图", Sep: true, Mods: shift | cmd, Key: ui.KeyBracketLeft,
+			Enabled: hasTabs, Run: func(a *App) { a.StepTab(-1) }},
+		{ID: "view.nextTab", Title: "下一个标签", Group: "视图", Mods: shift | cmd, Key: ui.KeyBracketRight,
+			Enabled: hasTabs, Run: func(a *App) { a.StepTab(1) }},
+		{ID: "view.recentTab", Title: "上一个用过的标签", Group: "视图", Mods: ctrl, Key: ui.KeyTab,
+			Enabled: hasTabs, Run: func(a *App) { a.StepTabByUse(1) }},
+		{ID: "view.oldestTab", Title: "最久没用的标签", Group: "视图", Mods: ctrl | shift, Key: ui.KeyTab,
+			Enabled: hasTabs, Run: func(a *App) { a.StepTabByUse(-1) }},
+		// ⌥⌘← / ⌥⌘→ 是 ⇧⌘[ / ⇧⌘] 的另一组键（菜单项只能挂一个键，所以不进菜单；窗口照样登记，不要求编辑器有焦点）
+		{ID: "view.prevTabAlt", Title: "上一个标签（备用键）", Mods: alt | cmd, Key: ui.KeyLeft, Context: Editor,
+			Enabled: hasTabs, Run: func(a *App) { a.StepTab(-1) }},
+		{ID: "view.nextTabAlt", Title: "下一个标签（备用键）", Mods: alt | cmd, Key: ui.KeyRight, Context: Editor,
+			Enabled: hasTabs, Run: func(a *App) { a.StepTab(1) }},
 		{ID: "view.splitRight", Title: "向右拆分编辑器", Group: "视图", Sep: true, Mods: cmd, Key: ui.KeyBackslash,
 			Enabled: hasDoc, Run: func(a *App) { a.SplitEditor(true) }},
 		{ID: "view.splitDown", Title: "向下拆分编辑器", Group: "视图", Mods: alt | cmd, Key: ui.KeyBackslash,

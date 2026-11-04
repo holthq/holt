@@ -79,6 +79,7 @@ func (a *App) markNav() {
 
 // visit 把切到的标签记进 ‹ › 的历史；在历史中间切到新标签就丢掉"前进"的那些。
 func (a *App) visit(k docs.Key) {
+	a.noteTabUse(k)
 	if a.navPos < len(a.nav) && a.nav[a.navPos].key == k {
 		return
 	}
