@@ -359,7 +359,7 @@ func tab(a *app.App, c *wui.Context, g *app.Group, i int, d *docs.Doc, active bo
 			tip := i18n.Tf("同一个文件的第 %d 份，改动是同一份", d.Copy+1)
 			tooltip(c, wui.Icon(c.Key("copy"), iconCopy).FontSize(iconInline).TextColor(t.TextMuted).Shrink(0).Margin(0, 0, textNudge, 0).Label(tip), tip)
 		}
-		tabClose(a, c, d, active || hover)
+		tabClose(a, c, d, active, hover)
 	})
 }
 
@@ -403,15 +403,22 @@ func dropMark(c *wui.Context, left bool) {
 	}
 }
 
-// tabClose 是标签右边 18×18 的一格：当前和悬停的标签是 ×，别的标签有没保存的改动是一个点，不然空着（位置总占着，
-// 免得标签宽度跟着鼠标跳）。悬停时有改动的标签也是 ×（关的时候会问）。
-func tabClose(a *app.App, c *wui.Context, d *docs.Doc, show bool) {
+// tabClose 是标签右边 18×18 的一格（位置总占着，免得标签宽度跟着鼠标跳）：
+//   - 有没保存的改动、没悬停：一个点（当前标签也是点，正在改的那个最要看出没存）；
+//   - 悬停（hover，鼠标在整个标签上），或没改动的当前标签（active）：×，点了关掉（有改动会问要不要保存）；
+//   - 别的：空着。
+//
+// 和 VS Code 一样：有改动是 ●，鼠标移上去才变 ×。
+func tabClose(a *app.App, c *wui.Context, d *docs.Doc, active, hover bool) {
 	t := c.Theme()
-	label := i18n.Tf("关闭 %s", d.Title)
-	x := wui.Box(c.Key("x")).Size(18, 18).AlignItems(wui.Center).Justify(wui.Center).Radius(5).Shrink(0).Label(label)
+	x := wui.Box(c.Key("x")).Size(18, 18).AlignItems(wui.Center).Justify(wui.Center).Radius(5).Shrink(0)
 	switch {
-	case show:
-		tooltip(c, x.Cursor(wui.CursorPointer), label)
+	case d.Modified() && !hover:
+		tip := i18n.T("有没保存的改动")
+		tooltip(c, x, tip).Children(func() { wui.Box(c).Size(8, 8).Radius(4).Background(t.TextMuted).Label(tip) })
+	case active || hover:
+		label := i18n.Tf("关闭 %s", d.Title)
+		tooltip(c, x.Label(label).Cursor(wui.CursorPointer), label)
 		fg := t.TextMuted
 		if x.Hovered() {
 			x.Background(toolFill(t, 0.06))
@@ -421,8 +428,6 @@ func tabClose(a *app.App, c *wui.Context, d *docs.Doc, show bool) {
 		if x.Clicked() {
 			a.CloseDoc(d)
 		}
-	case d.Modified():
-		tooltip(c, x, i18n.T("有没保存的改动")).Children(func() { wui.Box(c).Size(8, 8).Radius(4).Background(t.TextMuted) })
 	}
 }
 

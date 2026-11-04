@@ -111,6 +111,6 @@ func openEditorRow(a *app.App, c *wui.Context, r app.OpenEditorRow, indent float
 			wui.Text(c, s).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(100).Margin(0, 0, textNudge, 0)
 		}
 		wui.Spacer(c).Grow(1)
-		tabClose(a, c, d, hover)
+		tabClose(a, c, d, false, hover)
 	})
 }
