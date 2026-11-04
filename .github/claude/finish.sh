@@ -24,8 +24,24 @@ if [ -n "$(git status --porcelain)" ]; then
   git add -A
   git commit -qm "Claude：#${NUM} 里没提交的改动" -m "Co-Authored-By: Claude <noreply@anthropic.com>"
 fi
+pushed=1
 if [ "$(git rev-list --count "$START..HEAD")" -gt 0 ]; then
-  git push -q "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" "HEAD:refs/heads/$branch"
+  # 先打成 bundle（工作流把它传成运行的附件 claude-work）：推送失败时改动还在，`git fetch claude-work.bundle HEAD` 就能取回
+  git bundle create "$RUNNER_TEMP/claude-work.bundle" "$START..HEAD" 2>/dev/null || true
+  # GitHub 偶尔回 500（remote rejected / Internal Server Error）：退避重试，别让一小时的活儿白干
+  pushed=""
+  for wait in 0 15 30 60 120; do
+    sleep "$wait"
+    if git push -q "https://x-access-token:$GH_TOKEN@github.com/$REPO.git" "HEAD:refs/heads/$branch"; then
+      pushed=1
+      break
+    fi
+    echo "推送 $branch 失败（这次之前等了 ${wait}s），再试" >&2
+  done
+fi
+if [ -z "$pushed" ]; then
+  links="推送分支 \`$branch\` 失败（重试了 5 次），改动在运行附件 \`claude-work\` 的 bundle 里 · $links"
+elif [ "$(git rev-list --count "$START..HEAD")" -gt 0 ]; then
   links="分支 \`$branch\` · $links"
   compare="https://github.com/$REPO/compare/$BASE...$branch?expand=1"
   if [ -n "$ok" ] && [ -n "$NEW" ]; then
@@ -49,3 +65,4 @@ else
 fi
 
 gh api -X PATCH "repos/$REPO/issues/comments/$CID" -f body="$body" >/dev/null
+[ -n "$pushed" ] # 推送失败：评论已经写上了，这一步仍算失败

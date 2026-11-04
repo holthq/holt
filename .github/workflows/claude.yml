@@ -88,3 +88,13 @@ jobs:
           START: ${{ steps.prep.outputs.start }}
           CID: ${{ steps.prep.outputs.cid }}
         run: bash "$RUNNER_TEMP/claude/finish.sh"
+
+      # 收尾推送失败时改动还在这里（finish.sh 推送前打的 bundle）
+      - name: 留存改动
+        if: always() && steps.prep.outcome == 'success'
+        uses: actions/upload-artifact@v4
+        with:
+          name: claude-work
+          path: ${{ runner.temp }}/claude-work.bundle
+          retention-days: 7
+          if-no-files-found: ignore
