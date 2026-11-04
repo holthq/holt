@@ -417,6 +417,8 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 - 代码片段（`internal/snippets`）：内置的加状态目录里的，Tab 展开，Tab / ⇧Tab 跳位。
 - 图片：预览、和 HEAD 的图片 Diff；Markdown 和 SVG 用 ⇧⌘V 在源码和预览之间切（`TogglePreview`）；`app/image.go` 的 `ToggleHex` 切十六进制视图，也能用默认应用打开。
 - 键盘移动光标后，编辑器让光标上下各留 min(5 行, 视图高 1/5)（`ui/caret.go` 的 `caretMargin`）。mygo 自己只留 3 行；点击和滚轮不受影响。
+- 光标在标识符上（没有选区、只有一个光标）停稳 250 ms（`ui.OccurRest`）后，本文件里同名的其他出现（整词、区分大小写）铺上 mygo 的 `Occurrence` 底色（`ui/occur.go` 的 `occurMarks`，写进 `St.TextBackgrounds`，状态在 `Doc.Occur`）；打字、换词马上清掉。mygo 自己只在有选区时标选中文字的其他出现，也没有"光标下的词"这个选项，所以用 `TextBackgrounds` 在 Grove 这边做；按内容版本和词算一次，大于 `StickyQuick` 的文件只搜看得见的行、滚了重搜。搜索编辑器（底色是搜到的那几处）和十六进制视图不标。
+- 选中里画出来的空白符号（点、箭头）用 `TextMuted` 的 0.22（mygo 默认 0.45，`ui/occur.go` 的 `codeTheme` 设 `St.Theme.Whitespace`，别的代码颜色留零、照旧跟 mygo 的默认）。
 - 编辑器和 Diff 中的光标在停止操作一段时间后不再闪烁（`ui/caret.go`，`WORKBENCH_CARET_REST=off` 关掉）。mygo 的编辑器有键盘时每 500 ms 排一帧闪光标，而 mygo 要 2 秒没有新帧才放掉整窗的帧内存，因此持续闪烁会额外占用一两百 MB 内存，并持续消耗 CPU。
 - Diff 有并排和统一两种，全文 / 只看改动两种（`unified` / `fullDiff`）。
 - 两个磁盘文件、或文件和剪贴板比较：`app/filecompare.go`（先“选择以比较”，再“与已选的比较”）。

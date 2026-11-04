@@ -184,7 +184,8 @@ type Doc struct {
 	Raw    [2][]byte // 比较的两边原样的内容（旧、新）：DiffSt 的缓冲区把 CRLF 换成了 \n，块级操作的补丁要用原样的
 	ToHunk bool      // 全文 diff 刚读出来、或刚切了局部 / 全文：界面下一帧把光标所在（还没动过就是第一处）那块改动滚进视图，并清掉
 
-	Rest Rest // 编辑器 / Diff 视图的光标停手多久了（ui 的 restingEditor / restingDiff）
+	Rest  Rest  // 编辑器 / Diff 视图的光标停手多久了（ui 的 restingEditor / restingDiff）
+	Occur Occur // 光标下那个词在本文件里的其他出现（ui 的 occurMarks）
 
 	// blame 装订线（⌃⌘B，app/blame.go）：按标签记，不进 state.json
 	ShowBlame    bool
@@ -222,6 +223,21 @@ type BlameKey struct {
 	Gen  int
 	Ver  uint64
 	Head string
+}
+
+// Occur 是"高亮光标下的词"要记的东西：界面每帧读写，别处不用。算出来的范围放在 St.TextBackgrounds 里
+// （Done 时那些底色是它的；搜索编辑器的底色是 searchDocMarks 的，它不碰）。
+type Occur struct {
+	Ver         uint64 // 上一帧的内容版本、主选区和选区个数：都没变就不重新找光标下的词
+	Sel         editor.Selection
+	N           int
+	Word        string    // 光标下的词（"" 为没有：有选区、多个光标、不在标识符上）
+	From        int       // 那个词在光标下的那一处的起点（它自己不标）
+	At          time.Time // 词或内容最后一次变的时刻：停稳 OccurRest 才标
+	Done        bool      // 已经标了（St.TextBackgrounds 是它的）
+	Dark        bool      // 标的时候窗口是不是深色（换了外观重算颜色）
+	Partial     bool      // 大文件只标了看得见的那几行
+	First, Last int       // Partial 时标的是哪几行：滚了就重标
 }
 
 // Rest 是一个编辑器的光标"停手不闪"要记的东西：界面每帧读写，别处不用。

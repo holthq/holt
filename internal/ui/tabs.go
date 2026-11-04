@@ -487,6 +487,9 @@ func docContent(a *app.App, c *wui.Context, d *docs.Doc, focused bool) {
 		}
 		conflictMarks(c, &d.St, blocks)
 		a.EditorOptions(&d.St, d.Indent)
+		// 选中里的空白符号画淡些；光标在词上停稳后高亮这个词的其他出现
+		codeTheme(&d.St, c.Theme())
+		occurMarks(c, d)
 		if d.Hex { // 一行 16 字节对齐着看：不折行、没有行号（偏移就是行号）和折叠
 			d.St.LineNumbers, d.St.NoFolding, d.St.SoftWrap = editor.LineNumbersOff, true, false
 		}
