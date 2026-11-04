@@ -3,6 +3,7 @@ package app
 import (
 	"errors"
 	"os"
+	"sync/atomic"
 
 	"github.com/egoist/mygo/ui/editor"
 
@@ -23,27 +24,55 @@ type Peek struct {
 	sel  editor.Selection
 }
 
-// peekCache 记着上次算的块（两个缓冲区的版本没变就不重算）：卡开着时每帧都要。
+// peekCache 记着一个标签上次算的块（两个缓冲区的版本没变就不重算）：卡开着时每帧都要，装订线接管点击也每帧问。
+// ds 一直留着用：mygo 的 DiffState 记着上次的块和版本，New 改了只重比改动附近的几行（diffModel 的增量），
+// 每次新建一个就得整篇和 HEAD 重跑一遍 diff，大文件每敲一个键都来一遍会掉帧。
 type peekCache struct {
 	d         *docs.Doc
 	base, buf *editor.Buffer
+	ds        *editor.DiffState
 	bv, nv    uint64
 	hunks     []editor.DiffHunk
 }
 
-var lastPeek peekCache
+// peekCaches 是最近用过的几个标签的（分栏同时开着几个文件时不互相挤掉），前面的是最近的。
+var (
+	peekCaches  []*peekCache
+	hunkRebuild atomic.Int64
+)
+
+const peekCacheMax = 4
+
+// HunkRebuilds 是到现在为止改动块从头整篇算的次数（新建 DiffState 的次数，只给测试用）。
+func HunkRebuilds() int64 { return hunkRebuild.Load() }
 
 // DocHunks 是文件标签 d 和 HEAD（历史版本：父提交）比的改动块；没有对比基准（新文件、仓库外、大文件、NoBase）是 nil。
 func DocHunks(d *docs.Doc) []editor.DiffHunk {
 	if d == nil || d.Buf == nil || d.Base == nil || d.St.DiffBase == nil || d.Big {
 		return nil
 	}
-	c := &lastPeek
-	if c.d == d && c.base == d.Base && c.buf == d.Buf && c.bv == d.Base.Version() && c.nv == d.Buf.Version() {
+	var c *peekCache
+	for i, e := range peekCaches {
+		if e.d == d {
+			c = e
+			copy(peekCaches[1:i+1], peekCaches[:i])
+			peekCaches[0] = c
+			break
+		}
+	}
+	if c == nil {
+		c = &peekCache{d: d}
+		peekCaches = append([]*peekCache{c}, peekCaches[:min(len(peekCaches), peekCacheMax-1)]...)
+	}
+	bv, nv := d.Base.Version(), d.Buf.Version()
+	if c.ds != nil && c.base == d.Base && c.buf == d.Buf && c.bv == bv && c.nv == nv {
 		return c.hunks
 	}
-	ds := editor.DiffState{Old: d.Base, New: d.Buf}
-	*c = peekCache{d: d, base: d.Base, buf: d.Buf, bv: d.Base.Version(), nv: d.Buf.Version(), hunks: ds.Hunks()}
+	if c.ds == nil || c.base != d.Base || c.buf != d.Buf {
+		c.ds, c.base, c.buf = &editor.DiffState{Old: d.Base, New: d.Buf}, d.Base, d.Buf
+		hunkRebuild.Add(1)
+	}
+	c.bv, c.nv, c.hunks = bv, nv, c.ds.Hunks()
 	return c.hunks
 }
 

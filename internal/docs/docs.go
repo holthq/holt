@@ -12,6 +12,7 @@ import (
 	"path"
 	"path/filepath"
 	"strings"
+	"sync/atomic"
 	"time"
 
 	"github.com/egoist/mygo/ui"
@@ -156,8 +157,9 @@ type Doc struct {
 	olTree *outline.Tree
 	olVer  uint64
 	olOK   bool
-	olSeen uint64    // 粘性滚动（StickyOutline）见过的最新版本
-	olEdit time.Time // 和它第一次见到的时间
+	olSeen uint64        // 粘性滚动（StickyOutline）见过的最新版本
+	olEdit time.Time     // 和它第一次见到的时间
+	olCost time.Duration // 上一次解析花了多久：超过 StickySlow 的，粘性滚动停手了再重新解析
 	// 侧栏大纲的展开和选中，按标签记（键是 outline.Flat.Key）；OutlineSeen 是见过的有子项的符号（新出现的默认展开），
 	// OutlineSyms 是展开状态对过的那棵树，OutlineCur 是上一帧光标所在的符号（变了才跟着选中、滚到）
 	OutlineSt   ui.OutlineState[string]
@@ -652,22 +654,34 @@ func (d *Doc) Outline() *outline.Tree {
 		return nil
 	}
 	if v := d.Buf.Version(); !d.olOK || v != d.olVer {
+		t0 := time.Now()
 		d.olTree, d.olVer, d.olOK = outline.Build(outline.Parse(name, d.Buf.String())), v, true
+		d.olCost = time.Since(t0)
+		outlineParses.Add(1)
 	}
 	return d.olTree
 }
 
-// 粘性滚动用的大纲：大于 StickyQuick 的文件敲字的时候先用旧的，停手 StickyPause 再重新解析
-// （900 KB 的 Go 文件解析一遍 20 多 ms，每敲一个字在主线程上来一遍会卡）。
+// outlineParses 数 Outline 真解析了几次（测试看打字时是不是每个键都整篇解析）。
+var outlineParses atomic.Int64
+
+// OutlineParses 是到现在为止大纲整篇解析的次数（只给测试用）。
+func OutlineParses() int64 { return outlineParses.Load() }
+
+// 粘性滚动用的大纲：大于 StickyQuick 的文件，或上次解析超过 StickySlow 的，敲字的时候先用旧的，停手 StickyPause 再重新解析
+// （900 KB 的 Go 文件解析一遍 20 多 ms，200 KB 的也要几 ms，每敲一个字在主线程上来一遍会掉帧）。几百行的小文件解析远不到 1 ms，照旧每次都算。
 const (
 	StickyQuick = 256 << 10
 	StickyPause = 500 * time.Millisecond
 )
 
-// StickyOutline 是粘性滚动用的大纲（ui/sticky.go）：小文件和 Outline 一样；大的改着的时候先给旧的那棵（行号可能差几行），
+// StickySlow 是解析多慢就算“慢”（120 Hz 一帧 8.3 ms，留给光栅化）。变量只为测试能改小。
+var StickySlow = time.Millisecond
+
+// StickyOutline 是粘性滚动用的大纲（ui/sticky.go）：小文件和 Outline 一样；大的、解析慢的改着的时候先给旧的那棵（行号可能差几行），
 // wait > 0 时过这么久再来问。
 func (d *Doc) StickyOutline(now time.Time) (t *outline.Tree, wait time.Duration) {
-	if !d.olOK || d.Buf == nil || d.Buf.Len() <= StickyQuick {
+	if !d.olOK || d.Buf == nil || d.Buf.Len() <= StickyQuick && d.olCost < StickySlow {
 		return d.Outline(), 0
 	}
 	v := d.Buf.Version()
