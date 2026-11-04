@@ -254,6 +254,9 @@ func (a *App) LoadFiles(r *Repo) {
 	a.ignoredOn = showIgnored
 	base := a.excludeBase()
 	up := a.Update
+	// 包级开关在主线程上读好，后台 goroutine 只用局部的：测试会换 lsFiles、改 files.MaxEmptyScan，
+	// 上一个测试的 goroutine 可能还在跑
+	ls, maxScan := lsFiles, files.MaxEmptyScan
 	a.readyAsk(r, readyTree)
 	t0 := time.Now()
 	go func() {
@@ -264,7 +267,7 @@ func (a *App) LoadFiles(r *Repo) {
 		hidden := 0
 		if !plain {
 			var l git.Listing
-			l, err = lsFiles(r.ctx, r.Root)
+			l, err = ls(r.ctx, r.Root)
 			paths, cands = l.Paths, slices.Concat(l.Links, l.Others) // 符号链接：已跟踪的看索引，未跟踪的才看磁盘
 			plain = err != nil && r.ctx.Err() == nil && git.NotRepo(r.Root)
 			if err == nil && showIgnored {
@@ -290,7 +293,7 @@ func (a *App) LoadFiles(r *Repo) {
 			links = files.ReadLinks(r.Root, dropNested(cands, nested))
 		}
 		took := time.Since(t0)
-		scan := err == nil && !plain && len(paths) <= files.MaxEmptyScan
+		scan := err == nil && !plain && len(paths) <= maxScan
 		up(func() {
 			if r.Files.Done(gen, paths, err, ignored, dirs...) {
 				defer a.readyTreeDone(r, took, r.Files.Count, hidden, scan)
@@ -312,7 +315,7 @@ func (a *App) LoadFiles(r *Repo) {
 				}
 			}
 		})
-		if err != nil || plain || len(paths) > files.MaxEmptyScan {
+		if err != nil || plain || len(paths) > maxScan {
 			return // 普通文件夹的空目录 Walk 已经列了
 		}
 		t1 := time.Now()

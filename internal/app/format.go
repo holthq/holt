@@ -133,9 +133,10 @@ func (a *App) formatDoc(d *docs.Doc, then func(res formatOutcome, msg string)) {
 		ctx = r.ctx
 	}
 	shell, title := a.shell(), i18n.Tf("格式化 %s", d.Title)
+	timeout := FormatTimeout // 包级开关在主线程上读好（测试会改它，后台 goroutine 不碰）
 	up := a.Update
 	go func() {
-		out, msg, detail := runFormatter(ctx, shell, dir, cmd, text)
+		out, msg, detail := runFormatter(ctx, shell, dir, cmd, text, timeout)
 		up(func() {
 			d.Formatting = false
 			switch {
@@ -229,14 +230,14 @@ func runTool(ctx context.Context, shell, dir, cmd, stdin string, timeout time.Du
 }
 
 // runFormatter 跑 cmd：text 进 stdin，stdout 是格式化好的文字（\r\n 换成 \n）。失败时 msg 是给人看的一句、
-// detail 是 stderr 全文（记进输出栏）。
-func runFormatter(ctx context.Context, shell, dir, cmd, text string) (out, msg, detail string) {
-	res := runTool(ctx, shell, dir, cmd, text, FormatTimeout)
+// detail 是 stderr 全文（记进输出栏）。timeout 是调用方在主线程上读好的 FormatTimeout。
+func runFormatter(ctx context.Context, shell, dir, cmd, text string, timeout time.Duration) (out, msg, detail string) {
+	res := runTool(ctx, shell, dir, cmd, text, timeout)
 	detail = res.stderr
 	first, _, _ := strings.Cut(detail, "\n")
 	switch {
 	case res.timeout:
-		return "", i18n.Tf("格式化失败：%d 秒还没跑完", int(FormatTimeout/time.Second)), detail
+		return "", i18n.Tf("格式化失败：%d 秒还没跑完", int(timeout/time.Second)), detail
 	case res.canceled:
 		return "", i18n.T("格式化失败：取消了"), detail
 	case res.missing != "":

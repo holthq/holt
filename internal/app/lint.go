@@ -291,9 +291,10 @@ func (a *App) lintFrom(sn lintSnap, manual bool) {
 		ctx = r.ctx
 	}
 	shell, title, root := a.shell(), i18n.Tf("检查 %s", d.Title)+" · $ "+run, d.Root
+	timeout := LintTimeout // 包级开关在主线程上读好（测试会改它，后台 goroutine 不碰）
 	up := a.Update
 	go func() {
-		res := runTool(ctx, shell, base, run, "", LintTimeout)
+		res := runTool(ctx, shell, base, run, "", timeout)
 		ps := ParseProblems(res.stdout+"\n"+res.stderr, base)
 		ps = slices.DeleteFunc(ps, func(q Problem) bool { // 认错了的行（“zsh:1: …”这种）：文件不在就不算
 			fi, err := os.Stat(q.Abs())
