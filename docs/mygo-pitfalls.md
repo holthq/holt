@@ -495,6 +495,12 @@
 - Tester `SetVibrancy(true)` 时材质那块是透明像素（和 `WORKBENCH_CAPTURE` 一样）。截图测试用 `writeMaterialShot` 铺一块合成的毛玻璃，只是近似，真窗口透出来的样子要手测。
 - 原生菜单（右键、按钮的 `Menu`）不在 `tt.Image()` / `WORKBENCH_CAPTURE` 里，测试用 `tt.Menu()`、`tt.ChooseMenuItem(…)`、`tt.CloseMenu()`。
   `WORKBENCH_CAPTURE` 的图里也没有红绿灯。
+- 系统右键菜单（`ContextMenu`）在窗口靠下的地方会折起来（issue #6）：mygo v0.7.4 的 darwin 后端用 `popUpMenuPositioningItem:nil atLocation:inView:` 弹，
+  左上角钉在点的地方，下面（到屏幕底 / Dock）放不下时 AppKit 不往上翻，而是把菜单截短、底下出滚动箭头。Grove 碰不到这个调用（位置也改不了），
+  所以文件树的右键菜单（`treeMenu`、`rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）改用 `PopoverMenu`：mygo 画在窗口里，下面放不下就往上开，
+  窗口本身都放不下才滚。代价是样子跟着主题、不是系统菜单的毛玻璃。别处的右键菜单还是系统的，碰到同样的问题照这样换。
+  `PopoverMenu` 的菜单 Tester 的 `Menu()` / `ChooseMenuItem` 看不见：测试统一用 `popmenu_test.go` 的 `shownMenu` / `chooseMenu` / `closeMenu`
+  （两种都认，画出来的从无障碍树里找 RoleMenu / RoleMenuItem），`mustRightClick` 已经换成它们了。
 - 无头 Tester 每帧都软件画整窗，一帧的底约 1.8 ms，量出来的帧时间比真窗口的高。后台高亮追色的帧一帧 0.1 ms，Tester 连着画，1800 帧不到 1 s 就走完了，
   后台还没算完。所以量时间别数帧：`TestMeasureBigFile` 量的是墙上时间（1800 帧和 30 s 都过了才停），"几帧完成"只对照 60 Hz 的真窗口看。
 

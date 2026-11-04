@@ -282,10 +282,10 @@ func TestTreeRepoReorder(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("上移"); err == nil || !strings.Contains(err.Error(), "disabled") {
-		t.Fatalf("最上面的仓库的上移没灰着：%v；菜单=%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "上移"); err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Fatalf("最上面的仓库的上移没灰着：%v；菜单=%q", err, shownMenu(t, tt))
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	scale := float32(tt.Image().Bounds().Dx()) / 1440
 	edge := func(name string, lower bool) []color.RGBA { // name 那行上边 / 下边那条线上的点

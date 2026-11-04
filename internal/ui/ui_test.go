@@ -71,8 +71,8 @@ func mustRightClick(t *testing.T, tt *wui.Tester, s string, item ...string) {
 		t.Fatalf("右键 %q: %v", s, err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem(item...); err != nil {
-		t.Fatalf("右键 %q 选 %q: %v；菜单=%q", s, item, err, tt.Menu())
+	if err := chooseMenu(t, tt, item...); err != nil {
+		t.Fatalf("右键 %q 选 %q: %v；菜单=%q", s, item, err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	tt.Frame()

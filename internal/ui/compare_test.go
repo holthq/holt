@@ -42,8 +42,8 @@ func TestCompareMenu(t *testing.T) {
 			t.Fatalf("右键 %q: %v", name, err)
 		}
 		tt.Frame()
-		m := tt.Menu()
-		tt.CloseMenu()
+		m := shownMenu(t, tt)
+		closeMenu(t, tt)
 		tt.Frame()
 		return m
 	}

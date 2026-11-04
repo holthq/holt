@@ -290,6 +290,8 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 
 `files.Tree` 由 `git ls-files` 建（带模式位，`LsFilesModes`，认得出符号链接和子模块），未跟踪的文件来自 status。普通文件夹用 `Walk`。树里每个仓库是一段，段头贴顶；展开的目录记在会话 `dirs` 里。
 
+文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行）用 mygo 画在窗口里的 `PopoverMenu`，不用系统菜单：系统菜单在窗口靠下时会折成带滚动箭头的（见 `docs/mygo-pitfalls.md`），画出来的下面放不下就往上开。
+
 刷新是增量的（`app/treediff.go`）：监听报的 `Change.Dirs` 交给 `fileHints`，后台只对这些目录重新 `ls-files`，`Tree.Diff` 算出加减，回主线程 `Tree.Apply`。变了的目录超过 200 个或 `Full` 时整个重建。后台计算期间若整棵树已被替换（`Gen` 变化），则丢弃结果。
 
 几种特殊行的处理方式：

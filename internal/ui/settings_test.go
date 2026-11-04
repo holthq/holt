@@ -232,11 +232,11 @@ func TestEnglishUI(t *testing.T) {
 			t.Fatalf("右键 %q: %v", s, err)
 		}
 		tt.Frame()
-		check("右键 "+s+" 的菜单", tt.Menu())
-		if len(tt.Menu()) == 0 {
+		check("右键 "+s+" 的菜单", shownMenu(t, tt))
+		if len(shownMenu(t, tt)) == 0 {
 			t.Fatalf("右键 %q 没有菜单", s)
 		}
-		tt.CloseMenu()
+		closeMenu(t, tt)
 		tt.Frame()
 	}
 	mustRightClick("src")

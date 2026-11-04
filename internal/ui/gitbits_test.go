@@ -160,8 +160,8 @@ func TestCompareRows(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("与 " + cC.Short + " 比较"); err != nil {
-		t.Fatalf("没有与 %s 比较: %v；菜单=%q", cC.Short, err, tt.Menu())
+	if err := chooseMenu(t, tt, "与 "+cC.Short+" 比较"); err != nil {
+		t.Fatalf("没有与 %s 比较: %v；菜单=%q", cC.Short, err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	wait("比较", func() bool { return h.Compare != nil && !h.Compare.Loading })
@@ -254,10 +254,10 @@ func TestGitMultiSelect(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if m := tt.Menu(); !slices.Contains(m, "暂存") || slices.Contains(m, "暂存 2 项") {
+	if m := shownMenu(t, tt); !slices.Contains(m, "暂存") || slices.Contains(m, "暂存 2 项") {
 		t.Errorf("没选中的那行的菜单 %q", m)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	tt.Frame()
 	if got := chosen(); len(got) != 2 {
 		t.Fatalf("右键没选中的那行改了选中: %q", got)
@@ -319,10 +319,10 @@ func TestTagsMenu(t *testing.T) {
 	tt.Frame()
 
 	mustClick(t, tt, "分支 main")
-	if m := tt.Menu(); !slices.Contains(m, "标签") || slices.Index(m, "标签") > slices.Index(m, "新建分支…") {
+	if m := shownMenu(t, tt); !slices.Contains(m, "标签") || slices.Index(m, "标签") > slices.Index(m, "新建分支…") {
 		t.Fatalf("分支菜单：%v", m)
 	}
-	if err := tt.ChooseMenuItem("标签", "v1 · "+git.Ago(r.Tags[0].Date)); err != nil {
+	if err := chooseMenu(t, tt, "标签", "v1 · "+git.Ago(r.Tags[0].Date)); err != nil {
 		t.Fatal(err)
 	}
 	wait("标签的历史", func() bool { return loaded() && h.RefKind == app.RefTag && len(h.Commits) == 1 })
@@ -348,10 +348,10 @@ func TestTagsMenu(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("标签删了", func() bool { return idle(r)() && len(r.Tags) == 0 })
 	mustClick(t, tt, "分支 main")
-	if err := tt.ChooseMenuItem("标签", "没有标签"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "标签", "没有标签"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("没有标签时：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 }
 
 // 仓库菜单的"远程"子菜单：每个远程"origin  地址"（复制地址、提示一句）和"抓取 origin"（git fetch --prune origin），
@@ -379,25 +379,25 @@ func TestRemotesMenu(t *testing.T) {
 		if err := tt.RightClick(row); err != nil {
 			t.Fatal(err)
 		}
-		if !slices.Contains(tt.Menu(), "远程") {
-			t.Fatalf("仓库菜单：%v", tt.Menu())
+		if !slices.Contains(shownMenu(t, tt), "远程") {
+			t.Fatalf("仓库菜单：%v", shownMenu(t, tt))
 		}
 	}
 
 	open()
-	if err := tt.ChooseMenuItem("远程", "origin  "+up.Root); err != nil {
+	if err := chooseMenu(t, tt, "远程", "origin  "+up.Root); err != nil {
 		t.Fatal(err)
 	}
 	if copied != up.Root || a.Toast != "已复制 origin 的地址" && !tt.HasText("已复制 origin 的地址") {
 		t.Errorf("复制地址：%q，提示 %q", copied, a.Toast)
 	}
 	open()
-	if err := tt.ChooseMenuItem("远程", "推送："+up.Root); err == nil || !strings.Contains(err.Error(), "no item") {
+	if err := chooseMenu(t, tt, "远程", "推送："+up.Root); err == nil || !strings.Contains(err.Error(), "no item") {
 		t.Errorf("推送地址一样时不该有那一行：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	open()
-	if err := tt.ChooseMenuItem("远程", "抓取 origin"); err != nil {
+	if err := chooseMenu(t, tt, "远程", "抓取 origin"); err != nil {
 		t.Fatal(err)
 	}
 	wait("抓取", func() bool {
@@ -412,17 +412,17 @@ func TestRemotesMenu(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("推送地址", func() bool { return idle(r)() && len(r.Extra.Remotes) == 1 && r.Extra.Remotes[0].Push == push })
 	open()
-	if err := tt.ChooseMenuItem("远程", "推送："+push); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "远程", "推送："+push); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("推送地址：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	repo.Git("remote", "remove", "origin")
 	a.RefreshRepo(r, app.WhyManual)
 	wait("没有远程", func() bool { return idle(r)() && len(r.Extra.Remotes) == 0 })
 	open()
-	if err := tt.ChooseMenuItem("远程", "没有远程"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "远程", "没有远程"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("没有远程：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 }

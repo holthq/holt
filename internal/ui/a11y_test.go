@@ -34,6 +34,7 @@ type accNode struct {
 	Role               int
 	Label, Desc, Place string
 	Parent             int
+	States             uint64
 	X, Y, W, H         float64
 }
 
@@ -92,8 +93,8 @@ func accessTree(t *testing.T, tt *wui.Tester) []accNode {
 		out[i] = accNode{
 			Role: int(field(t, n, "Role").Uint()), Label: field(t, n, "Label").String(),
 			Desc: field(t, n, "Description").String(), Place: field(t, n, "Placeholder").String(),
-			Parent: int(field(t, n, "Parent").Int()),
-			X:      field(t, b, "X").Float(), Y: field(t, b, "Y").Float(), W: field(t, b, "W").Float(), H: field(t, b, "H").Float(),
+			Parent: int(field(t, n, "Parent").Int()), States: field(t, n, "States").Uint(),
+			X: field(t, b, "X").Float(), Y: field(t, b, "Y").Float(), W: field(t, b, "W").Float(), H: field(t, b, "H").Float(),
 		}
 	}
 	return out

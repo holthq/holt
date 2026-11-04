@@ -203,7 +203,7 @@ func TestTreeClicks(t *testing.T) {
 	if k.sel() != "docs/d.md" || a.FileChosen.Len() != 1 || a.CurrentDoc() != nil {
 		t.Fatalf("右键 d.md：选中 %s / %d 项，当前标签 %v", k.sel(), a.FileChosen.Len(), a.CurrentDoc())
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	k.click(0, "a.txt")
 	k.click(wui.Cmd, "b.txt")
 	a.Exec("file.closeAll")
@@ -212,10 +212,10 @@ func TestTreeClicks(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if items := tt.Menu(); a.FileChosen.Len() != 2 || !hasItem(items, "复制 2 项") {
+	if items := shownMenu(t, tt); a.FileChosen.Len() != 2 || !hasItem(items, "复制 2 项") {
 		t.Fatalf("右键多选里的 a.txt：选中 %d 项，菜单 %q", a.FileChosen.Len(), items)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 }
 
 // 右键菜单：文件的暂存 / 取消暂存，没跟踪的只有暂存；添加到 .gitignore（已经忽略的灰着）；
@@ -272,7 +272,7 @@ func TestTreeContextMenus(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	items := tt.Menu()
+	items := shownMenu(t, tt)
 	order := []string{"打开", "新建文件…", "暂存（git add）", "添加到 .gitignore", "在 Finder 中显示", "复制路径", "复制", "粘贴", "创建副本", "重命名…"}
 	last := -1
 	for _, it := range order {
@@ -285,10 +285,10 @@ func TestTreeContextMenus(t *testing.T) {
 	if hasItem(items, "删除文件…") {
 		t.Fatalf("文件树里没跟踪的文件不该有删除文件：%q", items)
 	}
-	if err := tt.ChooseMenuItem("粘贴"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "粘贴"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Fatalf("还没复制过，粘贴应该灰着：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	// 暂存、取消暂存（和 Git 栏一样的命令）
 	staged := func(kind git.Kind) func() bool {
@@ -318,10 +318,10 @@ func TestTreeContextMenus(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("添加到 .gitignore"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "添加到 .gitignore"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Fatalf("已经被忽略的，添加到 .gitignore 应该灰着：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	a.ToggleShowIgnored()
 	wait("不显示被忽略的", func() bool { return !tt.HasText("new.txt") })
 
@@ -394,8 +394,8 @@ func TestTreeContextMenus(t *testing.T) {
 	x, y := k.blank("other（仓库）")
 	tt.RightClickAt(x, y)
 	tt.Frame()
-	if err := tt.ChooseMenuItem("展开所有仓库有改动的目录"); err != nil {
-		t.Fatalf("空白处的菜单 %q: %v", tt.Menu(), err)
+	if err := chooseMenu(t, tt, "展开所有仓库有改动的目录"); err != nil {
+		t.Fatalf("空白处的菜单 %q: %v", shownMenu(t, tt), err)
 	}
 	tt.Frame()
 	if !rp.Files.Open["docs"] || !ro.Expanded {
@@ -425,8 +425,8 @@ func TestTreeContextMenus(t *testing.T) {
 	x, y = k.blank("other（仓库）")
 	tt.RightClickAt(x, y)
 	tt.Frame()
-	if !slices.Contains(tt.Menu(), "撤销：复制 o.txt → 仓库根目录") {
-		t.Fatalf("空白处的菜单 %q", tt.Menu())
+	if !slices.Contains(shownMenu(t, tt), "撤销：复制 o.txt → 仓库根目录") {
+		t.Fatalf("空白处的菜单 %q", shownMenu(t, tt))
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 }

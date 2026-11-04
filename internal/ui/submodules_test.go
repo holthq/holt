@@ -72,12 +72,12 @@ func TestSubmodules(t *testing.T) {
 		if err := tt.RightClick(r.Name + "（仓库）"); err != nil {
 			t.Fatal(err)
 		}
-		if !slices.Contains(tt.Menu(), "子模块") {
-			t.Fatalf("仓库菜单：%v", tt.Menu())
+		if !slices.Contains(shownMenu(t, tt), "子模块") {
+			t.Fatalf("仓库菜单：%v", shownMenu(t, tt))
 		}
 	}
 	open()
-	if err := tt.ChooseMenuItem("子模块", "vendor/lib 2 · "+git.Short(head)+" · 未初始化"); err != nil {
+	if err := chooseMenu(t, tt, "子模块", "vendor/lib 2 · "+git.Short(head)+" · 未初始化"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

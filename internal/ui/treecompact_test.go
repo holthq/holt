@@ -198,10 +198,10 @@ func TestTreeStickyStack(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if !hasItem(tt.Menu(), "从列表移除") {
-		t.Fatalf("钉着的仓库行右键菜单 %q", tt.Menu())
+	if !hasItem(shownMenu(t, tt), "从列表移除") {
+		t.Fatalf("钉着的仓库行右键菜单 %q", shownMenu(t, tt))
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	tt.Frame()
 	// 点它滚回真的仓库行
 	pb, _ := tt.Find("收起 big") // 钉着的那行的箭头（真的仓库行没画）

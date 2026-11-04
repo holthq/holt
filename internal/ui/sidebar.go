@@ -161,7 +161,7 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 			box := wui.Column(c).Grow(1).MinHeight(0).Clip() // 吸顶栈叠在列表上面
 			box.Children(func() {
 				list = sideList(a, c, &a.FileList, len(rows), func(row wui.ListRow) { treeRow(a, row, rows[row.Index], dragOf, g) }).
-					ContextMenu(func(m *wui.Menu) { treeMenu(a, m) }). // 行下面的空白处
+					PopoverMenu(func(m *wui.Menu) { treeMenu(a, m) }). // 行下面的空白处
 					HandleInput(treeCommands(a))
 				stickyStack(a, c, rows, box.Bounds())
 			})
@@ -257,6 +257,11 @@ func treeCommands(a *app.App) func(wui.InputEvent) bool {
 		return true
 	}
 }
+
+// 文件树里的右键菜单（空白处 treeMenu、行 rowMenu、仓库行、钉在顶上的行、压缩目录的每一段）都用 PopoverMenu
+// （mygo 画在窗口里），不用 ContextMenu（系统的 NSMenu）：mygo 弹系统菜单用的是
+// popUpMenuPositioningItem:nil，左上角钉在点的地方，下面放不下时 AppKit 不往上翻，而是把菜单折起来、
+// 底下出滚动箭头（issue #6）。PopoverMenu 下面放不下就往上开，窗口本身都放不下才滚。见 docs/mygo-pitfalls.md。
 
 // treeMenu 是文件树空白处的右键菜单。
 func treeMenu(a *app.App, m *wui.Menu) {
@@ -378,7 +383,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if filtering {
 		indent = 22
 	}
-	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) { rowMenu(a, m, row.Index, tr, tr.Row) })
+	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).PopoverMenu(func(m *wui.Menu) { rowMenu(a, m, row.Index, tr, tr.Row) })
 	drawGuides(el, tr, g)
 	if b := span(a, row, el); b.H > 0 {
 		a.TreeRowH = b.H
@@ -530,7 +535,7 @@ func chainName(c *wui.Context, tr app.TreeRow, muted wui.Color, col *wui.Color, 
 			seg := tr.Row
 			seg.Path, seg.Name, seg.Chain = p, files.BaseName(p), nil
 			name := wui.Text(c.Key(i), seg.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1).
-				ContextMenu(func(m *wui.Menu) { menu(m, seg) })
+				PopoverMenu(func(m *wui.Menu) { menu(m, seg) })
 			if col != nil && i == len(tr.Chain)-1 {
 				name.TextColor(*col)
 			}
@@ -1011,7 +1016,7 @@ func stickyDir(a *app.App, c *wui.Context, tr app.TreeRow) wui.Element {
 	t := c.Theme()
 	muted := t.TextMuted
 	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, treeIndent(tr.Depth)).Gap(treeGap).AlignItems(wui.Center).
-		ContextMenu(func(m *wui.Menu) { fileMenu(a, m, tr.Repo, tr.Row) }).Label(i18n.Tf("%s（钉在顶上）", tr.Label()))
+		PopoverMenu(func(m *wui.Menu) { fileMenu(a, m, tr.Repo, tr.Row) }).Label(i18n.Tf("%s（钉在顶上）", tr.Label()))
 	el.Children(func() {
 		chevron(c, iconTool, true, tr.Label(), muted, func() { a.ToggleDir(tr.Repo, tr.Path) })
 		folderGlyph(a, c, dirsOf(tr.Row), true, tr.Ignored, false)
@@ -1037,7 +1042,7 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 	if sel {
 		muted, mark, ok = t.AccentText.Alpha(0.75), t.AccentText, t.AccentText
 	}
-	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center).ContextMenu(menu)
+	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center).PopoverMenu(menu)
 	el.Children(func() {
 		if filtering {
 			wui.Box(c).Width(16).Shrink(0)
