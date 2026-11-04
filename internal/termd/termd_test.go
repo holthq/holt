@@ -55,11 +55,13 @@ func startServer(t *testing.T, idle time.Duration) (*Server, string) {
 	return s, sock
 }
 
+// shReq 起一个干净的 /bin/sh。HISTFILE 置空：shell 挂断时会把历史写进 $HOME/.bash_history，
+// 而 Server.Stop 不等 shell 退，慢机器上这一笔会落在 t.TempDir 删目录的时候（"directory not empty"）。
 func shReq(t *testing.T) NewReq {
 	home := t.TempDir()
 	return NewReq{
 		Shell: "/bin/sh", Dir: home, Cols: 80, Rows: 24,
-		Env: []string{"HOME=" + home, "PATH=/usr/bin:/bin:/usr/sbin:/sbin", "PS1=$ ", "ENV="},
+		Env: []string{"HOME=" + home, "PATH=/usr/bin:/bin:/usr/sbin:/sbin", "PS1=$ ", "ENV=", "HISTFILE="},
 	}
 }
 
