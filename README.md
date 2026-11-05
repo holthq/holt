@@ -57,7 +57,7 @@ mygo 已在 `go.mod` 中声明，无需单独安装。如果本机 Go 版本较�
 ## 用法
 
 按 ⌘O 打开文件夹或 `.code-workspace` 文件，也可以在命令行中运行 `open -a Grove <路径>`。
-⌘1–9 跳转到对应序号的仓库，⌘J 显示或隐藏终端。
+⌘1–9 跳转到对应序号的仓库，⌘J 显示或隐藏终端，⇧⌘J 把底栏最大化（占掉编辑区，再按一下还原；双击底栏标题行的空白处也行）。
 完整快捷键见 [docs/shortcuts.md](docs/shortcuts.md)。
 
 设置和会话保存在 `~/Library/Application Support/Grove/`，日志保存在 `~/Library/Logs/Grove/`。

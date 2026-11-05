@@ -186,6 +186,7 @@ func (a *App) FocusGroup(g *Group) {
 		return
 	}
 	a.markNav()
+	a.showEditor()
 	a.swapTo(g)
 	if d := a.CurrentDoc(); d != nil {
 		a.visit(d.Key())
@@ -245,6 +246,7 @@ func (a *App) MoveDocTo(d *docs.Doc, g *Group, at int) {
 		return
 	}
 	a.markNav()
+	a.showEditor()
 	a.takeOut(from, d)
 	a.swapTo(g)
 	if at < 0 || at > len(a.Docs) {

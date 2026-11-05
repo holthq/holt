@@ -432,6 +432,8 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 同一个文件要在两组里同时看，用镜像标签（`app/mirror.go`，⇧⌘\）：和正本共用缓冲区和对比基准，光标、滚动、折叠和查找状态各自独立。读盘、保存和切换编码等操作只对一份文档执行，再通过 `relink` 同步到其他镜像。打开文件总是找正本（`Copy` 为 0）。
 
+最大化底栏（`app/bottommax.go`，⇧⌘J）：`App.BottomMax`，每个窗口独立、只在内存里；`ui/view.go` 的 `center` 在 `BottomMaxed()` 时不画主区和底栏旁边的拖条，底栏 `Grow(1)` 占掉那块，`St.BottomH` / `St.TermW` 不动。关底栏（`ToggleArea` / `ToggleProblems`）、进禅模式、切到或打开编辑器标签（`SelectDoc` / `FocusGroup` / `MoveDocTo` 里的 `showEditor`）时还原。
+
 禅模式（`app/zen.go`，⌃⌘Z）：三个面板全关，编辑器组居中；每个窗口独立，不持久化，存 state.json 时写进入前的面板状态。连按两下 Esc 退出。
 
 ### 其他

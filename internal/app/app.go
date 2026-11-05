@@ -285,6 +285,8 @@ type App struct {
 	FocusTerm bool     // 下一帧把焦点给当前仓库当前终端标签里有键盘的那一格（新建、分屏之后，量内存时的 WORKBENCH_FOCUS=terminal）
 	FocusTab  *TermTab // FocusTerm 给的是哪个终端标签（编辑器区的、或指名的底栏标签）；nil 为底栏当前的
 
+	BottomMax bool // 底栏最大化着（bottommax.go，不持久；底栏关着时不算，看 BottomMaxed）
+
 	// 禅模式（zen.go）
 	Zen    bool
 	zenWas [3]bool   // 进禅模式时侧栏、右栏、底栏的开关

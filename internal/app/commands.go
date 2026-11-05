@@ -183,6 +183,8 @@ func buildCommands() []*Command {
 			Checked: func(a *App) bool { return a.St.Sidebar }, Run: func(a *App) { a.ToggleArea(&a.St.Sidebar) }},
 		{ID: "view.bottom", Title: "底栏（终端 / 输出）", Group: "视图", Mods: cmd, Key: ui.KeyJ,
 			Checked: func(a *App) bool { return a.St.BottomBar }, Run: func(a *App) { a.ToggleArea(&a.St.BottomBar) }},
+		{ID: "view.maximizeBottom", Title: "最大化底栏", Group: "视图", Mods: shift | cmd, Key: ui.KeyJ,
+			Checked: (*App).BottomMaxed, Run: (*App).ToggleBottomMax},
 		{ID: "view.problems", Title: "问题面板", Group: "视图", Mods: shift | cmd, Key: ui.KeyM,
 			Checked: (*App).ProblemsShown, Run: (*App).ToggleProblems},
 		{ID: "lint.clear", Title: "清空问题", Group: "视图", Enabled: (*App).HasProblems, Run: (*App).ClearProblems},

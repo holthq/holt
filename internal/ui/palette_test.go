@@ -90,7 +90,7 @@ func TestPalette(t *testing.T) {
 		t.Fatal("Esc 没关掉面板")
 	}
 
-	// ⇧⌘P：命令，显示分组和快捷键；↓ 选第二项，回车执行
+	// ⇧⌘P：命令，显示分组和快捷键；↓↓ 选第三项，回车执行
 	tt.Key(wui.Cmd|wui.Shift, wui.KeyP)
 	tt.Frame()
 	if !p.Open || p.Text != ">" || !tt.Focused(input) {
@@ -101,14 +101,15 @@ func TestPalette(t *testing.T) {
 	tt.Frame()
 	mustText(t, tt, "命令 侧栏")
 	mustText(t, tt, "⌘B")
-	if len(p.Items) != 4 || p.Items[0].Text != "侧栏" || p.Items[1].Text != "右栏（历史）" || p.Items[3].Kind != app.ItemTerm {
+	if len(p.Items) != 5 || p.Items[0].Text != "侧栏" || p.Items[2].Text != "右栏（历史）" || p.Items[4].Kind != app.ItemTerm {
 		t.Fatalf(">栏：%+v", p.Items)
 	}
 	right := a.St.RightBar
 	tt.Key(0, wui.KeyDown)
+	tt.Key(0, wui.KeyDown)
 	tt.Key(0, wui.KeyEnter)
 	tt.Frame()
 	if p.Open || a.St.RightBar == right {
-		t.Fatalf("回车没执行第二项：open=%v right=%v", p.Open, a.St.RightBar)
+		t.Fatalf("回车没执行第三项：open=%v right=%v", p.Open, a.St.RightBar)
 	}
 }

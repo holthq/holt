@@ -543,6 +543,8 @@
   "关闭已保存的": "Close Saved",
   "关闭已保存的标签": "Close Saved Tabs",
   "关闭底栏": "Close bottom panel",
+  "最大化底栏": "Maximize Bottom Panel",
+  "还原底栏": "Restore Bottom Panel",
   "关闭有键盘的那一格分屏": "Close the focused split pane",
   "关闭查找": "Close Find",
   "关闭标签": "Close Tab",

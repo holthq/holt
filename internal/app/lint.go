@@ -502,7 +502,7 @@ func (a *App) ProblemsShown() bool { return a.St.BottomBar && a.BottomTab == Bot
 // ToggleProblems 是“问题面板”（⇧⌘M）：开在问题页就关掉底栏，不然开底栏、换到问题页。
 func (a *App) ToggleProblems() {
 	if a.ProblemsShown() {
-		a.St.BottomBar = false
+		a.St.BottomBar, a.BottomMax = false, false
 	} else {
 		a.St.BottomBar, a.BottomTab = true, BottomProblems
 	}

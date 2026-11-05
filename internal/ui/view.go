@@ -86,27 +86,39 @@ func center(a *app.App, c *wui.Context) {
 	if a.Zen && !a.St.Sidebar && !a.St.RightBar && !a.St.BottomBar && row.OverlayShortcut(0, wui.KeyEscape) {
 		a.ZenEsc(c.Now())
 	}
+	if !a.St.BottomBar {
+		a.BottomMax = false // 底栏不管怎么关的（换工作区之类），下次打开都是普通高度
+	}
 	row.Children(func() {
 		right := a.St.Settings.TermDock == "right"
-		col := wui.Column(c).Grow(1).MinWidth(0).MinHeight(0).AlignItems(wui.Stretch)
-		if zen {
-			col.MaxWidth(app.ZenWidth)
-		}
-		col.Children(func() {
-			mainArea(a, c.Key("main"))
-			if a.St.BottomBar && !right {
-				if a.St.BottomH == 0 {
-					a.St.BottomH = defaultBottomH
-				}
-				resizer(c.Key("bottomResize"), i18n.T("调整底栏高度"), false, false, &a.St.BottomH, 80, 1200, a.SaveState)
-				bottomBar(a, c.Key("bottom"))
+		maxed := a.BottomMaxed() // 底栏最大化：不画主区和它旁边的拖条，底栏占掉那块地方
+		if !(maxed && right) {
+			col := wui.Column(c).Grow(1).MinWidth(0).MinHeight(0).AlignItems(wui.Stretch)
+			if zen {
+				col.MaxWidth(app.ZenWidth)
 			}
-		})
+			col.Children(func() {
+				if !maxed {
+					mainArea(a, c.Key("main"))
+				}
+				if a.St.BottomBar && !right {
+					if a.St.BottomH == 0 {
+						a.St.BottomH = defaultBottomH
+					}
+					if !maxed {
+						resizer(c.Key("bottomResize"), i18n.T("调整底栏高度"), false, false, &a.St.BottomH, 80, 1200, a.SaveState)
+					}
+					bottomBar(a, c.Key("bottom"))
+				}
+			})
+		}
 		if a.St.BottomBar && right { // 设置里把终端放在右边：底栏整个挪到主区右边
 			if a.St.TermW == 0 {
 				a.St.TermW = defaultTermW
 			}
-			resizer(c.Key("termResize"), i18n.T("调整终端宽度"), true, false, &a.St.TermW, 240, 1200, a.SaveState)
+			if !maxed {
+				resizer(c.Key("termResize"), i18n.T("调整终端宽度"), true, false, &a.St.TermW, 240, 1200, a.SaveState)
+			}
 			bottomBar(a, c.Key("bottom"))
 		}
 		if a.St.RightBar {

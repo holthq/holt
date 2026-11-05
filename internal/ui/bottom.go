@@ -19,7 +19,9 @@ func bottomBar(a *app.App, c *wui.Context) {
 	r := a.TermRepo() // 没有仓库时是家目录
 
 	panel := wui.Column(c).Shrink(0)
-	if a.St.Settings.TermDock == "right" {
+	if a.BottomMaxed() { // 最大化：占掉编辑区那块（ui/view.go 的 center 不画主区和拖条）
+		panel.Grow(1).MinWidth(0).MinHeight(0)
+	} else if a.St.Settings.TermDock == "right" {
 		panel.Width(a.St.TermW)
 	} else {
 		panel.Height(a.St.BottomH)
@@ -53,10 +55,15 @@ func bottomBar(a *app.App, c *wui.Context) {
 				bottomTab(a, c, app.BottomProblems, iconAlert, problemsTabLabel(a))
 			})
 			// shell 的标题只拿标签和按钮剩下的地方（Basis 0）：长标题（user@host:很长的路径）先省略，标签不让
+			// 双击标题行的空白处（标签和按钮以外）最大化 / 还原底栏
+			var blank wui.Element
 			if onTerm && pane != nil && pane.Title != "" && pane.Title != r.Name {
-				wui.Text(c, pane.Title).FontSize(11).TextColor(t.TextMuted).SingleLine().Ellipsis("…").Basis(0).Grow(1).MinWidth(0).Margin(0, 0, 0, 6)
+				blank = wui.Text(c.Key("blank"), pane.Title).FontSize(11).TextColor(t.TextMuted).SingleLine().Ellipsis("…").Basis(0).Grow(1).MinWidth(0).Margin(0, 0, 0, 6)
 			} else {
-				wui.Spacer(c).Grow(1)
+				blank = wui.Box(c.Key("blank")).Grow(1).MinWidth(0).AlignSelf(wui.Stretch)
+			}
+			if blank.DoubleClicked() {
+				a.Exec("view.maximizeBottom")
 			}
 			switch {
 			case a.BottomTab == app.BottomProblems:
@@ -82,6 +89,11 @@ func bottomBar(a *app.App, c *wui.Context) {
 					iconButton(c, iconPaneClose, app.Tip(i18n.T("关闭有键盘的那一格分屏"), "term.closePane"), func() { a.ClosePane(r, tab, pane) })
 				}
 				iconButton(c, iconRefresh, i18n.T("重新启动终端"), func() { a.RestartPane(r, pane) })
+			}
+			if a.BottomMaxed() {
+				iconButton(c, iconMinimize, app.Tip(i18n.T("还原底栏"), "view.maximizeBottom"), func() { a.Exec("view.maximizeBottom") })
+			} else {
+				iconButton(c, iconMaximize, app.Tip(i18n.T("最大化底栏"), "view.maximizeBottom"), func() { a.Exec("view.maximizeBottom") })
 			}
 			iconButton(c, iconClose, app.Tip(i18n.T("关闭底栏"), "view.bottom"), func() { a.Exec("view.bottom") })
 		})

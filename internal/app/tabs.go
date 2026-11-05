@@ -53,6 +53,7 @@ func (a *App) SelectDoc(i int) {
 		return
 	}
 	a.markNav()
+	a.showEditor()
 	a.DocSel = i
 	a.visit(a.Docs[i].Key())
 	a.noteRecent(a.Docs[i])
@@ -832,6 +833,9 @@ func (a *App) ToggleSidebarMode(mode string) {
 // ToggleArea 开关侧栏 / 右栏 / 底栏（⌘B / ⌥⌘B / ⌘J、标题栏按钮）。
 func (a *App) ToggleArea(area *bool) {
 	*area = !*area
+	if area == &a.St.BottomBar && !*area {
+		a.BottomMax = false // 关了底栏，下次打开是普通高度
+	}
 	if area == &a.St.RightBar && *area {
 		if r := a.Current(); r != nil {
 			a.EnsureHistory(r)

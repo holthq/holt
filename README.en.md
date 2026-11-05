@@ -72,7 +72,7 @@ notarization and DMG packaging instructions.
 ## Usage
 
 Press ⌘O to open a folder or a `.code-workspace` file, or run `open -a Grove <path>` from the command line.
-Use ⌘1–9 to jump to the corresponding repo and ⌘J to show or hide the terminal.
+Use ⌘1–9 to jump to the corresponding repo and ⌘J to show or hide the terminal; ⇧⌘J maximizes the bottom panel over the editor area (press again, or double-click the blank part of its header, to restore).
 See [docs/shortcuts.md](docs/shortcuts.md) for the full shortcut list.
 
 Settings and sessions are saved in `~/Library/Application Support/Grove/`. Logs are saved in `~/Library/Logs/Grove/`.

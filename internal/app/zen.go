@@ -19,6 +19,7 @@ func (a *App) ToggleZen() {
 		a.St.Sidebar, a.St.RightBar, a.St.BottomBar = a.zenWas[0], a.zenWas[1], a.zenWas[2]
 	} else {
 		a.Zen = true
+		a.BottomMax = false
 		a.zenWas = [3]bool{a.St.Sidebar, a.St.RightBar, a.St.BottomBar}
 		a.St.Sidebar, a.St.RightBar, a.St.BottomBar = false, false, false
 		a.FocusDoc = true
