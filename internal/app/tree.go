@@ -276,7 +276,8 @@ func (a *App) LoadFiles(r *Repo) {
 			}
 		}
 		if plain {
-			paths, dirs, cands, err = files.Walk(r.ctx, r.Root)
+			// 不往里走的 node_modules、点开头的目录当被忽略的目录列（不管"显示被忽略的文件"）
+			paths, dirs, cands, ignored, err = files.Walk(r.ctx, r.Root)
 		}
 		var links map[string]files.Link
 		if err == nil {

@@ -4,6 +4,7 @@ import (
 	"os"
 	"path/filepath"
 	"slices"
+	"strings"
 	"testing"
 
 	"github.com/lemoeade/grove/internal/testutil"
@@ -34,7 +35,7 @@ func TestPlainFolder(t *testing.T) {
 		t.Fatalf("plain=%v err=%v 仓库 plain=%v status=%+v", r.Plain, r.Err, gr.Plain, r.Status)
 	}
 
-	// 文件树：直接列目录，不进 node_modules 和点开头的目录
+	// 文件树：直接列目录，node_modules 和点开头的目录列着但不往里走（见 TestPlainDotDirs）
 	a.ToggleRepo(r)
 	wait("文件树", func() bool { return r.Files.Loaded && !r.Files.Loading })
 	if r.Files.Err != nil || !slices.Equal(r.Files.Paths, []string{"a.txt", "sub/b.go"}) {
@@ -117,4 +118,84 @@ func TestPlainFolder(t *testing.T) {
 	if _, err := os.Stat(filepath.Join(dir, ".git")); err != nil {
 		t.Fatal(err)
 	}
+}
+
+// 普通文件夹里点开头的目录、node_modules 当被忽略的目录列（不管"显示被忽略的文件"）：树里有、收着、灰显，
+// 里面的不在 Paths 里（⌘P 搜不到），展开时读一层；.git 不列；根下新建的点目录监听到了也进树。
+func TestPlainDotDirs(t *testing.T) {
+	dir := filepath.Join(t.TempDir(), "py")
+	for _, f := range []string{"main.py", ".coverage", ".venv/bin/python", ".venv/pyvenv.cfg", ".pytest_cache/README.md",
+		"node_modules/m/i.js", ".git/HEAD", ".DS_Store"} {
+		p := filepath.Join(dir, filepath.FromSlash(f))
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte("x\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	os.Remove(filepath.Join(dir, ".git", "HEAD")) // 空的 .git 目录：git 不认它是仓库，Walk 也不列
+	ws := wsFile(t, "py", dir)
+	a, wait := newTestApp(t, ws)
+	defer a.Close()
+	a.Start()
+	r := a.Repos[0]
+	wait("读完", func() bool { return idle(r)() && r.Watching() })
+	if !r.Plain {
+		t.Fatal("不是普通文件夹")
+	}
+	if !r.Expanded { // 只有一个仓库时本来就展开着
+		a.ToggleRepo(r)
+	}
+	wait("文件树", func() bool { return r.Files.Loaded && !r.Files.Loading })
+	if !slices.Equal(r.Files.Paths, []string{".coverage", "main.py"}) {
+		t.Fatalf("文件：%v %v", r.Files.Paths, r.Files.Err)
+	}
+	row := func(p string) (TreeRow, bool) {
+		for _, row := range a.TreeRows() {
+			if row.Repo == r && !row.Root && row.Path == p {
+				return row, true
+			}
+		}
+		return TreeRow{}, false
+	}
+	for _, p := range []string{".pytest_cache", ".venv", "node_modules"} {
+		if row, ok := row(p); !ok || !row.Dir || row.Open || !row.Ignored {
+			t.Errorf("%s：有 %v、目录 %v、展开 %v、灰显 %v", p, ok, row.Dir, row.Open, row.Ignored)
+		}
+	}
+	for _, p := range []string{".git", ".DS_Store", ".venv/pyvenv.cfg"} {
+		if _, ok := row(p); ok {
+			t.Errorf("树里有 %s", p)
+		}
+	}
+
+	// 展开 .venv：读到里面一层
+	a.ToggleDir(r, ".venv")
+	if row, ok := row(".venv/bin"); !ok || !row.Dir || !row.Ignored {
+		t.Errorf(".venv/bin：%v %+v", ok, row)
+	}
+	if row, ok := row(".venv/pyvenv.cfg"); !ok || !row.Ignored {
+		t.Errorf(".venv/pyvenv.cfg：%v %+v", ok, row)
+	}
+
+	// ⌘P：搜不到 .venv 里的
+	p := &a.Palette
+	a.OpenPalette("pyvenv")
+	a.UpdatePalette()
+	if got := itemTexts(p.Items); slices.ContainsFunc(got, func(s string) bool { return strings.Contains(s, "pyvenv") }) {
+		t.Errorf("⌘P 搜到了 .venv 里的：%v", got)
+	}
+	a.ClosePalette()
+
+	// 根下新建 .cache/、删掉 .pytest_cache/：树跟着变
+	if err := os.Mkdir(filepath.Join(dir, ".cache"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	if err := os.RemoveAll(filepath.Join(dir, ".pytest_cache")); err != nil {
+		t.Fatal(err)
+	}
+	wait("新的点目录进树", func() bool {
+		c, ok := row(".cache")
+		_, old := row(".pytest_cache")
+		return ok && c.Ignored && !old
+	})
 }

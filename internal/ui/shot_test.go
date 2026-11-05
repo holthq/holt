@@ -931,3 +931,48 @@ func TestScreenshotSplitEditors(t *testing.T) {
 	tt.Frame()
 	writeShot(t, tt, dir, "split-editors.png")
 }
+
+// TestScreenshotPlainTree 是普通文件夹文件树的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一张：
+// 点开头的目录和 node_modules 灰显、收着，.venv 展开读了一层；.coverage 这样的点文件照常。在临时目录里做。
+func TestScreenshotPlainTree(t *testing.T) {
+	dir := os.Getenv("WORKBENCH_SHOT")
+	if dir == "" {
+		t.Skip("设置 WORKBENCH_SHOT=目录 才渲染截图")
+	}
+	root := filepath.Join(t.TempDir(), "py-service")
+	for _, f := range []string{"main.py", "models.py", ".coverage", "alerting/rules.py", "api/routes.py",
+		".venv/bin/python", ".venv/pyvenv.cfg", ".venv/lib/x", ".pytest_cache/README.md", ".ruff_cache/x", "node_modules/m/i.js"} {
+		p := filepath.Join(root, filepath.FromSlash(f))
+		os.MkdirAll(filepath.Dir(p), 0o755)
+		if err := os.WriteFile(p, []byte("x = 1\n"), 0o644); err != nil {
+			t.Fatal(err)
+		}
+	}
+	stateDir := t.TempDir()
+	st := workspace.Default()
+	st.Settings.Shell, st.BottomBar, st.SidebarMode = "/bin/sh", false, workspace.ModeFiles
+	if err := workspace.SaveState(stateDir, st); err != nil {
+		t.Fatal(err)
+	}
+	a, tt, wait := newUI(t, testutil.Workspace(t, root), stateDir)
+	tt.SetScale(2)
+	tt.SetTitleBar(shotBar)
+	a.Start()
+	r := a.Repos[0]
+	wait("读完", loaded(a))
+	a.EnsureFiles(r)
+	wait("文件树", func() bool { return r.Files.Loaded && !r.Files.Loading })
+	a.ToggleDir(r, ".venv")
+	a.St.SidebarW = 300
+	for _, dark := range []bool{false, true} {
+		tt.SetDark(dark)
+		tt.Frame()
+		tt.Advance(500 * time.Millisecond)
+		tt.Frame()
+		name := "plain-tree-light.png"
+		if dark {
+			name = "plain-tree-dark.png"
+		}
+		writeShot(t, tt, dir, name)
+	}
+}

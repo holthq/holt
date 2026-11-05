@@ -173,7 +173,7 @@ func run(ctx context.Context, roots []Root, q Query) Result {
 		}
 		if r.Files == nil {
 			if r.Plain {
-				r.Files, _, _, err = files.Walk(ctx, r.Dir)
+				r.Files, _, _, _, err = files.Walk(ctx, r.Dir) // node_modules、点开头的目录不进
 			} else {
 				r.Files, err = git.LsFiles(ctx, r.Dir)
 			}

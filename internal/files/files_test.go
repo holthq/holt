@@ -153,8 +153,8 @@ func BenchmarkTree10k(b *testing.B) {
 	}
 }
 
-// 普通文件夹：列出文件和目录（空目录也在），不进 .git、node_modules、点开头的目录，不列 .DS_Store；
-// 点开头的文件照列；取消了返回 ctx 的错。
+// 普通文件夹：列出文件和目录（空目录也在），不列也不进 .git，不列 .DS_Store；node_modules、点开头的目录列进 lazy、
+// 不往里走（里面的文件不列），树里当被忽略的目录（收着、展开时读一层）；点开头的文件照列；取消了返回 ctx 的错。
 func TestWalk(t *testing.T) {
 	root := t.TempDir()
 	for _, f := range []string{"b.txt", "a/x.go", "a/sub/y.go", ".env", ".DS_Store", "a/.DS_Store",
@@ -170,7 +170,10 @@ func TestWalk(t *testing.T) {
 	if err := os.MkdirAll(filepath.Join(root, "empty"), 0o755); err != nil {
 		t.Fatal(err)
 	}
-	paths, dirs, _, err := Walk(context.Background(), root)
+	if err := os.MkdirAll(filepath.Join(root, ".empty"), 0o755); err != nil {
+		t.Fatal(err)
+	}
+	paths, dirs, _, lazy, err := Walk(context.Background(), root)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -180,17 +183,34 @@ func TestWalk(t *testing.T) {
 	if want := []string{"a", "a/sub", "empty"}; !reflect.DeepEqual(dirs, want) {
 		t.Errorf("目录 %v，要 %v", dirs, want)
 	}
+	if want := []string{".cache/", ".empty/", "a/node_modules/", "node_modules/"}; !reflect.DeepEqual(lazy, want) {
+		t.Errorf("不往里走的目录 %v，要 %v", lazy, want)
+	}
 	tr := Tree{Open: map[string]bool{"a": true}}
-	tr.Done(tr.Start(), paths, nil, nil, dirs...)
-	if got, want := names(tr.Rows(0, nil, nil, nil)), []string{"0:a", "1:a/sub", "1:a/x.go", "0:empty", "0:.env", "0:b.txt"}; !reflect.DeepEqual(got, want) {
+	tr.Done(tr.Start(), paths, nil, lazy, dirs...)
+	if got, want := names(tr.Rows(0, nil, nil, nil)), []string{"0:.cache", "0:.empty", "0:a", "1:a/node_modules", "1:a/sub", "1:a/x.go",
+		"0:empty", "0:node_modules", "0:.env", "0:b.txt"}; !reflect.DeepEqual(got, want) {
 		t.Errorf("树 %v，要 %v", got, want)
+	}
+	for _, r := range tr.Rows(0, nil, nil, nil) {
+		if want := r.Path == ".cache" || r.Path == ".empty" || strings.HasSuffix(r.Path, "node_modules"); r.Ignored != want || r.Open && want {
+			t.Errorf("%s：灰显 %v、展开 %v，要灰显 %v、收着", r.Path, r.Ignored, r.Open, want)
+		}
+	}
+	if tr.Count != 4 || tr.Has(".cache/z") {
+		t.Errorf("不往里走的目录里的文件算进了树：%d 个，有 .cache/z %v", tr.Count, tr.Has(".cache/z"))
+	}
+	tr.Toggle(".cache")
+	tr.ReadLazy(root)
+	if got := tr.Lazy[".cache"]; !reflect.DeepEqual(got, []string{"z"}) {
+		t.Errorf("展开 .cache 读到 %v", got)
 	}
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, _, _, err := Walk(ctx, root); err != context.Canceled {
+	if _, _, _, _, err := Walk(ctx, root); err != context.Canceled {
 		t.Errorf("取消了还返回 %v", err)
 	}
-	if _, _, _, err := Walk(context.Background(), filepath.Join(root, "没有")); err == nil {
+	if _, _, _, _, err := Walk(context.Background(), filepath.Join(root, "没有")); err == nil {
 		t.Error("不存在的目录没报错")
 	}
 }
@@ -471,7 +491,7 @@ func TestLinks(t *testing.T) {
 	if ReadLinks(root, []string{"a.txt", "d/x.txt"}) != nil {
 		t.Error("没有链接也不是 nil")
 	}
-	paths, dirs, links, err := Walk(context.Background(), root)
+	paths, dirs, links, _, err := Walk(context.Background(), root)
 	slices.Sort(links)
 	if err != nil || !slices.Equal(links, []string{"abs", "bad", "d/up", "dl", "l"}) || !slices.Equal(dirs, []string{"d"}) || !slices.Contains(paths, "dl") {
 		t.Errorf("Walk 链接 %v 目录 %v 文件 %v %v", links, dirs, paths, err)

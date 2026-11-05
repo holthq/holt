@@ -30,8 +30,8 @@ type Node struct {
 	Path  string   // 仓库内路径，根为空
 	Dirs  []*Node  // 子目录，按名字排序
 	Files []string // 直接子文件的名字，按名字排序
-	// Ignored 是整个被 .gitignore 忽略的目录（"显示被忽略的文件"开着时）：里面的不在树里，
-	// 展开时一层一层读磁盘（Tree.ReadLazy）。
+	// Ignored 是整个被 .gitignore 忽略的目录（"显示被忽略的文件"开着时），或普通文件夹里 Walk 不往里走的
+	// node_modules、点开头的目录：里面的不在树里，展开时一层一层读磁盘（Tree.ReadLazy）。
 	Ignored bool
 
 	paths []string // Files 的完整路径（仓库内），筛选用；第一次筛选时算，Files 变了清掉（见 filePaths）
@@ -58,7 +58,8 @@ type Tree struct {
 	// 应用里新建的不在这里（只在磁盘上没了时去掉）。
 	found map[string]bool
 
-	// Ignored 是"显示被忽略的文件"开着时并进树里的被忽略的文件和整个被忽略的目录（仓库内路径 → 是不是目录）。
+	// Ignored 是"显示被忽略的文件"开着时并进树里的被忽略的文件和整个被忽略的目录（仓库内路径 → 是不是目录）；
+	// 普通文件夹是 Walk 不往里走的那些目录（不管开关）。
 	// 它们不在 Paths 里、不算进 Count，快速打开和全文搜索都不含；每次 Done 换掉。
 	Ignored map[string]bool
 	// Lazy 是展开过的被忽略目录、指向目录的符号链接里的一层（ReadLazy 读的，目录在前、名字后面带 /，按名字排），
@@ -1146,9 +1147,11 @@ func (t *Tree) Removed(p string) {
 
 // Walk 列出普通文件夹 root（不是 Git 仓库，没有 ls-files 可用）里的文件和目录，仓库内路径、按名字的顺序；
 // links 是其中的符号链接（读目录时就知道，不另外看；不跟进去，指向目录的也算文件）。
-// 不进 .git、node_modules 和点开头的目录，不列 .DS_Store；读不了的子目录跳过；最多 WalkCap 个文件。
+// node_modules 和点开头的目录（.venv、.pytest_cache……）不往里走，列进 lazy（名字后面带 /，同 git.LsIgnored），
+// 调用方当被忽略的目录交给 Tree.Done：树里列着、收着，展开时 ReadLazy 读一层；快速打开、全文搜索不含里面的。
+// .git 不列也不进，不列 .DS_Store；读不了的子目录跳过；最多 WalkCap 个文件。
 // 只读磁盘，可以在后台调用；ctx 取消了就停下返回它的错。
-func Walk(ctx context.Context, root string) (paths, dirs, links []string, err error) {
+func Walk(ctx context.Context, root string) (paths, dirs, links, lazy []string, err error) {
 	err = filepath.WalkDir(root, func(p string, d fs.DirEntry, err error) error {
 		if ctx.Err() != nil {
 			return ctx.Err()
@@ -1159,7 +1162,11 @@ func Walk(ctx context.Context, root string) (paths, dirs, links []string, err er
 		rel, _ := filepath.Rel(root, p)
 		rel = filepath.ToSlash(rel)
 		if d.IsDir() {
-			if name := d.Name(); name == "node_modules" || strings.HasPrefix(name, ".") || err != nil {
+			switch name := d.Name(); {
+			case name == ".git" || err != nil:
+				return filepath.SkipDir
+			case name == "node_modules" || strings.HasPrefix(name, "."):
+				lazy = append(lazy, rel+"/")
 				return filepath.SkipDir
 			}
 			dirs = append(dirs, rel)
@@ -1178,9 +1185,9 @@ func Walk(ctx context.Context, root string) (paths, dirs, links []string, err er
 		return nil
 	})
 	if err != nil {
-		return nil, nil, nil, err
+		return nil, nil, nil, nil, err
 	}
-	return paths, dirs, links, nil
+	return paths, dirs, links, lazy, nil
 }
 
 // Under 是 p 是 dir 本身或在它下面。

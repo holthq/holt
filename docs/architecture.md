@@ -290,6 +290,10 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 ### 普通文件夹
 
 不是 git 仓库的文件夹（`Repo.Plain`）也能开：文件树用 `files.Walk` 遍历（最多 `WalkCap` 50 000 个），监听用 `watch.StartPlain`，Git 栏和历史里不出现；需要 git 的命令遇到 `git.NotRepo` 时禁用。
+`Walk` 不进 `node_modules` 和点开头的目录（`.venv`、`.pytest_cache`……），把它们列成第四个返回值（名字后面带 `/`，同 `LsIgnored`），
+`LoadFiles` 当被忽略的目录传给 `Tree.Done`：树里灰显、收着，展开时 `ReadLazy` 读一层，`Paths` 里没有它们里面的（⌘P、全文搜索不进）。
+这一条不看"显示被忽略的文件"开关，`files.exclude` / "隐藏的文件"照样能藏掉；`.git` 不列也不进，`.DS_Store` 不列。
+监听（`ignorePlain`）照旧不看这些目录里面，根下增删这样的目录是根目录的变化，整棵重读时跟上。
 
 ## 文件监听
 
@@ -315,7 +319,7 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 几种特殊行的处理方式：
 
 - 符号链接：`ReadLinks` 读目标，`Link{Target, Broken, Dir, Up, Deep}`。指向目录的链接能展开（懒读，`lazyLinks`），链接层数超过 `MaxLinkDepth` 8 层或指向祖先时不再展开。
-- 被忽略的文件：默认不显示；`ShowIgnored` 打开时，被忽略的目录由 `LsIgnored` 列出，并以灰色显示，展开时一层层读（`Lazy` / `ReadLazy`，一层最多 `FilterCap` 500 个）。
+- 被忽略的文件：默认不显示；`ShowIgnored` 打开时，被忽略的目录由 `LsIgnored` 列出（普通文件夹不看开关，是 `Walk` 不往里走的那些目录），并以灰色显示，展开时一层层读（`Lazy` / `ReadLazy`，一层最多 `FilterCap` 500 个）。
 - 空目录：git 不记空目录，所以另外找（`FindEmpty`，最多扫 `MaxEmptyScan` 20 000 个目录，跳过被忽略的 `FindEmptySkip`）。大仓库里不一次扫完，展开时再找那一层（`app/emptylazy.go`）。
 - 子模块：一行，不展开（`Row.Sub`）。
 - 只有一个子目录的目录合成一行（`CompactRows`，`Row.Chain`），每段能单独点。
