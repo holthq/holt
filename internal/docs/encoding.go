@@ -328,7 +328,7 @@ func badControl(s string) bool {
 //   - 不是 UTF-8 时只看前 cjkSample 字节；非 ASCII 的字少于 cjkMinRunes 个不打分，按 cjk 的顺序取第一个解得通的；
 //   - 按 Shift-JIS 解出来的非 ASCII 字里（全角）假名 ≥ kanaMin 是 Shift-JIS；
 //   - 按 EUC-KR 解出来的谚文 ≥ hangulMin、而且这些谚文里 koCommon 的常用音节 ≥ koCommonMin 是 EUC-KR
-//     （GB2312 的一级字多半落在 EUC-KR 的谚文区，短的中文能有 100% 的"谚文"，可都是生僻音节，样本里最多 30%，韩文 41–77%）；
+//     （GB2312 的一级字多半落在 EUC-KR 的谚文区，短的中文能有 100% 的"谚文"，可都是生僻音节；每种音节只算一次，本项目界面字符串切成的段里最多 33%，韩文样本 70%）；
 //   - GB18030 和 Big5 都解得通时，双字节字的第二个字节在 40–7E 的 ≥ big5LowMin 是 Big5（GB2312 的字第二个字节都 ≥ A1）。
 const (
 	utf16NulMin = 40
@@ -515,11 +515,14 @@ func share(s []byte, is func(rune) bool) int {
 	return hit * 100 / n
 }
 
-// koShare 是 s 的谚文音节里 koCommon 占百分之几。
+// koShare 是 s 里出现过的谚文音节（每种只算一次）里 koCommon 占百分之几：重复的不算，
+// 免得短短几行中文里同一个字（"编辑"按 EUC-KR 是"긍서"）反复出现、凑成假的常用音节。
 func koShare(s []byte) int {
 	var n, hit int
+	seen := map[rune]bool{}
 	for _, r := range string(s) {
-		if r >= 0xAC00 && r <= 0xD7A3 {
+		if r >= 0xAC00 && r <= 0xD7A3 && !seen[r] {
+			seen[r] = true
 			n++
 			if strings.ContainsRune(koCommon, r) {
 				hit++
