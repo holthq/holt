@@ -14,7 +14,9 @@ import (
 // 设置里的"快捷键"页和录键卡片。
 
 // shortcut 给菜单项标上命令 id 现在的键（keybindings.json 改过的照改后的；去掉了就不标）。
-func shortcut(it *wui.MenuItem, id string) *wui.MenuItem {
+func shortcut[T interface {
+	Shortcut(wui.Modifiers, wui.Key) T
+}](it T, id string) T {
 	if mods, key, ok := app.KeyOf(id); ok {
 		it.Shortcut(mods, key)
 	}

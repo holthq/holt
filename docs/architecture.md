@@ -312,7 +312,18 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 `files.Tree` 由 `git ls-files` 建（带模式位，`LsFilesModes`，认得出符号链接和子模块），未跟踪的文件来自 status。普通文件夹用 `Walk`。树里每个仓库是一段，段头贴顶；展开的目录记在会话 `dirs` 里。
 
-文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行）用 mygo 画在窗口里的 `PopoverMenu`，不用系统菜单：系统菜单在窗口靠下时会折成带滚动箭头的（见 `docs/mygo-pitfalls.md`），画出来的下面放不下就往上开。
+文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）是 Grove 自己画的（issue #48），不用系统菜单
+（窗口靠下时会折成带滚动箭头的，见 `docs/mygo-pitfalls.md`），也不用 mygo 的 `PopoverMenu`（不能按住右键拖到项上松开、子菜单没有延迟和安全三角、
+灰项说不了原因、点外面那一下会落到底下）：
+
+- 状态机是 `app.PopMenu`（`app/popmenu.go`，每个窗口一个 `App.TreeMenu`），不碰界面：项由建菜单的函数经 `app.MenuSink` 收集（每帧重收，灰不灰跟着状态），
+  位置、命中、子菜单延迟（`MenuSubDelay` 0.2 s）、安全三角、灰项提示（`MenuTipDelay` 0.5 s）、按住拖松开（`MenuHoldMin` 0.15 s 或动过）、键盘都在里面，
+  `popmenu_test.go` 直接喂事件测（Tester 按不住右键）。选中一项后再跑一遍建菜单的函数，选中那项的 `Chosen()` 报真（和 mygo 的菜单一样）。
+- `ui/gmenu.go` 喂事件和画：`treeMenuPress` 给树里的元素挂 `HandleInput`，右键按下打开菜单，按住时的移动和松开（归按下的那个元素）转给菜单；
+  `gmenuView`（`root` 里、`pending` 之前）执行选中的项、画各层面板，开着时在 Overlay 里铺一层全窗口的接收层：点外面关菜单并吞掉这一下，
+  滚动、Esc、失去焦点关，键盘也是它接。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
+- 建菜单的函数（`menus.go`）都收 `menu` 接口（`app.MenuSink`），系统菜单（`ContextMenu` / `Menu`）经 `nativeMenu(m)` 适配，所以两边共用；
+  灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Grove 画的悬停提示。
 
 刷新是增量的（`app/treediff.go`）：监听报的 `Change.Dirs` 交给 `fileHints`，后台只对这些目录重新 `ls-files`，`Tree.Diff` 算出加减，回主线程 `Tree.Apply`。变了的目录超过 200 个或 `Full` 时整个重建。后台计算期间若整棵树已被替换（`Gen` 变化），则丢弃结果。
 
@@ -337,7 +348,7 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
   按下那一帧就选中（`PressTreeRow`）、画"按下"的底色（`pressFill`，叠在选中的底上），按着拖到别的行是拖着选（`DragTreePress`，按 `TreeSpans` 找行，
   不会在列表边上自动滚），松开才打开文件 / 展开目录（`ReleaseTreePress`）；那次松开 mygo 下一帧还会报成这一行的单击，`TreeRowClicked` 按 `eat` 吃掉。
   ⌘ / ⇧ 点、双击、按在箭头上的照旧交给列表 / 箭头；已经选中的行照旧自己接（可拖）。右键不改选中（原来的多选留着），菜单只对那一行，
-  那一行画 1 pt 强调色描边（`menuRing`：`PopoverMenu` 开着时每帧同步建菜单，建菜单的函数顺手设个标记）。箭头不换手形光标。
+  那一行画 1 pt 强调色描边（`menuRing`：菜单开着、`TreeMenu.Owner` 是这一行，`menuOnRow` / `menuOwned`）。箭头不换手形光标。
 - 行的悬停提示不用 mygo 的 `Tooltip`（0.6 s，写死在 mygo 里）：`app.TreeTip` 记指针从什么时候起停在哪一行，停满 `TreeTipDelay`（0.5 s）
   `ui/treetip.go` 才在 Overlay 里画，贴在行的下方（`AttachTo`，底下放不下自己翻上去）；出过一条以后换一行直接出（暖启动，指针离开所有行、
   按下 / 右键以后又要等），点了那行（`Dismiss`）指针离开前不再出，

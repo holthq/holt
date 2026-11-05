@@ -44,6 +44,7 @@ func root(a *app.App, c *wui.Context) {
 		})
 		statusBar(a, c.Key("status"))
 	})
+	gmenuView(a, c) // 文件树的右键菜单：选了的项在这里执行，所以在 pending 之前
 	dialogs(a, c)
 	pending(a, c)
 	if a.Toast != "" {

@@ -502,13 +502,20 @@
   `WORKBENCH_CAPTURE` 的图里也没有红绿灯。
 - 系统右键菜单（`ContextMenu`）在窗口靠下的地方会折起来（issue #6）：mygo v0.7.4 的 darwin 后端用 `popUpMenuPositioningItem:nil atLocation:inView:` 弹，
   左上角钉在点的地方，下面（到屏幕底 / Dock）放不下时 AppKit 不往上翻，而是把菜单截短、底下出滚动箭头。Grove 碰不到这个调用（位置也改不了），
-  所以文件树的右键菜单（`treeMenu`、`rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）改用 `PopoverMenu`：mygo 画在窗口里，下面放不下就往上开，
-  窗口本身都放不下才滚。代价是样子跟着主题、不是系统菜单的毛玻璃。别处的右键菜单还是系统的，碰到同样的问题照这样换。
-  `PopoverMenu` 的菜单 Tester 的 `Menu()` / `ChooseMenuItem` 看不见：测试统一用 `popmenu_test.go` 的 `shownMenu` / `chooseMenu` / `closeMenu`
-  （两种都认，画出来的从无障碍树里找 RoleMenu / RoleMenuItem），`mustRightClick` 已经换成它们了。
+  所以文件树的右键菜单（`treeMenu`、`rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）画在窗口里（先是 `PopoverMenu`，issue #48 起是 Grove 自己画的
+  `ui/gmenu.go`），下面放不下就往上开，窗口本身都放不下才滚。代价是样子跟着主题、不是系统菜单的毛玻璃。别处的右键菜单还是系统的。
+  画出来的菜单 Tester 的 `Menu()` / `ChooseMenuItem` 看不见：测试统一用 `popmenu_test.go` 的 `shownMenu` / `chooseMenu` / `closeMenu`
+  （两种都认，画出来的从无障碍树里找 RoleMenu / RoleMenuItem，所以 `gmenu.go` 的面板和项要设 `Role`、`Label`、灰项 `Disabled`），`mustRightClick` 已经换成它们了。
 - `PopoverMenu`（v0.7.4）在 macOS 上右键按下就开（`menuPress`），开的时候没有元素被"按着"，所以按住右键移动时项的悬停高亮跟着走；
   但松开右键不会选中指针下的项（项只认左键的 `Clicked`），子菜单悬停立刻开、没有安全三角，灰掉的项没有提示，点外面关掉的那一下照样落到下面的元素上。
-  这些要自己画菜单才做得到（issue #46）。Tester 只有左键的 `Press` / `Release`，右键只有 `RightClickAt`（按下松开一起），按住右键拖测不了。
+  这些要自己画菜单才做得到（issue #46），所以文件树换成了 Grove 自己画的（issue #48，`app/popmenu.go` + `ui/gmenu.go`）。
+  Tester 只有左键的 `Press` / `Release`，右键只有 `RightClickAt`（按下松开一起），按住右键拖测不了：菜单的状态机放在 `app.PopMenu` 里直接喂事件测。
+- 自己画菜单时的几处（issue #48）：右键按下由行的 `HandleInput` 接，接了以后按着的移动和松开都送到这一行（不管指针在哪），所以按住拖松开不用别的；
+  一个元素只有一个 `HandleInput`，原来挂着的（`treePress`、列表的 `treeCommands`）要包进去，不是右键的照旧转给它。`HandleInput` 让出去的按下
+  不会再给外层元素的 `HandleInput`（`rt.handler` 只取最里面那个），所以列表的空白处菜单只在没挂 `HandleInput` 的地方开。
+  吞掉点外面那一下靠 Overlay 里铺满窗口的接收层（`Absolute` + 窗口大小 + `HandleInput` 接下按下）；它 `Focus()` 每帧拿着焦点接键盘，
+  `Element.Focused()` 在窗口失去焦点时报假（mygo 的 `windowFocus`），拿它当"失去焦点就关"。回调里的坐标是相对元素的，换成窗口坐标用建界面时记下的
+  `Bounds()`（上一帧的），回调里不能再碰元素。
 - 列表行的按下（issue #46）：`ListState.DragSelecting()` 只在按着拖远了以后才报真，不能拿来判断"还按着"；列表在按下时就选中没选中的行，
   按下和松开对应用分不开。要按下选中、松开打开，就让行自己用 `HandleInput` 接 `InputPointerDown`（接了以后移动和松开都归它），
   而且松开之前每帧都要接着挂 `HandleInput`（不挂，状态上的回调就没了，松开送不到）。回调里不能用建界面时的 `wui.Element`（会 panic

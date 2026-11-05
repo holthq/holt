@@ -75,7 +75,7 @@ func wsButton(a *app.App, c *wui.Context) {
 		wui.Text(c, name).FontSize(12.5).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Margin(0, 0, textNudge, 0)
 		wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(t.TextMuted)
 	})
-	b.Menu(func(m *wui.Menu) { wsMenu(a, m) })
+	b.Menu(func(m *wui.Menu) { wsMenu(a, nativeMenu(m)) })
 }
 
 // breadcrumb 是当前标签的位置：仓库 › 目录 › 文件，目录太深时中间收成"…"，位置不够时见 crumbFit。
@@ -387,7 +387,7 @@ func repoControls(a *app.App, c *wui.Context, r *app.Repo) {
 	more.Children(func() {
 		wui.Icon(c, iconMore).FontSize(iconTool).TextColor(fg)
 	})
-	more.Menu(func(m *wui.Menu) { gitMenu(a, m, r) })
+	more.Menu(func(m *wui.Menu) { gitMenu(a, nativeMenu(m), r) })
 }
 
 // syncState 是一个仓库的拉取 / 推送按钮该怎么画：悬停提示（带 git 命令和领先 / 落后的数）、灰不灰。
@@ -437,10 +437,10 @@ func syncOf(a *app.App, r *app.Repo) syncState {
 
 // pushMenu 是推送按钮的右键菜单：强制推送、同步。
 func pushMenu(a *app.App, m *wui.Menu, r *app.Repo) {
-	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
+	if whyItem(nativeMenu(m), i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
 		a.PushForce(r)
 	}
-	if whyItem(m, i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
+	if whyItem(nativeMenu(m), i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
 		a.Sync(r)
 	}
 }
@@ -463,7 +463,7 @@ func branchButton(a *app.App, c *wui.Context, r *app.Repo) {
 		wui.Text(c, label).FontSize(11).FontWeight(500).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0).Margin(0, 0, textNudge, 0)
 		wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(t.TextMuted)
 	})
-	b.Menu(func(m *wui.Menu) { branchMenu(a, m, r) })
+	b.Menu(func(m *wui.Menu) { branchMenu(a, nativeMenu(m), r) })
 }
 
 // copyText 把文字放进剪贴板；测试里换成记下来的（测试不碰剪贴板）。

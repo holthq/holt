@@ -17,7 +17,7 @@ import (
 
 // wsMenu 是标题栏工作区按钮的菜单。
 // 换工作区的在上面：打开文件夹 / 工作区文件、最近的工作区（直接列出来，点了换过去）、清除最近工作区。
-func wsMenu(a *app.App, m *wui.Menu) {
+func wsMenu(a *app.App, m menu) {
 	if shortcut(m.Item(i18n.T("打开文件夹…")), "file.openFolder").Chosen() {
 		a.ChooseFolder()
 	}
@@ -61,7 +61,7 @@ func wsMenu(a *app.App, m *wui.Menu) {
 }
 
 // gitMenu 是标题栏"更多 git 操作"菜单，和菜单栏的 Git 菜单一样。
-func gitMenu(a *app.App, m *wui.Menu, r *app.Repo) {
+func gitMenu(a *app.App, m menu, r *app.Repo) {
 	if r.Running() != nil || len(r.Queue) > 0 {
 		queueMenu(a, m, r)
 		m.Separator()
@@ -119,7 +119,7 @@ func gitMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 
 // branchMenu 是分支按钮的菜单：本地分支（最多 30 个）、远程分支子菜单（最多 60 个）、标签子菜单（最多 60 个）、
 // 合并 / 变基到、新建分支、改名 / 发布当前分支、删除分支 / 远程分支。
-func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
+func branchMenu(a *app.App, m menu, r *app.Repo) {
 	local, remote := 0, 0
 	for _, b := range r.Branches {
 		if b.Remote {
@@ -151,7 +151,7 @@ func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 	}
 	if remote > 0 {
 		m.Separator()
-		m.Submenu(i18n.T("远程分支"), func(m *wui.Menu) {
+		m.Submenu(i18n.T("远程分支"), func(m menu) {
 			n := 0
 			for _, b := range r.Branches {
 				if !b.Remote {
@@ -171,13 +171,13 @@ func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 	if remote == 0 {
 		m.Separator()
 	}
-	m.Submenu(i18n.T("标签"), func(m *wui.Menu) { tagItems(a, m, r) })
+	m.Submenu(i18n.T("标签"), func(m menu) { tagItems(a, m, r) })
 	m.Separator()
 	why := app.RefWhy(r)
-	m.Submenu(withWhy(i18n.T("合并到当前分支"), why), func(m *wui.Menu) {
+	m.Submenu(withWhy(i18n.T("合并到当前分支"), why), func(m menu) {
 		refItems(m, r, app.MergeWhy, func(b git.Branch) { a.Merge(r, b) })
 	}).Disabled(why != "")
-	m.Submenu(withWhy(i18n.T("把当前分支变基到"), why), func(m *wui.Menu) {
+	m.Submenu(withWhy(i18n.T("把当前分支变基到"), why), func(m menu) {
 		refItems(m, r, app.RebaseOntoWhy, func(b git.Branch) { a.RebaseOnto(r, b) })
 	}).Disabled(why != "")
 	m.Separator()
@@ -191,9 +191,9 @@ func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 	if onBranch && cur.Upstream == "" && app.HasRemote(r, "origin") && m.Item(i18n.T("发布到 origin（推送并设置上游）")).Chosen() {
 		a.Push(r)
 	}
-	m.Submenu(i18n.T("删除分支"), func(m *wui.Menu) { deleteBranchItems(a, m, r) })
+	m.Submenu(i18n.T("删除分支"), func(m menu) { deleteBranchItems(a, m, r) })
 	if remote > 0 {
-		m.Submenu(i18n.T("删除远程分支"), func(m *wui.Menu) {
+		m.Submenu(i18n.T("删除远程分支"), func(m menu) {
 			n := 0
 			for _, b := range r.Branches {
 				if !b.Remote {
@@ -213,7 +213,7 @@ func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 
 // deleteBranchItems 是分支菜单"删除分支"子菜单的内容：当前分支以外的本地分支（最多 30 个），
 // 在别的工作树里检出着的灰着带原因；选了先问（app.DeleteBranch 数过提交再问）。
-func deleteBranchItems(a *app.App, m *wui.Menu, r *app.Repo) {
+func deleteBranchItems(a *app.App, m menu, r *app.Repo) {
 	n := 0
 	for _, b := range r.Branches {
 		if b.Remote || b.Current {
@@ -234,12 +234,6 @@ func deleteBranchItems(a *app.App, m *wui.Menu, r *app.Repo) {
 	}
 }
 
-// whyItem 是一项 Git 操作的菜单项：why（app 的 XxxWhy）不空时灰着、原因括在标签后面。
-// 点下去时动作自己再查一次（app.Blocked），菜单开着时状态变了也不会照做。
-func whyItem(m *wui.Menu, label, why string) *wui.MenuItem {
-	return m.Item(withWhy(label, why)).Disabled(why != "")
-}
-
 // withWhy 把灰着的原因括在菜单标签后面（原生菜单项没有悬停说明）；why 为空原样。
 func withWhy(label, why string) string {
 	if why == "" {
@@ -254,7 +248,7 @@ func withWhy(label, why string) string {
 
 // refItems 是"合并到当前分支 / 把当前分支变基到"子菜单的内容：别的本地分支（最多 30 个）、分隔、远程分支
 // （最多 60 个），当前分支不列；why（MergeWhy / RebaseOntoWhy）不空的灰着带原因，选了一个就 pick 它。
-func refItems(m *wui.Menu, r *app.Repo, why func(*app.Repo, git.Branch) string, pick func(b git.Branch)) {
+func refItems(m menu, r *app.Repo, why func(*app.Repo, git.Branch) string, pick func(b git.Branch)) {
 	local, remote := 0, 0
 	for _, b := range r.Branches {
 		if b.Current {
@@ -296,7 +290,7 @@ func refItems(m *wui.Menu, r *app.Repo, why func(*app.Repo, git.Branch) string, 
 
 // tagItems 是分支菜单"标签"子菜单的内容：新的在前（最多 60 个），"v0.9.0 · 3 天前"，选一个右栏看它往前的历史；
 // 底下新建标签、推送标签、删除标签。
-func tagItems(a *app.App, m *wui.Menu, r *app.Repo) {
+func tagItems(a *app.App, m menu, r *app.Repo) {
 	for i, t := range r.Tags {
 		if i == 60 {
 			more := strconv.Itoa(len(r.Tags) - 60)
@@ -327,20 +321,20 @@ func tagItems(a *app.App, m *wui.Menu, r *app.Repo) {
 	if rm != "" {
 		push = i18n.Tf("推送标签到 %s", rm)
 	}
-	m.Submenu(withWhy(push, pushWhy), func(m *wui.Menu) {
+	m.Submenu(withWhy(push, pushWhy), func(m menu) {
 		tagList(m, r, func(t git.Tag) { a.PushTag(r, t.Name) })
 		m.Separator()
 		if m.Item(i18n.T("全部（--tags）")).Chosen() {
 			a.PushTag(r, "")
 		}
 	}).Disabled(pushWhy != "")
-	m.Submenu(i18n.T("删除标签"), func(m *wui.Menu) {
+	m.Submenu(i18n.T("删除标签"), func(m menu) {
 		tagList(m, r, func(t git.Tag) { a.OpenDeleteTag(r, t) })
 	}).Disabled(len(r.Tags) == 0)
 }
 
 // tagList 是"推送标签 / 删除标签"子菜单里的标签名（新的在前，最多 60 个），选了一个就 pick 它。
-func tagList(m *wui.Menu, r *app.Repo, pick func(t git.Tag)) {
+func tagList(m menu, r *app.Repo, pick func(t git.Tag)) {
 	for i, t := range r.Tags {
 		if i == 60 {
 			m.Item(i18n.Tf("…还有 %s 个", strconv.Itoa(len(r.Tags)-60))).Disabled(true)
@@ -354,7 +348,7 @@ func tagList(m *wui.Menu, r *app.Repo, pick func(t git.Tag)) {
 
 // remoteItems 是仓库菜单"远程"子菜单的内容：每个远程一段，"origin  地址"（复制地址）、"抓取 origin"，
 // 推送地址不一样时再一行灰的"推送：地址"，再是改名 / 删除；最底下"添加远程…"。
-func remoteItems(a *app.App, m *wui.Menu, r *app.Repo) {
+func remoteItems(a *app.App, m menu, r *app.Repo) {
 	for i, rm := range r.Extra.Remotes {
 		if i > 0 {
 			m.Separator()
@@ -386,7 +380,7 @@ func remoteItems(a *app.App, m *wui.Menu, r *app.Repo) {
 }
 
 // repoMenu 是仓库行的右键菜单（文件树、Git 栏、历史）。tree 是文件树里的：多了展开 / 收起那组和粘贴。
-func repoMenu(a *app.App, m *wui.Menu, r *app.Repo, tree bool) {
+func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 	refresh := i18n.T("刷新 Git 状态")
 	if r.Plain {
 		refresh = i18n.T("刷新")
@@ -449,8 +443,8 @@ func repoMenu(a *app.App, m *wui.Menu, r *app.Repo, tree bool) {
 		if r.Linked && m.Item(i18n.T("打开主仓库")).Disabled(r.MainRoot == "").Chosen() {
 			a.OpenMainRepo(r)
 		}
-		m.Submenu(i18n.T("远程"), func(m *wui.Menu) { remoteItems(a, m, r) })
-		m.Submenu(i18n.T("子模块"), func(m *wui.Menu) { submoduleItems(a, m, r) })
+		m.Submenu(i18n.T("远程"), func(m menu) { remoteItems(a, m, r) })
+		m.Submenu(i18n.T("子模块"), func(m menu) { submoduleItems(a, m, r) })
 		if m.Item(i18n.T("显示被忽略的文件")).Checked(a.St.Settings.ShowIgnored).Chosen() {
 			a.ToggleShowIgnored()
 		}
@@ -475,7 +469,7 @@ func repoMenu(a *app.App, m *wui.Menu, r *app.Repo, tree bool) {
 }
 
 // newItems 是右键菜单里的"新建文件… / 新建文件夹…"，建在仓库的 dir 目录下。
-func newItems(a *app.App, m *wui.Menu, r *app.Repo, dir string) {
+func newItems(a *app.App, m menu, r *app.Repo, dir string) {
 	if shortcut(m.Item(i18n.T("新建文件…")), "file.new").Chosen() {
 		a.StartNew(r, dir, false)
 	}
@@ -487,7 +481,7 @@ func newItems(a *app.App, m *wui.Menu, r *app.Repo, dir string) {
 // fileMenu 是文件树里文件和目录的右键菜单。分组：打开（目录是展开 / 收起、终端、搜索、历史）| 新建 | Git |
 // 访达、默认应用、网页 | 路径 | 复制粘贴 | 重命名、废纸篓。指向目录的链接能展开，别的当文件（重命名、删掉的是链接）；
 // 链接里面的行见 linkedMenu。
-func fileMenu(a *app.App, m *wui.Menu, r *app.Repo, row files.Row) {
+func fileMenu(a *app.App, m menu, r *app.Repo, row files.Row) {
 	if row.Sub != 0 {
 		submoduleMenu(a, m, r, row.Path)
 		return
@@ -535,7 +529,7 @@ func fileMenu(a *app.App, m *wui.Menu, r *app.Repo, row files.Row) {
 		if shortcut(m.Item(i18n.T("在侧边打开")), "tree.openSide").Chosen() {
 			a.OpenFileSide(r, row.Path)
 		}
-		if m.Item(i18n.T("查看 diff")).Disabled(row.Code == 0).Chosen() {
+		if whyItem(m, i18n.T("查看 diff"), noDiffWhy(row.Code == 0)).Chosen() {
 			a.ShowDiffFor(r, row.Path)
 		}
 		if m.Item(i18n.T("查看文件历史")).Disabled(row.Code == '?' || r.Plain).Chosen() {
@@ -543,7 +537,7 @@ func fileMenu(a *app.App, m *wui.Menu, r *app.Repo, row files.Row) {
 		}
 		localHistItem(a, m, filepath.Join(r.Root, filepath.FromSlash(row.Path)))
 		if tks := a.TasksOf(r, row.Path); len(tks) > 0 { // 仓库根的 package.json / Makefile / justfile……：挑一个在终端里跑
-			m.Submenu(i18n.T("运行"), func(m *wui.Menu) {
+			m.Submenu(i18n.T("运行"), func(m menu) {
 				for _, tk := range tks {
 					if m.Item(tk.Cmd).Chosen() {
 						a.RunTask(r, tk)
@@ -599,7 +593,7 @@ func fileMenu(a *app.App, m *wui.Menu, r *app.Repo, row files.Row) {
 
 // linkedMenu 是指向目录的链接里面的行的右键菜单：只能展开 / 打开、在访达中显示、复制路径
 // （它们在链接指向的地方：不新建、不重命名、不删，也没有 git 状态）。
-func linkedMenu(a *app.App, m *wui.Menu, r *app.Repo, row files.Row) {
+func linkedMenu(a *app.App, m menu, r *app.Repo, row files.Row) {
 	full := filepath.Join(r.Root, filepath.FromSlash(row.Path))
 	if row.Dir {
 		label := i18n.T("展开")
@@ -627,7 +621,7 @@ func linkedMenu(a *app.App, m *wui.Menu, r *app.Repo, row files.Row) {
 }
 
 // clipItems 是复制 / 粘贴 / 创建副本：复制、创建副本对 rows，粘贴到 at 那行（PasteDir），⌘C 记下的没有时灰着。
-func clipItems(a *app.App, m *wui.Menu, at app.TreeRow, rows []app.TreeRow) {
+func clipItems(a *app.App, m menu, at app.TreeRow, rows []app.TreeRow) {
 	copyLabel, dupLabel := i18n.T("复制"), i18n.T("创建副本")
 	if len(rows) > 1 {
 		copyLabel, dupLabel = i18n.Tn("复制 %d 项", len(rows)), i18n.Tn("创建 %d 个副本", len(rows))
@@ -643,9 +637,17 @@ func clipItems(a *app.App, m *wui.Menu, at app.TreeRow, rows []app.TreeRow) {
 	}
 }
 
+// noDiffWhy 是文件行"查看 diff"灰着的原因：文件没有改动时。
+func noDiffWhy(clean bool) string {
+	if clean {
+		return i18n.T("没有改动")
+	}
+	return ""
+}
+
 // compareItems 是文件行右键里比较的三项：选择以进行比较、与已选的比较（选过别的文件才有）、与剪贴板比较
 // （建菜单时不读剪贴板：读系统剪贴板要回主线程，空着的点了再说）。
-func compareItems(a *app.App, m *wui.Menu, r *app.Repo, rel string) {
+func compareItems(a *app.App, m menu, r *app.Repo, rel string) {
 	if m.Item(i18n.T("选择以进行比较")).Chosen() {
 		a.SelectForCompare(r, rel)
 	}
@@ -660,7 +662,7 @@ func compareItems(a *app.App, m *wui.Menu, r *app.Repo, rel string) {
 // chosenMenu 是文件树里选了多行、右键其中一行（at）时的菜单：作用于选中的全部（可以跨仓库），粘贴到 at 那行。
 // 看历史、重命名只对一项，灰着；选中里有仓库行时不能移到废纸篓。选中里有链接目录里面的行时只能打开、
 // 在访达中显示、复制路径（同 linkedMenu）。
-func chosenMenu(a *app.App, m *wui.Menu, at app.TreeRow, rows []app.TreeRow) {
+func chosenMenu(a *app.App, m menu, at app.TreeRow, rows []app.TreeRow) {
 	n, nf, nc := len(rows), app.Files(rows), app.Changed(rows)
 	if m.Item(i18n.Tn("打开 %d 个文件", nf)).Disabled(nf == 0).Chosen() {
 		a.OpenRows(rows)
@@ -684,7 +686,7 @@ func chosenMenu(a *app.App, m *wui.Menu, at app.TreeRow, rows []app.TreeRow) {
 	if m.Item(i18n.Tn("查看 %d 个文件的 diff", nc)).Disabled(nc == 0).Chosen() {
 		a.DiffRows(rows)
 	}
-	m.Item(i18n.T("查看文件历史")).Disabled(true)
+	whyItem(m, i18n.T("查看文件历史"), i18n.T("只能查看一个文件的历史"))
 	m.Separator()
 	if m.Item(i18n.T("添加到 .gitignore")).Disabled(!app.CanIgnore(rows)).Chosen() {
 		a.IgnoreRows(rows)
@@ -703,14 +705,14 @@ func chosenMenu(a *app.App, m *wui.Menu, at app.TreeRow, rows []app.TreeRow) {
 	m.Separator()
 	clipItems(a, m, at, rows)
 	m.Separator()
-	shortcut(m.Item(i18n.T("重命名…")), "tree.rename").Disabled(true)
+	shortcut(whyItem(m, i18n.T("重命名…"), i18n.T("一次只能重命名一项")), "tree.rename")
 	if shortcut(m.Item(i18n.Tn("把 %d 项移到废纸篓…", n)), "tree.trash").Disabled(app.HasRoot(rows)).Chosen() {
 		a.TrashRows(rows)
 	}
 }
 
 // chosenChangeMenu 是 Git 栏里选了好几项变更、右键其中一项时的菜单：作用于选中的全部（可以跨仓库）；冲突不暂存、不丢弃。
-func chosenChangeMenu(a *app.App, m *wui.Menu, rows []app.ChangeRow) {
+func chosenChangeMenu(a *app.App, m menu, rows []app.ChangeRow) {
 	n := len(rows)
 	ns, nu := app.CountChanges(rows, app.CanStage), app.CountChanges(rows, app.CanUnstage)
 	if m.Item(i18n.Tn("查看 %d 个 Diff", n)).Shortcut(0, wui.KeyEnter).Chosen() {
@@ -741,7 +743,7 @@ func chosenChangeMenu(a *app.App, m *wui.Menu, rows []app.ChangeRow) {
 
 // stageItems 是一项变更的暂存那几项：Git 栏的变更行和文件树的文件行共用（一样的命令、一样的确认）。
 // tree 是文件树里的：没跟踪的文件只有暂存，删掉它用"移到废纸篓"。
-func stageItems(a *app.App, m *wui.Menu, r *app.Repo, ch git.Change, tree bool) {
+func stageItems(a *app.App, m menu, r *app.Repo, ch git.Change, tree bool) {
 	switch ch.Kind {
 	case git.Staged:
 		if m.Item(i18n.T("取消暂存")).Chosen() {
@@ -769,7 +771,7 @@ func stageItems(a *app.App, m *wui.Menu, r *app.Repo, ch git.Change, tree bool) 
 }
 
 // changeMenu 是 Git 栏变更行、右栏提交文件行的右键菜单。
-func changeMenu(a *app.App, m *wui.Menu, r *app.Repo, ch git.Change) {
+func changeMenu(a *app.App, m menu, r *app.Repo, ch git.Change) {
 	full := filepath.Join(r.Root, filepath.FromSlash(ch.Path))
 	if ch.Kind == git.InCommit {
 		if m.Item(i18n.T("查看此版本")).Disabled(ch.Code == 'D').Chosen() {
@@ -828,9 +830,9 @@ func changeMenu(a *app.App, m *wui.Menu, r *app.Repo, ch git.Change) {
 }
 
 // commitMenu 是右栏提交行的右键菜单。
-func commitMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
+func commitMenu(a *app.App, m menu, r *app.Repo, cm git.Commit) {
 	// 菜单里的操作都落在这个提交的仓库上，并把当前仓库切到它（"所有仓库"视图里它不一定是当前的）
-	chosen := func(it *wui.MenuItem) bool {
+	chosen := func(it menuItem) bool {
 		if !it.Chosen() {
 			return false
 		}
@@ -870,7 +872,7 @@ func commitMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
 		a.Revert(r, cm) // 它先问
 	}
 	why := app.ResetWhy(r, cm)
-	m.Submenu(withWhy(i18n.T("重置到这个提交"), why), func(m *wui.Menu) {
+	m.Submenu(withWhy(i18n.T("重置到这个提交"), why), func(m menu) {
 		for _, mode := range []app.ResetMode{app.ResetSoft, app.ResetMixed, app.ResetHard} {
 			if chosen(m.Item(mode.Label())) {
 				a.ResetTo(r, cm, mode) // 三档都先问
@@ -899,7 +901,7 @@ func commitMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
 }
 
 // stashMenu 是 Git 栏里一条贮藏的右键菜单。
-func stashMenu(a *app.App, m *wui.Menu, r *app.Repo, s git.Stash) {
+func stashMenu(a *app.App, m menu, r *app.Repo, s git.Stash) {
 	look := i18n.T("查看改动")
 	if r.StashOpen == s.Hash {
 		look = i18n.T("收起")
@@ -925,7 +927,7 @@ func stashMenu(a *app.App, m *wui.Menu, r *app.Repo, s git.Stash) {
 }
 
 // tabMenu 是标签的右键菜单。
-func tabMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func tabMenu(a *app.App, m menu, d *docs.Doc) {
 	g := a.GroupOf(d)
 	ds, _ := a.GroupDocs(g)
 	if m.Item(i18n.T("关闭")).Chosen() {
@@ -977,14 +979,14 @@ func tabMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
 }
 
 // localHistItem 是标签、编辑器、文件树文件行右键里的"查看本地历史"：仓库外、未跟踪的也能用。
-func localHistItem(a *app.App, m *wui.Menu, abs string) {
+func localHistItem(a *app.App, m menu, abs string) {
 	if abs != "" && m.Item(i18n.T("查看本地历史")).Disabled(a.LocalHist() == nil).Chosen() {
 		a.ShowLocalHistory(abs)
 	}
 }
 
 // docMenu 是编辑器右键菜单里追加的几项。
-func docMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func docMenu(a *app.App, m menu, d *docs.Doc) {
 	mergeMenu(a, m, d)
 	m.Separator()
 	if m.Item(i18n.T("保存")).Disabled(!d.Modified()).Chosen() {
@@ -1031,9 +1033,9 @@ func docMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
 // splitItems 是标签和编辑器右键菜单里的"拆分"子菜单：把 d 搬进它那组某一边新分出的一组，键盘跟过去。
 // 放不下的方向灰；那组只有它一个（哪边都分不了）整项灰。⌘\ / ⌥⌘\（改过的键照改后的）只在 d 是键盘所在组的当前标签时标出来，
 // 不然按了分的是别的标签。文件标签后面跟一项“在另一组里再开一份”（镜像，⇧⌘\）。
-func splitItems(a *app.App, m *wui.Menu, d *docs.Doc) {
+func splitItems(a *app.App, m menu, d *docs.Doc) {
 	cur := a.CurrentDoc() == d
-	m.Submenu(i18n.T("拆分"), func(m *wui.Menu) {
+	m.Submenu(i18n.T("拆分"), func(m menu) {
 		item := func(label string, s app.Side, id string) {
 			it := m.Item(label).Disabled(!a.CanSplit(d, s))
 			if cur && id != "" {
@@ -1059,7 +1061,7 @@ func splitItems(a *app.App, m *wui.Menu, d *docs.Doc) {
 	}
 }
 
-func pathItems(a *app.App, m *wui.Menu, d *docs.Doc) {
+func pathItems(a *app.App, m menu, d *docs.Doc) {
 	if d.Abs == "" {
 		return
 	}

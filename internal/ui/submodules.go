@@ -21,7 +21,7 @@ func subTip(r *app.Repo, p string) string {
 }
 
 // submoduleMenu 是文件树里子模块那一行的右键菜单。
-func submoduleMenu(a *app.App, m *wui.Menu, r *app.Repo, p string) {
+func submoduleMenu(a *app.App, m menu, r *app.Repo, p string) {
 	s, _ := r.Submodule(p)
 	inited := s.Inited()
 	if m.Item(i18n.T("添加为仓库…")).Disabled(!inited).Chosen() {
@@ -52,7 +52,7 @@ func submoduleMenu(a *app.App, m *wui.Menu, r *app.Repo, p string) {
 }
 
 // submoduleItems 是仓库菜单里"子模块"下面的：每个子模块一项（点了在文件树里选中它），最后全部初始化并更新。
-func submoduleItems(a *app.App, m *wui.Menu, r *app.Repo) {
+func submoduleItems(a *app.App, m menu, r *app.Repo) {
 	if len(r.Extra.Subs) == 0 {
 		m.Item(i18n.T("没有子模块")).Disabled(true)
 		return

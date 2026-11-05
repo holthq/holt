@@ -160,9 +160,8 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 			var list wui.Element
 			box := wui.Column(c).Grow(1).MinHeight(0).Clip() // 吸顶栈叠在列表上面
 			box.Children(func() {
-				list = sideList(a, c, &a.FileList, len(rows), func(row wui.ListRow) { treeRow(a, row, rows[row.Index], dragOf, g) }).
-					PopoverMenu(func(m *wui.Menu) { treeMenu(a, m) }). // 行下面的空白处
-					HandleInput(treeCommands(a))
+				list = sideList(a, c, &a.FileList, len(rows), func(row wui.ListRow) { treeRow(a, row, rows[row.Index], dragOf, g) })
+				treeMenuPress(a, c, list, treeOwner{Blank: true}, func(m menu) { treeMenu(a, m) }, treeCommands(a)) // 行下面的空白处
 				stickyStack(a, c, rows, box.Bounds())
 			})
 			if a.FileHover < 0 {
@@ -262,13 +261,28 @@ func treeCommands(a *app.App) func(wui.InputEvent) bool {
 	}
 }
 
-// 文件树里的右键菜单（空白处 treeMenu、行 rowMenu、仓库行、钉在顶上的行、压缩目录的每一段）都用 PopoverMenu
-// （mygo 画在窗口里），不用 ContextMenu（系统的 NSMenu）：mygo 弹系统菜单用的是
+// 文件树里的右键菜单（空白处 treeMenu、行 rowMenu、仓库行、钉在顶上的行、压缩目录的每一段）是 Grove 自己画的
+// （gmenu.go，issue #48），不用 ContextMenu（系统的 NSMenu）：mygo 弹系统菜单用的是
 // popUpMenuPositioningItem:nil，左上角钉在点的地方，下面放不下时 AppKit 不往上翻，而是把菜单折起来、
-// 底下出滚动箭头（issue #6）。PopoverMenu 下面放不下就往上开，窗口本身都放不下才滚。见 docs/mygo-pitfalls.md。
+// 底下出滚动箭头（issue #6）。也不用 PopoverMenu：按住右键拖到项上松开、子菜单延迟和安全三角、灰项的原因、
+// 吞掉点外面那一下，它都没有。下面放不下就往上开，窗口本身都放不下才滚。见 docs/mygo-pitfalls.md。
+
+// treeOwner 是文件树右键菜单对着的东西：一行（Key）、合并行的一段（Seg）、钉在顶上的那份（Pin），或者空白处。
+type treeOwner struct {
+	Key   app.FileKey
+	Seg   string
+	Pin   bool
+	Blank bool
+}
+
+// menuOnRow 报菜单对着列表里 key 那一行（或它的一段）开着：那一行画描边。
+func menuOnRow(a *app.App, key app.FileKey) bool {
+	o, ok := a.TreeMenu.Owner.(treeOwner)
+	return a.TreeMenu.IsOpen() && ok && o.Key == key && !o.Pin && !o.Blank
+}
 
 // treeMenu 是文件树空白处的右键菜单。
-func treeMenu(a *app.App, m *wui.Menu) {
+func treeMenu(a *app.App, m menu) {
 	if m.Item(i18n.T("显示被忽略的文件")).Checked(a.St.Settings.ShowIgnored).Chosen() {
 		a.ToggleShowIgnored()
 	}
@@ -389,11 +403,8 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if filtering {
 		indent = 22
 	}
-	menuOn := false // 这一行（或合并行的一段）的右键菜单开着：画一圈描边
-	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).PopoverMenu(func(m *wui.Menu) {
-		menuOn = true
-		rowMenu(a, m, tr, tr.Row)
-	})
+	menuOn := menuOnRow(a, tr.Key()) // 这一行（或合并行的一段）的右键菜单开着：画一圈描边
+	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center)
 	drawGuides(el, tr, g)
 	menuRing(el, &menuOn)
 	if b := span(a, row, el); b.H > 0 {
@@ -406,9 +417,11 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	k, pressing := a.TreePressed()
 	pressing = pressing && k == tr.Key() // 按下时选中了这一行，还按着：松开之前接着收它的移动和松开
 	pressed := pressing && hov
+	var press func(wui.InputEvent) bool
 	if pressing || !a.FileChosen.Has(tr.Key()) {
-		el.HandleInput(treePress(a, row.Index, tr, indent))
+		press = treePress(a, row.Index, tr, indent)
 	}
+	treeMenuPress(a, c, el, treeOwner{Key: tr.Key()}, func(m menu) { rowMenu(a, m, tr, tr.Row) }, press)
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		// 按下归这一行了（列表接不到点击），点击记下来等列表建好再照列表的规矩做（ApplyTreeClick）
 		el.Drag(dragOf(tr))
@@ -469,10 +482,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			folderGlyph(a, c, dirsOf(tr.Row), tr.Open, tr.Ignored, sel)
 			nameCol := dirNameColor(a, t, tr, muted, sel)
 			if len(tr.Chain) > 0 {
-				chainName(c, tr, muted, nameCol, func(m *wui.Menu, seg files.Row) {
-					menuOn = true
-					rowMenu(a, m, tr, seg)
-				})
+				chainName(a, c, tr, muted, nameCol, false, func(m menu, seg files.Row) { rowMenu(a, m, tr, seg) })
 			} else {
 				nameEl, hasName = wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0), true
 				if nameCol != nil {
@@ -557,7 +567,7 @@ func codeLetter(c *wui.Context, t *wui.Theme, code byte, sel bool) {
 // rowMenu 是文件树里文件 / 目录行的右键菜单：选了好几行、右键的是其中一行时对选中的全部（chosenMenu），
 // 否则对 row（合并行里右键的那一段，或整行）。右键没选中的行不改选中（原来的多选留着，VS Code 也是），
 // 菜单只对它，那一行画一圈描边（menuRing）表示菜单是对它开的。
-func rowMenu(a *app.App, m *wui.Menu, tr app.TreeRow, row files.Row) {
+func rowMenu(a *app.App, m menu, tr app.TreeRow, row files.Row) {
 	a.TreeTip.Dismiss()
 	if rows := a.MenuRows(tr); len(rows) > 1 {
 		at := tr
@@ -571,7 +581,7 @@ func rowMenu(a *app.App, m *wui.Menu, tr app.TreeRow, row files.Row) {
 // chainName 是合并行的名字 "internal / ui"：每一段自己接右键（菜单对那一段的目录），分隔的 "/" 是淡色、两边各空 3
 // （用 Gap，不用 " / "：文字末尾的空格量宽时不算，画出来是 "internal /ui"）。col 不空时只给最后一段
 // （这一行代表的那个目录：Mark、Ignored 说的都是它）上这个颜色。menu 是一段的右键菜单。
-func chainName(c *wui.Context, tr app.TreeRow, muted wui.Color, col *wui.Color, menu func(*wui.Menu, files.Row)) {
+func chainName(a *app.App, c *wui.Context, tr app.TreeRow, muted wui.Color, col *wui.Color, pin bool, build func(menu, files.Row)) {
 	wui.Row(c).AlignItems(wui.Center).Gap(3).MinWidth(0).Shrink(1).Children(func() {
 		for i, p := range tr.Chain {
 			if i > 0 {
@@ -579,8 +589,8 @@ func chainName(c *wui.Context, tr app.TreeRow, muted wui.Color, col *wui.Color, 
 			}
 			seg := tr.Row
 			seg.Path, seg.Name, seg.Chain = p, files.BaseName(p), nil
-			name := wui.Text(c.Key(i), seg.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1).
-				PopoverMenu(func(m *wui.Menu) { menu(m, seg) })
+			name := wui.Text(c.Key(i), seg.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+			treeMenuPress(a, c, name, treeOwner{Key: tr.Key(), Seg: p, Pin: pin}, func(m menu) { build(m, seg) }, nil)
 			if col != nil && i == len(tr.Chain)-1 {
 				name.TextColor(*col)
 			}
@@ -741,7 +751,7 @@ func repoRow(a *app.App, c *wui.Context, row wui.ListRow, tr app.TreeRow, filter
 	// 外面这层接拖着的仓库行（调顺序）：一个元素只接一种拖的东西，里面那行接文件（TreeDrag）
 	slot := wui.Column(c)
 	slot.Children(func() {
-		el = repoLine(a, c, tr, onAccent(a, row.Selected()), filtering, func(m *wui.Menu) {
+		el = repoLine(a, c, tr, onAccent(a, row.Selected()), filtering, false, func(m menu) {
 			a.TreeTip.Dismiss()
 			if rows := a.MenuRows(tr); len(rows) > 1 {
 				chosenMenu(a, m, tr, rows)
@@ -860,7 +870,7 @@ func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 		pin.Children(func() {
 			var el wui.Element
 			if tr.Root {
-				el = repoLine(a, c, tr, false, false, func(m *wui.Menu) { repoMenu(a, m, tr.Repo, true) }).
+				el = repoLine(a, c, tr, false, false, true, func(m menu) { repoMenu(a, m, tr.Repo, true) }).
 					Label(i18n.Tf("%s（仓库，钉在顶上）", tr.Repo.Name))
 			} else {
 				el = stickyDir(a, c, tr)
@@ -1070,13 +1080,14 @@ func stickyDir(a *app.App, c *wui.Context, tr app.TreeRow) wui.Element {
 	t := c.Theme()
 	muted := t.TextMuted
 	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, treeIndent(tr.Depth)).Gap(treeGap).AlignItems(wui.Center).
-		PopoverMenu(func(m *wui.Menu) { fileMenu(a, m, tr.Repo, tr.Row) }).Label(i18n.Tf("%s（钉在顶上）", tr.Label()))
+		Label(i18n.Tf("%s（钉在顶上）", tr.Label()))
+	treeMenuPress(a, c, el, treeOwner{Key: tr.Key(), Pin: true}, func(m menu) { fileMenu(a, m, tr.Repo, tr.Row) }, nil)
 	el.Children(func() {
 		chevron(c, iconTool, true, tr.Label(), muted, func() { a.ToggleDir(tr.Repo, tr.Path) })
 		folderGlyph(a, c, dirsOf(tr.Row), true, tr.Ignored, false)
 		col := dirNameColor(a, t, tr, muted, false)
 		if len(tr.Chain) > 0 {
-			chainName(c, tr, muted, col, func(m *wui.Menu, seg files.Row) { fileMenu(a, m, tr.Repo, seg) })
+			chainName(a, c, tr, muted, col, true, func(m menu, seg files.Row) { fileMenu(a, m, tr.Repo, seg) })
 		} else if name := wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0); col != nil {
 			name.TextColor(*col)
 		}
@@ -1088,7 +1099,7 @@ func stickyDir(a *app.App, c *wui.Context, tr app.TreeRow) wui.Element {
 }
 
 // repoLine 画仓库行的内容（列表里的和钉在顶上的共用）：箭头、名字、分支、变更数（或 ✓ / ! / 转圈）。sel 是画在实心选中块上。
-func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, menu func(*wui.Menu)) wui.Element {
+func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering, pin bool, build func(menu)) wui.Element {
 	t := c.Theme()
 	r, open := tr.Repo, tr.Open
 	current := r == a.Current()
@@ -1096,11 +1107,10 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 	if sel {
 		muted, mark, ok = t.AccentText.Alpha(0.75), t.AccentText, t.AccentText
 	}
-	menuOn := false
-	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center).PopoverMenu(func(m *wui.Menu) {
-		menuOn = true
-		menu(m)
-	})
+	owner := treeOwner{Key: tr.Key(), Pin: pin}
+	menuOn := menuOwned(a, owner)
+	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center)
+	treeMenuPress(a, c, el, owner, build, nil)
 	menuRing(el, &menuOn)
 	el.Children(func() {
 		if filtering {
@@ -1145,8 +1155,8 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 	return el
 }
 
-// menuRing 在文件树的一行 el 上画一圈 1 pt 强调色描边，*on 是这一帧它的右键菜单开着（PopoverMenu 开着时每帧建菜单，
-// 建菜单的函数把它设上）：右键没选中的行时菜单对它，选中不挪，靠这圈描边看出菜单是对哪行开的；菜单关了就没有了。
+// menuRing 在文件树的一行 el 上画一圈 1 pt 强调色描边，*on 是这一帧它的右键菜单开着（Grove 画的菜单 gmenu.go 开着、
+// 对着这一行，menuOnRow / menuOwned）：右键没选中的行时菜单对它，选中不挪，靠这圈描边看出菜单是对哪行开的；菜单关了就没有了。
 func menuRing(el wui.Element, on *bool) {
 	el.DrawOver(func(p *wui.Painter, r wui.Rect) {
 		if !*on {

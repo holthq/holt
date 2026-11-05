@@ -2190,5 +2190,8 @@
   "跳到终端": "Go to Terminal",
   "跳到这个工作树上的 agent 终端": "Go to the agent terminal in this worktree",
   "这一段是链接的工作树：到主仓库那一段合并": "This section is a linked worktree: merge from the main repository's section",
-  "需要你": "Needs you"
+  "需要你": "Needs you",
+  "一次只能重命名一项": "Rename one item at a time",
+  "只能查看一个文件的历史": "History works on one file at a time",
+  "右键菜单": "Context menu"
 }

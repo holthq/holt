@@ -314,7 +314,7 @@ func tab(a *app.App, c *wui.Context, g *app.Group, i int, d *docs.Doc, active bo
 	}
 	// 当前标签和卡身同色、盖住卡片头底下那条线；别的标签是头上的一个圆角块，悬停才有底色
 	el := tooltip(c, panelTab(c, active).Label(i18n.Tf("标签 %s", d.Title)), d.Where()).ContextMenu(func(m *wui.Menu) {
-		tabMenu(a, m, d)
+		tabMenu(a, nativeMenu(m), d)
 	})
 	hover := el.Hovered()
 	if active && g.TabShown != d { // 换了当前标签（点、新开的、关掉别的、后退 / 前进）：滚到看得见
@@ -499,7 +499,7 @@ func docContent(a *app.App, c *wui.Context, d *docs.Doc, focused bool) {
 		}
 		a.SyncInlineBlame(d, focused) // 设置里开着行内 blame：光标行末尾那一条（只在键盘所在那组的当前标签上）
 		a.SyncProblems(d)             // 检查报的问题：这个文件的变了才重设诊断
-		d.St.ContextMenu = func(m *wui.Menu) { docMenu(a, m, d) }
+		d.St.ContextMenu = func(m *wui.Menu) { docMenu(a, nativeMenu(m), d) }
 		if d.Top > 0 { // 恢复的标签：等编辑器排过一次版（知道每行多高）再滚
 			if _, last := d.St.VisibleLines(); last > 0 {
 				d.St.ScrollTo(d.Top)

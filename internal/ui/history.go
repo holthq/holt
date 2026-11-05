@@ -484,7 +484,7 @@ func histCommitRow(a *app.App, l *listLook, row wui.ListRow, r *app.Repo, ci int
 	}
 	histParts(l, row, top, func() {
 		sel := onAccent(a, row.Selected())
-		el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch).ContextMenu(func(m *wui.Menu) { commitMenu(a, m, r, cm) })
+		el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch).ContextMenu(func(m *wui.Menu) { commitMenu(a, nativeMenu(m), r, cm) })
 		hover := el.Hovered()
 		el.Children(func() {
 			switch {
@@ -695,7 +695,7 @@ func commitMoreMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
 		copyItem(i18n.Tf("父提交 %s", strings.Join(ps, " ")), strings.Join(cm.Parents, " "))
 	}
 	m.Separator()
-	commitMenu(a, m, r, cm)
+	commitMenu(a, nativeMenu(m), r, cm)
 }
 
 // fileCount 是"N 个文件 · +A −D"，都没有行数（只有二进制）时只写个数。
@@ -713,7 +713,7 @@ func histFileRow(a *app.App, l *listLook, row wui.ListRow, r *app.Repo, ch git.C
 	c := row.Context
 	withTheme(c, l.real, func() {
 		t := c.Theme()
-		wui.Row(c).AlignItems(wui.Stretch).Shrink(0).ContextMenu(func(m *wui.Menu) { changeMenu(a, m, r, ch) }).Children(func() {
+		wui.Row(c).AlignItems(wui.Stretch).Shrink(0).ContextMenu(func(m *wui.Menu) { changeMenu(a, nativeMenu(m), r, ch) }).Children(func() {
 			graph()
 			slice := wui.Column(c).Grow(1).MinWidth(0).Background(histCardBg(t)).BorderColor(cardLine(t))
 			if last {
@@ -886,7 +886,7 @@ func allHistRow(a *app.App, l *listLook, row wui.ListRow, rows []app.AllHistRow)
 			t := c.Theme()
 			sel := onAccent(a, row.Selected())
 			wui.Row(c).Height(histRowH).Padding(0, 8).Gap(6).AlignItems(wui.Center).Tooltip(i18n.T("在侧栏的 Git 栏里看这个仓库")).
-				ContextMenu(func(m *wui.Menu) { repoMenu(a, m, r, false) }).Children(func() {
+				ContextMenu(func(m *wui.Menu) { repoMenu(a, nativeMenu(m), r, false) }).Children(func() {
 				repoDot(a, c, r, sel)
 				wui.Text(c, r.Name).FontSize(13.5).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).Tooltip(changeSummary(r.Status))
 				pill(c, strconv.Itoa(r.Status.Count), t.Warning, sel)
@@ -913,7 +913,7 @@ func allHistRow(a *app.App, l *listLook, row wui.ListRow, rows []app.AllHistRow)
 		}
 		histParts(l, row, top, func() {
 			sel := onAccent(a, row.Selected())
-			el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch).ContextMenu(func(m *wui.Menu) { commitMenu(a, m, r, cm) })
+			el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch).ContextMenu(func(m *wui.Menu) { commitMenu(a, nativeMenu(m), r, cm) })
 			hover := el.Hovered()
 			el.Children(func() { commitLine(a, c, r, cm, sel, hover, true, 8) })
 		}, tail)
@@ -947,7 +947,7 @@ func compareRow(a *app.App, row wui.ListRow, r *app.Repo, cp *app.Compare, hr ap
 	}
 	if hr.File >= 0 {
 		ch := cp.Files[hr.File]
-		el := wui.Row(c).ContextMenu(func(m *wui.Menu) { changeMenu(a, m, r, ch) })
+		el := wui.Row(c).ContextMenu(func(m *wui.Menu) { changeMenu(a, nativeMenu(m), r, ch) })
 		if el.RowDoubleClicked() {
 			a.OpenDiff(r, ch, true)
 		}

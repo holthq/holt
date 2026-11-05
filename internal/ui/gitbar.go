@@ -183,7 +183,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		bg = windowBg(t)
 	}
 	el := wui.Row(c).Height(34).Padding(0, 4, 0, 2).Gap(6).AlignItems(wui.Center).Background(bg).Cursor(wui.CursorPointer).
-		BorderWidth(1, 0, 0, 0).BorderColor(t.Border.Alpha(0.6)).ContextMenu(func(m *wui.Menu) { repoMenu(a, m, r, false) })
+		BorderWidth(1, 0, 0, 0).BorderColor(t.Border.Alpha(0.6)).ContextMenu(func(m *wui.Menu) { repoMenu(a, nativeMenu(m), r, false) })
 	underBackdrop(a, c, el)
 	hover := el.Hovered()
 	if el.Clicked() {
@@ -410,7 +410,7 @@ func stashRow(a *app.App, row wui.ListRow, r *app.Repo, s git.Stash) {
 	toggle := func() { a.ToggleStash(r, s) }
 	el := wui.Row(c).Height(26).Padding(0, 4, 0, 16).Gap(6).AlignItems(wui.Center).
 		Tooltip(s.Ref + "  " + s.Message + "\n" + s.Date.Local().Format("2006-01-02 15:04")).
-		ContextMenu(func(m *wui.Menu) { stashMenu(a, m, r, s) })
+		ContextMenu(func(m *wui.Menu) { stashMenu(a, nativeMenu(m), r, s) })
 	hover := el.Hovered()
 	if hover {
 		a.GitHover = row.Index
@@ -453,7 +453,7 @@ func stashFileRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			a.ApplyStashFiles(r, files)
 		}
 		m.Separator()
-		changeMenu(a, m, r, ch)
+		changeMenu(a, nativeMenu(m), r, ch)
 	})
 	if el.Hovered() {
 		a.GitHover = row.Index
@@ -498,10 +498,10 @@ func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	}
 	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, left).Gap(8).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
 		if rows := a.MenuChanges(cr); rows != nil {
-			chosenChangeMenu(a, m, rows)
+			chosenChangeMenu(a, nativeMenu(m), rows)
 			return
 		}
-		changeMenu(a, m, r, ch)
+		changeMenu(a, nativeMenu(m), r, ch)
 	})
 	hover := el.Hovered()
 	if hover {
@@ -587,7 +587,7 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	toggle := func() { a.ToggleUntrackedDir(r, ch.Path) }
 	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, 12).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
 		if rows := a.MenuChanges(cr); rows != nil {
-			chosenChangeMenu(a, m, rows)
+			chosenChangeMenu(a, nativeMenu(m), rows)
 			return
 		}
 		label := i18n.T("展开")
@@ -598,7 +598,7 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 			toggle()
 		}
 		m.Separator()
-		changeMenu(a, m, r, ch)
+		changeMenu(a, nativeMenu(m), r, ch)
 	})
 	hover := el.Hovered()
 	if hover {

@@ -180,7 +180,7 @@ var mergeActions = []struct {
 }
 
 // mergeMenu 是编辑器右键菜单里冲突的几项（在"保存"上面）：光标在块里时解决这一块，有块时上一处 / 下一处。
-func mergeMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func mergeMenu(a *app.App, m menu, d *docs.Doc) {
 	blocks := d.ConflictBlocks()
 	if len(blocks) == 0 {
 		return
