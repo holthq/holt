@@ -308,6 +308,7 @@ func (a *App) OnChangeSelected(pin bool) {
 		return // ⌘点把唯一选中的那行取消了
 	}
 	a.gitMulti = false
+	a.gitAfter = gitAfter{} // 用户自己挪了选中
 	sel := a.GitSel
 	if sel >= 0 && sel < len(rows) && !canStop(rows[sel].Kind) {
 		if a.GitHover == sel {
@@ -394,6 +395,10 @@ func (a *App) syncChangeSel() {
 	}
 	a.gitMulti = false
 	sel := a.docChangeRow(rows)
+	if sel < 0 && a.gitAfter.set { // 暂存 / 丢弃了选中的那行：停在原来位置的下一行，不丢选中
+		sel = a.gitAfter.pick(rows)
+		a.gitAfter = gitAfter{}
+	}
 	a.GitSel, a.gitPrev = sel, sel
 	a.chooseGit(rows, sel)
 }

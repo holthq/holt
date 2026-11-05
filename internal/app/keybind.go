@@ -662,7 +662,7 @@ func KeyGroups() []KeyGroup {
 			add(i18n.T(cmp.Or(c.Group, "其他")), c)
 		}
 	}
-	for ctx := Editor; ctx <= SearchList; ctx++ {
+	for ctx := Editor; ctx <= GitList; ctx++ {
 		for _, c := range Commands {
 			if c.Context == ctx && c.Section == "" {
 				add(i18n.T(ctx.String()), c)

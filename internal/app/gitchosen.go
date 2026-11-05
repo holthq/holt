@@ -12,7 +12,8 @@ import (
 
 // 这个文件是 Git 栏的多选：⌘点加减、⇧点一段、⌘A 全选、拖着选都是列表（ChangeList.Selection）做的，
 // 选中按行的键（ChangeKey）记。选了好几行时点击不预览，右键其中一行一次暂存 / 取消暂存 / 丢弃选中的全部（跨仓库也行），
-// 回车把它们都开成固定的 Diff。行里悬停出来的按钮只管自己那一行。
+// 回车把它们都开成固定的 Diff。行里悬停出来的暂存 / 取消暂存 / 丢弃按钮（ActChanges）和列表有焦点时的空格 / ⌘⌫
+// （KeyChanges）也一样：指针所在的行在多选里就作用于选中的全部，不然只管那一行。
 
 // rowKey 是第 i 行的键，i 不在范围里是零值（不会在选中里）。
 func rowKey(rows []ChangeRow, i int) ChangeKey {
@@ -154,6 +155,109 @@ func (a *App) UnstageChanges(rows []ChangeRow) {
 	}
 }
 
+// gitAfter 记着 Git 栏里对选中的行做暂存 / 取消暂存 / 丢弃时，它后面（没有就是前面）第一个不在选中里、能停的行：
+// 状态重读后那行（连同多选的其余几行）挪到别的组或没了、选中跟不上当前标签时，选中停在 next 上（它也没了就 prev，
+// 再没有就原来的行号附近），键盘可以接着按。
+type gitAfter struct {
+	set        bool
+	next, prev ChangeKey
+	at         int
+}
+
+// markGitAfter 在改动 r 里的 paths 之前记下 gitAfter；选中的行不是其中之一时不记。
+func (a *App) markGitAfter(r *Repo, paths []string) {
+	rows := a.GitRows()
+	sel := a.GitSel
+	if sel < 0 || sel >= len(rows) || rows[sel].Kind != RowChange || rows[sel].Repo != r || !slices.Contains(paths, rows[sel].Change.Path) {
+		return
+	}
+	after := gitAfter{set: true, at: sel}
+	near := func(d int) ChangeKey {
+		for i := nextStop(rows, sel, d); i >= 0; i = nextStop(rows, i, d) {
+			if k := rows[i].Key(); !a.GitChosen.Has(k) {
+				return k
+			}
+		}
+		return ChangeKey{}
+	}
+	after.next, after.prev = near(1), near(-1)
+	a.gitAfter = after
+}
+
+// pick 是状态重读后选中落到的行，没有为 -1。
+func (g gitAfter) pick(rows []ChangeRow) int {
+	for _, k := range []ChangeKey{g.next, g.prev} {
+		if k == (ChangeKey{}) {
+			continue
+		}
+		if i := slices.IndexFunc(rows, func(cr ChangeRow) bool { return cr.Key() == k }); i >= 0 {
+			return i
+		}
+	}
+	at := min(g.at, len(rows)-1)
+	if at < 0 {
+		return -1
+	}
+	if canStop(rows[at].Kind) {
+		return at
+	}
+	if i := nextStop(rows, at, 1); i >= 0 {
+		return i
+	}
+	return nextStop(rows, at, -1)
+}
+
+// ActChanges 是变更行上行内按钮作用于哪些行：cr 在两行以上的多选里时是选中的全部（同右键菜单），不然只有它。
+func (a *App) ActChanges(cr ChangeRow) []ChangeRow {
+	if rows := a.MenuChanges(cr); rows != nil {
+		return rows
+	}
+	return []ChangeRow{cr}
+}
+
+// KeyChanges 是 Git 栏键盘上的暂存 / 丢弃键（命令面板里的同一条）作用于哪些行：选中的变更；
+// 选中里没有变更时是光标那一行（是变更的话）。都没有为 nil。
+func (a *App) KeyChanges() []ChangeRow {
+	if rows := a.ChosenChanges(); len(rows) > 0 {
+		return rows
+	}
+	rows := a.GitRows()
+	if a.GitSel >= 0 && a.GitSel < len(rows) && rows[a.GitSel].Kind == RowChange {
+		return rows[a.GitSel : a.GitSel+1 : a.GitSel+1]
+	}
+	return nil
+}
+
+// CanToggleStage 是 rows 里有能暂存或能取消暂存的（全是冲突、或是空的就不能）。
+func (a *App) CanToggleStage(rows []ChangeRow) bool {
+	return CountChanges(rows, CanStage)+CountChanges(rows, CanUnstage) > 0
+}
+
+// ToggleStageRows 是暂存键：rows 里有能暂存的（未暂存、未跟踪）就暂存它们，没有就取消暂存已暂存的。冲突不动。
+func (a *App) ToggleStageRows(rows []ChangeRow) {
+	if CountChanges(rows, CanStage) > 0 {
+		a.StageChanges(rows)
+		return
+	}
+	a.UnstageChanges(rows)
+}
+
+// DiscardRows 是丢弃键 / 行内的丢弃按钮：一项时和右键菜单的"丢弃改动…" / "删除文件…"一样（Discard），
+// 好几项时是"丢弃 N 项改动…"（DiscardChanges）。都先问。
+func (a *App) DiscardRows(rows []ChangeRow) {
+	if len(rows) == 1 {
+		a.Discard(rows[0].Repo, rows[0].Change)
+		return
+	}
+	a.DiscardChanges(rows)
+}
+
+// ToggleStageChosen 是 changes.toggleStage：对 KeyChanges 暂存 / 取消暂存。
+func (a *App) ToggleStageChosen() { a.ToggleStageRows(a.KeyChanges()) }
+
+// DiscardChosen 是 changes.discard：丢弃 KeyChanges 里未暂存的改动、删掉未跟踪的（先问）。
+func (a *App) DiscardChosen() { a.DiscardRows(a.KeyChanges()) }
+
 // DiscardChanges 丢掉 rows 里未暂存的改动、删掉未跟踪的文件：只问一次（列出前 5 个），
 // 然后每个仓库一条 git restore、一条 git clean。已暂存的、冲突不动。
 // 子模块 git restore 管不到：检出的提交变了的（Sub 里有 C）检出回记录的提交（同 Discard），里面的改动不动；
@@ -203,6 +307,7 @@ func (a *App) DiscardChanges(rows []ChangeRow) {
 		_, subs := byRepo(rows, isSubMoved)
 		_, clean := byRepo(rows, isUntracked)
 		for _, r := range a.Repos { // 仓库按列表的顺序；问的时候移除了的跳过
+			a.markGitAfter(r, slices.Concat(restore[r], subs[r], clean[r]))
 			if ps := restore[r]; len(ps) > 0 {
 				a.RunOp(r, i18n.T("丢弃改动"), append([]string{"restore", "--"}, ps...)...)
 			}

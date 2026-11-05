@@ -31,9 +31,10 @@ const (
 	Terminal                  // 终端有焦点
 	CommitBox                 // Git 栏的提交信息框有焦点
 	SearchList                // 侧栏搜索页的结果列表有焦点
+	GitList                   // 侧栏 Git 栏的变更列表有焦点
 )
 
-var contextNames = [...]string{"全局", "编辑器", "Diff", "文件树", "终端", "提交框", "搜索结果"}
+var contextNames = [...]string{"全局", "编辑器", "Diff", "文件树", "终端", "提交框", "搜索结果", "Git 栏"}
 
 func (c Context) String() string { return contextNames[c] }
 
@@ -420,6 +421,11 @@ func buildCommands() []*Command {
 		&Command{ID: "commit", Title: "提交", Mods: cmd, Key: ui.KeyEnter, Context: CommitBox},
 		&Command{ID: "search.replaceOne", Title: "替换选中的一处 / 文件", Mods: cmd, Key: ui.KeyEnter, Context: SearchList},
 		&Command{ID: "search.dismiss", Title: "排除选中的一处 / 文件", Key: ui.KeyBackspace, Context: SearchList},
+		// Git 栏的列表有焦点时由列表自己接键（ui/gitbar.go），作用于选中的变更；Run 也给命令面板
+		&Command{ID: "changes.toggleStage", Title: "暂存 / 取消暂存选中的变更", Key: ui.KeySpace, Context: GitList,
+			Enabled: func(a *App) bool { return a.CanToggleStage(a.KeyChanges()) }, Run: (*App).ToggleStageChosen},
+		&Command{ID: "changes.discard", Title: "丢弃选中的改动…", Mods: cmd, Key: ui.KeyBackspace, Context: GitList,
+			Enabled: func(a *App) bool { return CountChanges(a.KeyChanges(), CanStage) > 0 }, Run: (*App).DiscardChosen},
 		&Command{ID: "tree.expand", Title: "展开目录 / 仓库", Key: ui.KeyRight, Context: FileTree},
 		&Command{ID: "tree.collapse", Title: "收起目录 / 仓库，或走到上一级", Key: ui.KeyLeft, Context: FileTree},
 		&Command{ID: "tree.open", Title: "固定打开文件", Key: ui.KeyEnter, Context: FileTree},
@@ -801,7 +807,7 @@ func ShortcutDoc() string {
 		"⌃⇧` 新建终端标签不管键盘在哪都行。\n\n" +
 		"⌘= / ⌘- / ⌘0 是界面缩放（视图菜单，所有窗口一起，状态栏右边显示不是 100% 的缩放）；键盘在终端里也是：" +
 		"终端自带的字号键（⌘= ⇧⌘= ⌘- ⌘0）让给了它，终端字号在设置的终端页改。设置窗口里 ⌘F 到搜索框，有字时 Esc 清空。\n")
-	for ctx := Global; ctx <= SearchList; ctx++ {
+	for ctx := Global; ctx <= GitList; ctx++ {
 		var rows []string
 		for _, c := range Commands {
 			if c.Context == ctx && c.Key != 0 {

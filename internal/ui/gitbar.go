@@ -72,7 +72,13 @@ func gitView(a *app.App, c *wui.Context) {
 		// 右键不改选中：列表替我们选中时和点击分不开，会把那一项预览出来。没选中的那行的菜单只对它（MenuChanges）
 		a.ChangeList.MenuKeepsSelection = true
 		a.GitHover = -1
-		list := sideList(a, c, &a.ChangeList, len(rows), func(row wui.ListRow) { gitRow(a, row, rows[row.Index]) })
+		// 行内按钮的动作等列表建完再做（开文件会换当前标签、挪选中）
+		var later func()
+		g := gitFrame{do: func(fn func()) { later = fn }}
+		list := sideList(a, c, &a.ChangeList, len(rows), func(row wui.ListRow) { gitRow(a, row, rows[row.Index], &g) })
+		if later != nil {
+			later()
+		}
 		if list.Changed() {
 			a.OnChangeSelected(false)
 			c.Invalidate() // 点在分组标题上时选中又退回去了，再画一帧
@@ -87,12 +93,26 @@ func gitView(a *app.App, c *wui.Context) {
 		if a.ChangeList.Focused(c) { // ← → 收起 / 展开未跟踪目录；焦点在提交框上时归提交框
 			a.ChangeList.OnShortcut(c, 0, wui.KeyLeft, func() { a.FoldGitDir(false) })
 			a.ChangeList.OnShortcut(c, 0, wui.KeyRight, func() { a.FoldGitDir(true) })
+			// 空格暂存 / 取消暂存、⌘⌫ 丢弃：作用于选中的变更（多选是全部），和行内按钮一样
+			onKey(c, &a.ChangeList.Handle, "changes.toggleStage", func() { a.Exec("changes.toggleStage") })
+			onKey(c, &a.ChangeList.Handle, "changes.discard", func() { a.Exec("changes.discard") })
 		}
 	})
 }
 
+// gitFrame 是画一帧 Git 栏时各行共用的：do 把行内按钮的动作留到列表建完再做。
+type gitFrame struct {
+	do func(func())
+}
+
+// showActions 是这一行出不出行内按钮：指针在上面，或列表有键盘、它是选中的（键盘用户也看得到能做什么）。
+// 列表的焦点要在建行时读（列表建完之前读不到这一帧的）。
+func showActions(a *app.App, row wui.ListRow, hover bool) bool {
+	return hover || row.Selected() && a.ChangeList.Focused(row.Context)
+}
+
 // gitRow 画 Git 栏的一行。
-func gitRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
+func gitRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	switch cr.Kind {
 	case app.RowRepo:
 		repoHeader(a, row.Context, cr.Repo)
@@ -100,9 +120,9 @@ func gitRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		groupRow(a, row, cr)
 	case app.RowChange:
 		if cr.Change.Dir {
-			dirRow(a, row, cr)
+			dirRow(a, row, cr, g)
 		} else {
-			changeRow(a, row, cr)
+			changeRow(a, row, cr, g)
 		}
 	case app.RowNote:
 		noteRow(a, row, cr)
@@ -302,6 +322,7 @@ func groupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		case git.Staged:
 			rowButton(c, iconMinus, i18n.T("全部取消暂存"), i18n.T("全部取消暂存（git reset）"), func() { a.UnstageAll(r) })
 		case git.Unstaged:
+			rowButton(c, iconUndo, i18n.T("丢弃所有未暂存的改动…"), i18n.T("丢弃所有未暂存的改动…（git restore .，会先问）"), func() { a.DiscardAll(r) })
 			rowButton(c, iconPlus, i18n.T("暂存所有未暂存的改动"), i18n.T("暂存所有未暂存的改动（git add -u）"), func() { a.StageTracked(r) })
 		case git.Untracked:
 			rowButton(c, iconPlus, i18n.T("暂存所有未跟踪文件"), i18n.T("暂存所有未跟踪文件（git add）"), func() { a.StageUntracked(r) })
@@ -432,8 +453,9 @@ func stashTitle(msg string) string {
 }
 
 // changeRow 画一项变更：状态字母、文件名、目录；右键是暂存 / 取消暂存 / 丢弃之类。展开的未跟踪目录里的文件多缩进一级，
-// 目录写相对那个目录的（harness/sub/b.md 写成 b.md 和灰的 sub）。
-func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
+// 目录写相对那个目录的（harness/sub/b.md 写成 b.md 和灰的 sub）。指针在上面（或列表有键盘时选中它）右边出行内按钮
+// （changeActions），名字先省略号截断、按钮贴在最右边；不出按钮时放一个同高的占位，行不跳。
+func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	r, ch := cr.Repo, cr.Change
 	c := row.Context
 	t := c.Theme()
@@ -446,7 +468,7 @@ func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	if cr.InDir != "" {
 		left, shown.Path = 44, strings.TrimPrefix(ch.Path, cr.InDir)
 	}
-	el := wui.Row(c).Padding(4, 8, 4, left).Gap(8).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
+	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, left).Gap(8).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
 		if rows := a.MenuChanges(cr); rows != nil {
 			chosenChangeMenu(a, m, rows)
 			return
@@ -462,22 +484,69 @@ func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	}
 	el.Children(func() {
 		changeLabel(c, shown, sel, muted, sideFont)
-		if ch.Kind != git.Conflict {
-			return
-		}
-		if !hover { // 和指针在上面时一样高，行不跳
-			wui.Box(c).Size(0, rowToolSize)
+		if !showActions(a, row, hover) {
+			wui.Box(c).Size(0, rowToolSize).Shrink(0) // 和出按钮时一样高，行不跳
 			return
 		}
 		wui.Spacer(c).Grow(1)
-		rowButton(c, iconCheck, i18n.T("标记为已解决"), i18n.T("标记为已解决（git add）"), func() { a.MarkResolvedPath(r, ch.Path) })
+		changeActions(a, c, cr, g.do)
 	})
+}
+
+// rowPadY 是 Git 栏变更行、未跟踪目录行上下的留白：加上 rowToolSize 高的按钮（或同高的占位）是一行的高度。
+const rowPadY = 3
+
+// changeActions 是变更行右边的行内按钮，从左到右和 VS Code 一样：未暂存的是打开文件（删掉的不出）· 丢弃改动 · 暂存，
+// 未跟踪的是打开文件 · 删除文件 · 暂存，已暂存的是打开文件 · 取消暂存，冲突是标记为已解决。指针所在的行在多选里时
+// 暂存 / 取消暂存 / 丢弃作用于选中的全部（ActChanges，同右键菜单），提示里写数量；打开文件只开这一行。丢弃、删除照旧先问。
+func changeActions(a *app.App, c *wui.Context, cr app.ChangeRow, do func(func())) {
+	r, ch := cr.Repo, cr.Change
+	if ch.Kind == git.Conflict {
+		rowButton(c, iconCheck, i18n.T("标记为已解决"), i18n.T("标记为已解决（git add）"), func() { do(func() { a.MarkResolvedPath(r, ch.Path) }) })
+		return
+	}
+	if ch.Code != 'D' && !ch.Dir {
+		rowButton(c, iconFile, i18n.T("在编辑器中打开"), i18n.T("在编辑器中打开"), func() { do(func() { a.OpenFile(r, ch.Path, true) }) })
+	}
+	stageActions(a, c, cr, do)
+}
+
+// stageActions 是行内的丢弃 / 删除、暂存、取消暂存按钮（变更行和未跟踪目录行共用），文案同右键菜单，提示带 git 命令和快捷键。
+func stageActions(a *app.App, c *wui.Context, cr app.ChangeRow, do func(func())) {
+	rows := a.ActChanges(cr)
+	multi := len(rows) > 1
+	switch cr.Change.Kind {
+	case git.Unstaged, git.Untracked:
+		label, tip := i18n.T("丢弃改动…"), i18n.T("丢弃改动…（git restore，会先问）")
+		if cr.Change.Kind == git.Untracked {
+			label, tip = i18n.T("删除文件…"), i18n.T("删除文件…（git clean，会先问）")
+		}
+		if multi {
+			n := app.CountChanges(rows, app.CanStage)
+			label = i18n.Tn("丢弃 %d 项改动…", n)
+			tip = i18n.Tn("丢弃 %d 项改动…（未暂存的 git restore，未跟踪的 git clean，会先问）", n)
+		}
+		rowButton(c, iconUndo, label, app.Tip(tip, "changes.discard"), func() { do(func() { a.DiscardRows(rows) }) })
+		label, tip = i18n.T("暂存"), i18n.T("暂存（git add）")
+		if multi {
+			n := app.CountChanges(rows, app.CanStage)
+			label, tip = i18n.Tn("暂存 %d 项", n), i18n.Tn("暂存 %d 项（git add）", n)
+		}
+		rowButton(c, iconPlus, label, app.Tip(tip, "changes.toggleStage"), func() { do(func() { a.StageChanges(rows) }) })
+	case git.Staged:
+		label, tip := i18n.T("取消暂存"), i18n.T("取消暂存（git restore --staged）")
+		if multi {
+			n := app.CountChanges(rows, app.CanUnstage)
+			label, tip = i18n.Tn("取消暂存 %d 项", n), i18n.Tn("取消暂存 %d 项（git restore --staged）", n)
+		}
+		rowButton(c, iconMinus, label, app.Tip(tip, "changes.toggleStage"), func() { do(func() { a.UnstageChanges(rows) }) })
+	}
 }
 
 // dirRow 是一个整个未跟踪的目录（git status 折叠成的一项）：箭头、文件夹、“harness/”和上级目录，右边灰字是
 // 里面几个文件（还没列到是“…”，超了上限是“2000+ 个文件”）。点它展开 / 收起（不开 Diff）；右键是未跟踪的那套
-// （暂存、删除都是整个目录）再加展开 / 收起。
-func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
+// （暂存、删除都是整个目录）再加展开 / 收起；指针在上面（或列表有键盘时选中它）右边的个数换成删除 · 暂存两个按钮。
+func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	r, ch := cr.Repo, cr.Change
 	c := row.Context
 	t := c.Theme()
@@ -488,7 +557,7 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	}
 	open := r.DirOpen[ch.Path]
 	toggle := func() { a.ToggleUntrackedDir(r, ch.Path) }
-	el := wui.Row(c).Padding(4, 8, 4, 12).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
+	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, 12).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
 		if rows := a.MenuChanges(cr); rows != nil {
 			chosenChangeMenu(a, m, rows)
 			return
@@ -503,7 +572,8 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		m.Separator()
 		changeMenu(a, m, r, ch)
 	})
-	if el.Hovered() {
+	hover := el.Hovered()
+	if hover {
 		a.GitHover = row.Index
 	}
 	if el.Clicked() {
@@ -522,7 +592,12 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			})
 			pathLabel(c, ch, sel, muted, sideFont)
 			wui.Spacer(c).Grow(1)
-			wui.Text(c, dirCount(r, ch.Path)).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
+			if !showActions(a, row, hover) {
+				wui.Text(c, dirCount(r, ch.Path)).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
+				wui.Box(c).Size(0, rowToolSize).Shrink(0) // 和出按钮时一样高，行不跳
+				return
+			}
+			stageActions(a, c, cr, g.do) // 删除 · 暂存，都是整个目录
 		})
 	})
 }

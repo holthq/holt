@@ -254,8 +254,9 @@ func TestDiffTabsFollowStatus(t *testing.T) {
 	if d.Info != GoneNote || d.DiffSt != nil || len(a.Docs) != 1 {
 		t.Fatalf("改动没了之后 Info=%q", d.Info)
 	}
-	if a.GitSel != -1 {
-		t.Errorf("改动没了之后 Git 栏还选中 %d", a.GitSel)
+	// 选中的那行挪走了：停在它原来的下一行（u.txt），不丢选中
+	if rows := a.GitRows(); a.GitSel < 0 || a.GitSel >= len(rows) || rows[a.GitSel].Change.Path != "u.txt" {
+		t.Errorf("改动没了之后 Git 栏选中 %d，应停在下一行 u.txt", a.GitSel)
 	}
 	staged := a.OpenDiff(r, r.Status.Changes[0], true)
 	wait("读暂存的 diff", func() bool { return !staged.Loading })

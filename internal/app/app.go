@@ -198,6 +198,7 @@ type App struct {
 	Peek        Peek                    // 编辑器里就地看的那块改动（peek.go），一次只开一张
 	gitMulti    bool                    // 选着好几行（点击不预览），只要当前标签还是 gitMultiDoc 就留着，见 syncChangeSel
 	gitMultiDoc *docs.Doc
+	gitAfter    gitAfter // 暂存 / 取消暂存 / 丢弃了选中的行之后，那行没了时选中落到哪（gitchosen.go）
 	HistList    ui.ListState
 	AllHist     ui.ListState // 右栏"所有仓库"视图
 	HistAllSel  int          // "所有仓库"视图里选中的行，-1 为无

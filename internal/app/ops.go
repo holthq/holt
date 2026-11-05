@@ -35,13 +35,15 @@ func logText(out string, err error) string {
 	return out
 }
 
-// Stage 暂存（git add -A -- paths）。
+// Stage 暂存（git add -A -- paths）。Git 栏里选中的那行因此挪走时选中停在它的下一行（markGitAfter）。
 func (a *App) Stage(r *Repo, paths ...string) {
+	a.markGitAfter(r, paths)
 	a.RunOp(r, i18n.T("暂存"), append([]string{"add", "-A", "--"}, paths...)...)
 }
 
-// Unstage 取消暂存（git restore --staged -- paths）。
+// Unstage 取消暂存（git restore --staged -- paths）。选中同 Stage。
 func (a *App) Unstage(r *Repo, paths ...string) {
+	a.markGitAfter(r, paths)
 	a.RunOp(r, i18n.T("取消暂存"), append([]string{"restore", "--staged", "--"}, paths...)...)
 }
 
@@ -89,10 +91,12 @@ func (a *App) Discard(r *Repo, ch git.Change) {
 		a.discardSub(r, ch)
 	case ch.Kind == git.Unstaged:
 		a.AskDanger(i18n.Tf("丢弃 %s 的改动？", ch.Path), i18n.T("工作区里对它的修改会恢复成暂存区 / 上次提交的样子，不能撤销。"), i18n.T("丢弃"), func() {
+			a.markGitAfter(r, []string{ch.Path})
 			a.RunOp(r, i18n.T("丢弃改动"), "restore", "--", ch.Path)
 		})
 	case ch.Kind == git.Untracked:
 		a.AskDanger(i18n.Tf("删除未跟踪的 %s？", ch.Path), i18n.T("它还没进过 Git，删了就找不回来。"), i18n.T("删除"), func() {
+			a.markGitAfter(r, []string{ch.Path})
 			a.RunOp(r, i18n.T("删除"), "clean", "-fdq", "--", ch.Path)
 		})
 	}

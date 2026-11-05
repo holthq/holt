@@ -361,7 +361,7 @@ func (a *App) commandItems(q string) ([]PaletteItem, string) {
 	}
 	var hs []hit
 	for _, c := range Commands {
-		if c.Run == nil || (c.Group == "" && c.Context != Editor && c.Context != DiffTab) {
+		if c.Run == nil || (c.Group == "" && c.Context != Editor && c.Context != DiffTab && c.Context != GitList) {
 			continue
 		}
 		title := c.Label()

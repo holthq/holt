@@ -38,6 +38,8 @@ about 79 MiB of memory when idle.
   are available in the UI. Each repo's header in the Git panel has its own Pull and Push buttons, with ahead / behind
   commit counts. Git actions that are greyed out say why ("Push (in sync with origin)"), and button tooltips show the
   git command they run.
+  Hovering (or selecting with the keyboard) a changed file shows inline Open File, Discard Changes and Stage / Unstage
+  buttons; with the list focused, Space stages / unstages and ⌘⌫ discards, acting on all selected rows.
 - **Terminals**: each repo has its own set of terminals, built on Ghostty's libghostty-vt, with split panes. Layout
   and output are saved when you close the window. When an agent such as claude or codex runs in a terminal, its tab
   shows whether it is waiting for you (an amber dot: it rang the bell or sent a notification; gone once you switch in)
