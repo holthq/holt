@@ -35,6 +35,8 @@ type session struct {
 	cl      *client
 	framing bool
 	dir     string // OSC 7 最近报的
+	rang    bool   // 这一笔输出里响了铃 / 要了通知（Feed 里的回调写，output 读完清；都在 s.mu 下）
+	bell    bool   // 响过铃但当时没有窗口接着：接上时补一帧
 	exited  bool
 	killed  bool
 	linger  int // 每排一次拿掉（lingerLocked）、每接上一次加一：到点时对不上就是作废了
@@ -71,11 +73,21 @@ func newSession(srv *Server, sid string, req NewReq) (*session, error) {
 		cols, rows = 80, 24
 	}
 	h := &headless{closed: make(chan struct{})}
+	var s *session
+	// 响铃、通知的回调在 Feed 里同步调（output 拿着 s.mu），这里只记一笔，output 喂完再告诉窗口。
+	// 终端自己分得清 OSC 里当结束符的 BEL 和真的响铃，不用自己扫输出。
+	rang := func() {
+		if s != nil {
+			s.rang = true
+		}
+	}
 	term, err := terminal.New(terminal.Options{
 		Conn:       h,
 		Scrollback: req.Scrollback,
 		// 程序读剪贴板（OSC 52）交给接着的窗口去答，它照常问用户
 		ClipboardRead: terminal.ClipboardForward,
+		OnBell:        rang,
+		OnNotify:      func(string, string) { rang() },
 	})
 	if err != nil {
 		return nil, err
@@ -102,7 +114,7 @@ func newSession(srv *Server, sid string, req NewReq) (*session, error) {
 		return nil, err
 	}
 	h.proc.Store(pr)
-	s := &session{
+	s = &session{
 		srv:  srv,
 		info: Info{Sid: sid, WS: req.WS, Repo: req.Repo, Dir: dir, Pid: pr.pid(), Started: time.Now()},
 		term: term, proc: pr, pumped: make(chan struct{}),
@@ -212,6 +224,14 @@ func (s *session) output(p []byte) {
 			s.cl.send(frameDir, []byte(d))
 		}
 	}
+	if s.rang {
+		s.rang = false
+		if s.cl != nil {
+			s.cl.send(frameBell, nil)
+		} else {
+			s.bell = true
+		}
+	}
 	s.frameSoon()
 }
 
@@ -303,6 +323,10 @@ func (s *session) attach(c *client, cols, rows, cellW, cellH int) bool {
 	c.send(frameHello, hello)
 	if len(first) > 0 {
 		c.send(frameOutput, first)
+	}
+	if s.bell {
+		s.bell = false
+		c.send(frameBell, nil)
 	}
 	return true
 }

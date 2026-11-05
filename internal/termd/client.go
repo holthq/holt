@@ -104,6 +104,10 @@ type Conn struct {
 	OnGone func(kicked bool)
 	// OnNoClear 是全屏程序里没清屏。
 	OnNoClear func()
+	// OnBell 是程序响了铃（BEL）或要了通知（OSC 9、OSC 777）；没接着时响的，接上时补一次。
+	OnBell func()
+	// OnOutput 是来了一帧屏幕（有输出）：在读的 goroutine 上调，要快。
+	OnOutput func()
 
 	c         net.Conn
 	r         *bufio.Reader
@@ -182,6 +186,9 @@ func (c *Conn) Read(p []byte) (int, error) {
 		switch typ {
 		case frameOutput:
 			c.buf = payload
+			if c.OnOutput != nil {
+				c.OnOutput()
+			}
 		case frameResized:
 			if v, ok := parseUint32s(payload, 2); ok && c.OnResized != nil {
 				c.OnResized(v[0], v[1])
@@ -193,6 +200,10 @@ func (c *Conn) Read(p []byte) (int, error) {
 		case frameExited:
 			if len(payload) == 4 && c.OnExited != nil {
 				c.OnExited(int(int32(binary.BigEndian.Uint32(payload))))
+			}
+		case frameBell:
+			if c.OnBell != nil {
+				c.OnBell()
 			}
 		case frameNoClear:
 			if c.OnNoClear != nil {

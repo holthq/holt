@@ -39,7 +39,9 @@ about 79 MiB of memory when idle.
   commit counts. Git actions that are greyed out say why ("Push (in sync with origin)"), and button tooltips show the
   git command they run.
 - **Terminals**: each repo has its own set of terminals, built on Ghostty's libghostty-vt, with split panes. Layout
-  and output are saved when you close the window.
+  and output are saved when you close the window. When an agent such as claude or codex runs in a terminal, its tab
+  shows whether it is waiting for you (an amber dot: it rang the bell or sent a notification; gone once you switch in)
+  or running (a spinner); more agent commands can be added in Settings.
 - **Search and navigation**: search and replace across repos. Use ⌘P to find files, ⇧⌘P to open the command palette
   and ⌘T to jump to symbols; ⇧⌘[ / ⇧⌘] switch to the previous / next tab and ⌃Tab goes back to the last used tab.
 - **Local history**: each save keeps a snapshot to help recover content you changed or deleted by mistake.

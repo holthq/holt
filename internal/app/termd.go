@@ -228,6 +228,8 @@ func (a *App) attachPane(r *Repo, p *TermPane, gen int, dir string, res dialResu
 			}
 		})
 	}
+	conn.OnBell = func() { up(func() { a.paneBell(p, gen) }) }
+	conn.OnOutput = func() { p.paneOutput(time.Now()) }
 	conn.OnNoClear = func() {
 		up(func() {
 			if p.gen == gen {
@@ -236,6 +238,7 @@ func (a *App) attachPane(r *Repo, p *TermPane, gen int, dir string, res dialResu
 		})
 	}
 	conn.Start()
+	a.syncAgents()
 	a.SaveState() // 会话里记下 sid
 }
 

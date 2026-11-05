@@ -54,6 +54,12 @@ type TermPane struct {
 	ready []func()    // 终端建好之后要做的（连 termd 时 RunInTerminal 排的）
 	hist  string      // termhist 里这一格的回滚文件：还原的格启动前是上次的，关窗口时写的是这次的；空为没有
 	feed  []byte      // 启动时读回来的上次的回滚（带分隔行），startLocal 建好终端马上喂给它
+
+	// agent 的状态（agents.go）
+	bellAt time.Time    // 响铃 / 要通知的时候（用户没在看这一格）；零为没在等你，切进这一格时清
+	outNs  atomic.Int64 // 最近有输出的时候（UnixNano）：termd 的格读连接的 goroutine 上记，本地的看屏幕变没变
+	runAt  time.Time    // 前台的 agent 这一段从什么时候起有输出；不在运行为零
+	job    string       // 后台轮询最近读到的前台命令
 }
 
 // shellDir 是 shell 报告的目录（OSC 7），没报告为空。
@@ -378,6 +384,8 @@ func (a *App) StartPane(r *Repo, p *TermPane) {
 	gen := p.gen
 	p.Term, p.Err, p.Title, p.Exited, p.ExitCode, p.pid, p.Find = nil, nil, "", false, 0, 0, TermFind{}
 	p.lost, p.rdir, p.ready = "", "", nil
+	p.bellAt, p.runAt, p.job = time.Time{}, time.Time{}, ""
+	p.outNs.Store(0)
 	p.feed = a.takeHist(p) // 接到 termd 上的用不着（attachPane 丢掉），连不上退回本地的照样喂
 	dir := r.Root
 	if p.Dir != "" {
@@ -442,6 +450,9 @@ func (a *App) paneOptions(r *Repo, p *TermPane, gen int, dir string) terminal.Op
 				}
 			})
 		},
+		// 响铃（BEL，OSC 里当结束符的不算）和通知（OSC 9 / 777）：用户没在看这一格就是 agent 在等你
+		OnBell:   func() { up(func() { a.paneBell(p, gen) }) },
+		OnNotify: func(string, string) { up(func() { a.paneBell(p, gen) }) },
 		// 窗口没登记的键（⌘D 分屏、⇧⌘[ ⇧⌘] 切标签）先到这里；编辑器自己要 ⌘D，所以不放到窗口上
 		OnKey: func(mods ui.Modifiers, key ui.Key) bool { return a.termKey(r, p, mods, key) },
 	}
@@ -487,6 +498,7 @@ func (a *App) termZoomKeyFor(mods ui.Modifiers, key ui.Key) func() {
 func (a *App) FocusPane(r *Repo, p *TermPane) {
 	a.TermFocused = true
 	a.focusPane(r, p)
+	p.seen()
 }
 
 func (a *App) focusPane(r *Repo, p *TermPane) {
@@ -1221,7 +1233,6 @@ func (a *App) pollPids() {
 func (a *App) claimPids(kids []int) bool {
 	a.pidWait = slices.DeleteFunc(a.pidWait, func(p *TermPane) bool { return p.Term == nil || p.pid != 0 })
 	claimMu.Lock()
-	defer claimMu.Unlock()
 	for _, k := range kids {
 		if len(a.pidWait) == 0 {
 			break
@@ -1232,6 +1243,8 @@ func (a *App) claimPids(kids []int) bool {
 			a.pidWait = a.pidWait[1:]
 		}
 	}
+	claimMu.Unlock()
+	a.syncAgents()
 	return len(a.pidWait) == 0
 }
 

@@ -265,6 +265,13 @@ func SettingsView(a *app.App) func(c *wui.Context) {
 				})
 			}},
 			{4, "后台", "终端后台进程在不在跑、几个会话；停止…", func(c *wui.Context, l, _ string) { termdField(a, c, l) }},
+			{4, "agent 命令", "终端前台是这些命令时，标签上标出 agent 在等你（响铃、通知）或运行中；claude、codex、gemini、aider、opencode 不用写。逗号分开", func(c *wui.Context, l, d string) {
+				settingField(c, l, func() {
+					if wui.TextInput(c, &s.AgentNames).Width(260).Placeholder("goose, amp").Changed() {
+						done()
+					}
+				}).Description(d)
+			}},
 			{5, "拉取方式", "", func(c *wui.Context, l, _ string) { choice(c, l, &s.PullMode, workspace.PullModes, pullModeNames, done) }},
 			{5, "提交后推送", "提交成功后马上推送当前分支（默认关）", func(c *wui.Context, l, d string) { toggle(c, l, d, &s.AutoPush, done) }},
 			{5, "行内 blame", "光标所在行的行尾显示作者、多久前和提交摘要（改了没保存时不显示）", func(c *wui.Context, l, d string) {

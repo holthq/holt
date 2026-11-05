@@ -58,7 +58,8 @@ type Settings struct {
 	TermDaemon       bool          `json:"termDaemon,omitempty"`       // 关掉窗口后终端继续在后台运行（shell 跑在 termd 里），默认关
 	TermOptionAsAlt  bool          `json:"termOptionAsAlt,omitempty"`  // ⌥ 作为 Meta 键（新开的终端生效）
 	TermCopyOnSelect bool          `json:"termCopyOnSelect,omitempty"` // 终端里选中即复制到剪贴板（开着的终端马上生效）
-	TermProfiles     []TermProfile `json:"termProfiles,omitempty"`     // "其他配置"表：底栏「+」右键、"用配置新建终端…"里挑（上面的 Shell 是默认）
+	TermProfiles     []TermProfile `json:"termProfiles,omitempty"`
+	AgentNames       string        `json:"agentNames,omitempty"` // 另外认作 agent 的前台命令，逗号分开（默认的 claude、codex… 不用写）     // "其他配置"表：底栏「+」右键、"用配置新建终端…"里挑（上面的 Shell 是默认）
 
 	// Git
 	PullMode    string    `json:"pullMode,omitempty"`    // 拉取方式："" 只快进（--ff-only）、"rebase"、"merge"

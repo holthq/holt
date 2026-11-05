@@ -144,6 +144,7 @@ func termTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab, active bo
 			dropMark(c, j > slices.Index(ts, tt))
 		}
 		wui.Icon(c, iconTerminal).FontSize(iconRow).TextColor(fg)
+		agentMark(c, a.TabAgent(tt))
 		wui.Text(c, label).FontSize(12).FontWeight(500).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0).MaxWidth(180)
 		if n := len(tt.Panes()); n > 1 {
 			wui.Text(c, strconv.Itoa(n)).FontSize(10).TextColor(t.TextMuted).SingleLine().Padding(0, 4).Radius(999).

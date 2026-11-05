@@ -35,6 +35,7 @@ const (
 	frameExited  = 'x' // int32 退出码：shell 退出了，会话留到关掉
 	frameGone    = 'g' // 会话不在了；内容 "kicked" 是被别的连接接走了
 	frameNoClear = 'N' // 全屏程序里不清屏
+	frameBell    = 'b' // 程序响铃（BEL）或要通知（OSC 9、OSC 777）：镜像帧里没有，单独告诉窗口
 	frameListed  = 'L' // []Info
 	frameOK      = 'o'
 	frameError   = 'e'

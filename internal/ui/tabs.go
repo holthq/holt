@@ -391,6 +391,11 @@ func docGlyph(a *app.App, c *wui.Context, d *docs.Doc, on bool) {
 		col = c.Theme().AccentText.Alpha(0.75)
 	}
 	wui.Icon(c, ic).FontSize(iconRow).TextColor(col).Shrink(0)
+	if d.Kind == docs.Term {
+		if _, tab := a.TermTabOf(d); tab != nil {
+			agentMark(c, a.TabAgent(tab))
+		}
+	}
 }
 
 // dropMark 是拖着的标签放下去的位置：标签左边（left）或右边一条 2 pt 的强调色竖线。

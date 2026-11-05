@@ -3,12 +3,14 @@ package termd
 import (
 	"encoding/json"
 	"errors"
+	"fmt"
 	"os"
 	"path/filepath"
 	"regexp"
 	"slices"
 	"strconv"
 	"strings"
+	"sync/atomic"
 	"syscall"
 	"testing"
 	"time"
@@ -544,4 +546,36 @@ func TestNewReqArgs(t *testing.T) {
 	v := show(t, c)
 	v.waitText(t, "args-6")
 	v.waitText(t, "env-two")
+}
+
+// 响铃和通知：BEL、OSC 9、OSC 777 各告诉窗口一次；OSC 0 / 2 / 7 / 52 里当结束符的 BEL 不算。
+func TestBell(t *testing.T) {
+	_, sock := startServer(t, -1)
+	c, err := New(sock, shReq(t))
+	if err != nil {
+		t.Fatal(err)
+	}
+	var bells atomic.Int32
+	c.OnBell = func() { bells.Add(1) }
+	v := show(t, c)
+	cases := []struct {
+		seq  string
+		want int32
+	}{
+		{`\033]0;标题\007`, 0},
+		{`\033]2;title\007`, 0},
+		{`\033]7;file://localhost/tmp\007`, 0},
+		{`\033]52;p;aGk=\007`, 0}, // primary：终端不写剪贴板（测试不碰开发机的剪贴板）
+		{`\007`, 1},
+		{`\033]9;agent 等你\007`, 1},
+		{`\033]777;notify;Claude;等你\007`, 1},
+	}
+	for i, tc := range cases {
+		before := bells.Load()
+		v.typeLine(t, fmt.Sprintf("printf '%s'; echo mark-$((%d+1000))", tc.seq, i))
+		v.waitText(t, fmt.Sprintf("mark-%d", i+1000))
+		if got := bells.Load() - before; got != tc.want {
+			t.Errorf("%s：响了 %d 次，要 %d 次", tc.seq, got, tc.want)
+		}
+	}
 }

@@ -478,6 +478,15 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 `internal/tasks` 认仓库根上的 package.json scripts、Makefile / justfile 的目标、Cargo.toml / go.mod 的常用命令（最多 200 条，`Stamp` 按那几个文件的大小和修改时间决定要不要重读）。⇧⌘B 或面板 `!` 选一个，在那个仓库里一个以任务名命名的终端标签里跑；文件树里 package.json 这些的右键也能跑。最近跑过的记在 `TaskHistory`（20 条）排前面。
 
+### agent 状态
+
+终端里跑着 claude、codex 这类 agent 时，按格算它的状态，再按工作树汇总（`app/agents.go`）。全在本机算，只看 Grove 自己的终端，不读 agent 的日志、不接它的接口。
+
+- 等你（`AgentWaiting`）：终端响铃（BEL）或要通知（OSC 9 / OSC 777），而键盘不在这一格（`paneLooked`）；记在 `TermPane.bellAt`，用户切进这一格（`FocusPane`、`GoToPane`）时清。认序列靠 mygo 终端的 `OnBell` / `OnNotify`（OSC 0/2/7/52 里当结束符的 BEL 它不算）；termd 的会话在无头终端上接这两个回调，发 `frameBell` 给窗口（没窗口接着时记下，接上时补一帧），窗口端是 `Conn.OnBell`。
+- 运行中 / 空闲（`AgentRunning` / `AgentIdle`）：前台命令在 agent 名单里（`DefaultAgents` 加设置的「agent 命令」），最近 10 秒（`agentQuiet`）有输出算运行中，否则空闲。前台命令由后台 goroutine（`agentPoller`）每 2 秒用一次 `ps -A -o pid,pgid,tpgid,args` 读所有开着的格（node / bun / python 跑的脚本按脚本名）；读到的和上一轮一样就不回主线程，免得空闲时每 2 秒多一帧。输出时间：termd 的格每来一帧屏幕记一次（`Conn.OnOutput`，原子量），本地的格没有输出回调，前台是 agent 时看屏幕文字的指纹变没变。
+- 终端 → 工作树：格现在的目录（`paneDir`：OSC 7，没有时上次 lsof 读的）落在哪个工作树里（`git.Under` / `SamePath`，套在里面的别的工作树归那个工作树）。`WtAgent(r, w)` 取最需要你的一格（等你 > 运行中 > 空闲），带上开始运行 / 等你的时间和是哪个终端；`GoToPane` 切到那一格（底栏的打开底栏、切仓库和标签，编辑器区的切到那个标签）。
+- 界面：终端标签（底栏和编辑器区）的图标后面，等你画 7px 琥珀色圆点，运行中画 13px 的灰色转圈（`ui/agents.go` 的 `agentMark`），空闲和没有 agent 不画。
+
 ### 回滚内容的保存
 
 未启用后台进程时，shell 随窗口关闭而结束。为便于重开后查看原有输出，关闭窗口、退出或切换工作区前，每个启动过的分屏都会将回滚内容（`Terminal.History`，VT 序列）写入 `<状态目录>/termhist/<工作区哈希>/<毫秒>-<n>.vt`，文件名保存在会话中对应分屏的 `hist` 中。下次启动该分屏时，先将内容输入新终端，并在前面加一行淡色分隔；读取后删除文件。每个分屏最多保留 `TermHistCap` 256 KB（从行首截取），整个目录上限为 `TermHistMax` 20 MB，超出时删除最早的文件。
@@ -490,6 +499,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 - 套接字：状态目录里的 `termd.sock`，0600，不做别的认证（只有这个用户能连）。路径太长（unix 套接字有长度限制）时换成 `$TMPDIR/grove-termd-<sha1>.sock`。同时起了两个时靠 `<sock>.lock` 的 flock 只留一个。一个状态目录一个 termd，所以 `WORKBENCH_STATE` 的实例有自己的。
 - 会话：由一个 pty（自行实现的 `pty_darwin.go`，使用 `/dev/ptmx` + `ioctl`）、一个 shell 和一个无头 `terminal.Terminal` 组成。shell 输出传给无头终端，窗口中的终端通过 `terminal.Options.Conn` 获取镜像帧，保持屏幕和回滚内容一致。仅在窗口端尺寸实际变化时发送大小（`ResizeByConn`）。每个会话同时只允许一条连接，新连接会替换旧连接，另一个窗口会显示“被别的窗口接走了”。
 - 断开和关掉：关窗口、⌘Q、换工作区是断开，会话留在 termd 里，会话记下 sid，再开同一个工作区接回去；关格、关标签、移除仓库、重新启动是关掉会话（shell 收到 SIGHUP）。
+- 响铃：会话的无头终端响铃或要通知时发 `frameBell`（镜像帧里没有），见上面“agent 状态”。
 - 退出：shell 退出了、又没窗口接着的会话过 `Linger` 10 秒拿掉；没有会话也没有连接 60 秒后 termd 自己退出、删掉套接字。SIGTERM / SIGINT 挂断所有 shell 再退。
 - 设置窗口终端页显示 termd 在不在跑、几个会话（`TermdStatus`），能“停止”（`StopTermDaemon`）。关掉设置只影响新开的格。
 

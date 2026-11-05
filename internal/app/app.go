@@ -283,8 +283,11 @@ type App struct {
 	zenEsc time.Time // 禅模式里上一下没人接的 Esc
 
 	// 底栏的终端（terminals.go）
-	TermFocused bool     // 这一帧键盘在终端里（底栏或编辑器区；View 的根上清，终端画出来时写）；终端的快捷键看它
-	edTab       *TermTab // 键盘最近在的编辑器区终端标签（edRepo 的）；在底栏的格里为 nil。TermFocused 时 ActivePane 是它
+	TermFocused bool                       // 这一帧键盘在终端里（底栏或编辑器区；View 的根上清，终端画出来时写）；终端的快捷键看它
+	agents      *agentPoller               // 后台看终端前台的 agent（agents.go）
+	clock       func() time.Time           // 测试换的钟；nil 为 time.Now
+	fgJobs      func([]int) map[int]string // 测试换的前台命令；nil 为 ps
+	edTab       *TermTab                   // 键盘最近在的编辑器区终端标签（edRepo 的）；在底栏的格里为 nil。TermFocused 时 ActivePane 是它
 	edRepo      *Repo
 	Rename      TermRename // 正在改名的终端标签
 	paneSeq     int
@@ -423,6 +426,7 @@ func (a *App) Start() {
 
 // Close 关掉所有终端和文件监听、取消还在跑的 git 命令、停掉还没搜完的搜索（窗口关了之后）。
 func (a *App) Close() {
+	a.stopAgents()
 	a.stopWatching()
 	a.Search.stop()
 	if a.Search.timer != nil {

@@ -2142,5 +2142,9 @@
   "；后面还排着 %d 个提交|1": "; %d commit still queued after it",
   "；忽略了 %d 个不认识的键": "; ignored %d unknown keys",
   "；忽略了 %d 个不认识的键|1": "; ignored %d unknown key",
-  "；这次太大（原文件合计超过 %d MB），不能撤销": "; too large to undo (original files over %d MB in total)"
+  "；这次太大（原文件合计超过 %d MB），不能撤销": "; too large to undo (original files over %d MB in total)",
+  "agent 命令": "Agent commands",
+  "agent 在等你": "Agent is waiting for you",
+  "agent 运行中": "Agent is running",
+  "终端前台是这些命令时，标签上标出 agent 在等你（响铃、通知）或运行中；claude、codex、gemini、aider、opencode 不用写。逗号分开": "When one of these commands runs in the foreground of a terminal, its tab shows whether the agent is waiting for you (bell, notification) or running; claude, codex, gemini, aider and opencode are built in. Separate with commas"
 }
