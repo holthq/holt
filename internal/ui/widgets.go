@@ -212,6 +212,15 @@ type seg struct {
 // segTabs 是等分的分段标签（侧栏的 文件 | 搜索 | Git、右栏的 当前仓库 | 所有仓库）：浅灰的槽里每段一样宽、
 // 图标加文字居中，选中的一段是浮起来的底色。返回槽，Changed() 报换了一段。
 func segTabs(c *wui.Context, sel *int, segs ...seg) wui.Element {
+	return segTabsOf(c, sel, false, segs)
+}
+
+// segIconTabs 是只有图标的 segTabs（侧栏顶上的 文件 / 搜索 / Git / 大纲）：图标 iconTool，读屏念 label，悬停提示照旧。
+func segIconTabs(c *wui.Context, sel *int, segs ...seg) wui.Element {
+	return segTabsOf(c, sel, true, segs)
+}
+
+func segTabsOf(c *wui.Context, sel *int, iconOnly bool, segs []seg) wui.Element {
 	t := c.Theme()
 	p := wui.SegmentedBase(c, sel, len(segs))
 	p.Track.Height(26).Padding(2).Gap(2).Radius(7).Background(t.Text.Alpha(0.055)).AlignItems(wui.Stretch).MinWidth(0)
@@ -219,6 +228,9 @@ func segTabs(c *wui.Context, sel *int, segs ...seg) wui.Element {
 		for i, sg := range segs {
 			s := p.Segment(i).Grow(1).Basis(0).MinWidth(0).Radius(5).AlignItems(wui.Center).Justify(wui.Center).Cursor(wui.CursorPointer)
 			tooltip(c, s, sg.tip)
+			if iconOnly {
+				s.Label(sg.label)
+			}
 			fg := t.TextMuted
 			switch {
 			case i == *sel:
@@ -230,6 +242,10 @@ func segTabs(c *wui.Context, sel *int, segs ...seg) wui.Element {
 			}
 			s.Children(func() {
 				wui.Row(c).Gap(5).AlignItems(wui.Center).Justify(wui.Center).MinWidth(0).Padding(0, 6).Children(func() {
+					if iconOnly {
+						wui.Icon(c, sg.icon).FontSize(iconTool).TextColor(fg)
+						return
+					}
 					if sg.icon != nil {
 						wui.Icon(c, sg.icon).FontSize(iconRow).TextColor(fg)
 					}

@@ -36,7 +36,10 @@ about 79 MiB of memory when idle.
 - **Git**: stage changes by hunk or line and resolve conflicts in the editor. View a commit graph for one repo, or the
   history of all repos merged by time; commits co-authored by a coding agent are marked and can be filtered. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
   are available in the UI. Each repo's header in the Git panel has its own Pull and Push buttons, with ahead / behind
-  commit counts. Git actions that are greyed out say why ("Push (in sync with origin)"), and button tooltips show the
+  commit counts. Each worktree is an agent's desk: one row with a single status mark (waiting for you, running, ready to
+  merge, has changes, idle, merged); expand it to see what it adds over the main branch, review it, or merge it into main.
+  A "Needs you" bar at the top lists worktrees across all repositories that are waiting or ready to merge, with previous /
+  next buttons to jump between them. Git actions that are greyed out say why ("Push (in sync with origin)"), and button tooltips show the
   git command they run.
   Hovering (or selecting with the keyboard) a changed file shows inline Open File, Discard Changes and Stage / Unstage
   buttons; with the list focused, Space stages / unstages and ⌘⌫ discards, acting on all selected rows.

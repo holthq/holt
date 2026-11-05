@@ -129,7 +129,7 @@ func (a *App) setWorktrees(r *Repo, x git.Extra, l wtList) {
 			a.LoadHistory(r, true)
 		}
 	}
-	if r.WtOpen && len(r.Worktrees) > 0 {
+	if r.WtShown() && len(r.Worktrees) > 0 {
 		a.loadWtInfo(r)
 	} else {
 		r.WtInfo = nil
@@ -228,8 +228,12 @@ func wtInfo(ctx context.Context, root, base string, w git.Worktree) *WtInfo {
 
 // ToggleWorktrees 展开 / 收起 Git 栏里仓库段的"工作树"块（记进会话的 wtOpen）；展开时重算各条的状态、开始盯着各工作树的目录。
 func (a *App) ToggleWorktrees(r *Repo) {
-	r.WtOpen = !r.WtOpen
-	if r.WtOpen && len(r.Worktrees) > 0 {
+	if r.WtShown() { // 收起：默认展开的也记下这次收起了
+		r.WtOpen, r.WtShut = false, true
+	} else {
+		r.WtOpen, r.WtShut = true, false
+	}
+	if r.WtShown() && len(r.Worktrees) > 0 {
 		a.loadWtInfo(r) // 收着时没盯着，上次算的可能过时了
 	}
 	a.syncWtWatch(r)

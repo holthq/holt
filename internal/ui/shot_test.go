@@ -332,7 +332,8 @@ func material(img *image.RGBA, dark bool) *image.RGBA {
 // TestScreenshotGitBar 是 Git 栏改成"所有仓库同时列出"之后的截图（WORKBENCH_SHOT=目录 时才跑），在临时仓库里做：
 //
 //	gitbar.png       Git 栏：四个仓库一段一段（已暂存 + 未暂存 + 未跟踪、未暂存 + 收起的未跟踪、合并冲突、干净），
-//	                 分组标题上的 + / − / 中止合并图标，选中一项在预览 Diff 标签里看，有已暂存改动的那段提交框展开
+//	                 段头右边是改动数徽标（干净的是绿色圈中勾）、↓ / ↑ 灰字和 24 见方的拉取 / 推送；未暂存 / 已暂存组头是橙色铅笔 /
+//	                 绿色勾选框加个数，分组标题上的 + / − / 中止合并图标，选中一项在预览 Diff 标签里看，有已暂存改动的那段提交框展开
 //	history-all.png  右栏"所有仓库"：置顶有改动的仓库，各仓库的提交按时间交错、带仓库胶囊，展开一个提交
 func TestScreenshotGitBar(t *testing.T) {
 	dir := os.Getenv("WORKBENCH_SHOT")
@@ -805,8 +806,10 @@ func TestScreenshotTreeMulti(t *testing.T) {
 }
 
 // TestScreenshotWorktrees 是 worktrees.png（WORKBENCH_SHOT=目录 时才跑）：临时仓库 api-server 旁边四个工作树——
-// wt/fix-io（领先 2，在工作区里打开着，段头有"工作树"标签）、wt/search（3 处改动）、分离 HEAD 的 demo（锁着）、
-// 目录删掉了的 wt/old（可清理）；Git 栏里工作树块展开，右栏看 wt/search 的分支历史。
+// wt/fix-io（领先 2、干净：可合并的绿勾和 ↑2，在工作区里打开着，段头有"工作树"标签，侧栏顶上的"需要你"条里有它）、
+// wt/search（3 处改动：文件夹加改动数徽标）、分离 HEAD 的 demo（锁着，没有 agent）、目录删掉了的 wt/old（已合并，半透明）；
+// 组里按状态排。Git 栏里工作树组展开，wt/search 展开着（摘要、审查、合并到 main、main...分支 的文件），右栏看它的分支历史。
+// 深色的同一画面是 worktrees-dark.png。
 func TestScreenshotWorktrees(t *testing.T) {
 	dir := os.Getenv("WORKBENCH_SHOT")
 	if dir == "" {
@@ -874,8 +877,14 @@ func TestScreenshotWorktrees(t *testing.T) {
 	a.ToggleWorktrees(r)
 	wait("工作树的状态", func() bool { return r.WtInfo != nil && !r.WtLoading })
 	a.ShowWorktreeHistory(r, searchW)
-	wait("wt/search 的历史", func() bool { return r.Hist.Loaded && !r.Hist.Loading && tt.HasText("搜索：按词查") })
+	a.ExpandWorktree(r, searchW)
+	wait("wt/search 的历史和 main...wt/search", func() bool {
+		return r.Hist.Loaded && !r.Hist.Loading && tt.HasText("搜索：按词查") && a.WtExp != nil && !a.WtExp.Loading
+	})
 	writeShot(t, tt, dir, "worktrees.png")
+	tt.SetDark(true)
+	writeShot(t, tt, dir, "worktrees-dark.png")
+	tt.SetDark(false)
 }
 
 // TestScreenshotSplitEditors 是 split-editors.png（WORKBENCH_SHOT=目录 时才跑）：临时仓库 api-server，编辑器分成三组——

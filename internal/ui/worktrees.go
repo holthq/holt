@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"path"
 	"path/filepath"
 	"strconv"
 	"strings"
@@ -17,22 +16,21 @@ import (
 // 每行是 Git 栏列表里能选中的一行：单击或 ↑↓ 停上去在右栏看它的分支历史，双击或回车在工作区中打开，
 // 右键是锁定 / 移除 / 清理之类。
 
-// worktreesHeader 是"工作树"块头：箭头、图标、"工作树"、个数和"n 有改动 · n 可清理"，右边是新建和更多。
+// worktreesHeader 是工作树组头（高 26）：箭头、树形图标（悬停"工作树"）、个数，不写"工作树"三个字；收起时右边放组里
+// 最需要你的那一档的符号（等你 / 运行中 / 可合并，没有就不放），右边是新建和更多。
 func worktreesHeader(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	c := row.Context
 	t := c.Theme()
 	r := cr.Repo
-	count := strconv.Itoa(cr.Count)
-	dirty, prunable, _ := r.WtSummary()
-	if dirty > 0 {
-		count += " · " + i18n.Tf("%s 有改动", strconv.Itoa(dirty))
-	}
-	if prunable > 0 {
-		count += " · " + i18n.Tf("%s 可清理", strconv.Itoa(prunable))
-	}
-	foldHeader(a, row, 30, cr.Title, count, r.WtOpen, func() { a.ToggleWorktrees(r) }, func() {
-		wui.Icon(c, iconWorktree).FontSize(iconInline).TextColor(t.TextMuted).Shrink(0)
+	open := r.WtShown()
+	foldHeader(a, row, 26, cr.Title, true, strconv.Itoa(cr.Count), open, func() { a.ToggleWorktrees(r) }, func() {
+		wui.Icon(c, iconWorktree).FontSize(iconRow).TextColor(t.TextMuted).Shrink(0).Label(i18n.T("工作树")).Tooltip(i18n.T("工作树"))
 	}, func() {
+		if top, ok := a.WtGroupTop(r); ok && !open {
+			wui.Box(c.Key("top")).Size(16, 16).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Children(func() {
+				wtMark(c, top)
+			})
+		}
 		if r.WtLoading {
 			wui.Spinner(c)
 		}
@@ -65,46 +63,52 @@ func worktreesMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 	}
 }
 
-// worktreeRow 是一个工作树：分支（分离 HEAD 写短哈希）、和分支对不上时灰字的目录名，右边从右往左是
-// 领先 / 落后、改动数、锁、"可清理"、"已打开" / "主"。右栏正在看它的历史、选中又不在它上面时有一层底色；
-// 选中时是列表的强调色底，灰字、徽标、锁都换成底上看得清的颜色。
-func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree) {
+// worktreeRow 是一个工作树（高 28，一个词都不写）：状态符号（16 的格子，wtMark）、名字、右边一个灰色的小数字
+// （等了 / 跑了多久、↑N、改动数徽标、↑N ↓M）；分支、路径、主 / 已打开 / 已锁定写在悬停提示里，已打开、已锁定另有小图标。
+// 已合并的整行半透明。指针在上面（或列表有键盘时选中它）右边出 22 见方的按钮：终端（有 agent 的终端）、
+// 审查（可合并、有改动）、移除工作树（已合并）。单击选中并展开，双击在工作区中打开，右键是锁定 / 移除之类。
+func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree, g *gitFrame) {
 	c := row.Context
 	t := c.Theme()
 	sel := onAccent(a, row.Selected())
-	muted, dot := t.TextMuted, t.Warning
+	muted := t.TextMuted
 	if sel {
-		muted, dot = t.AccentText.Alpha(0.75), t.AccentText
+		muted = t.AccentText.Alpha(0.75)
 	}
-	el := wui.Row(c).Height(24).Padding(0, 8, 0, 30).Gap(6).AlignItems(wui.Center).Radius(6).
-		Tooltip(wtTip(w)).ContextMenu(func(m *wui.Menu) { worktreeMenu(a, m, r, w) })
-	if el.Hovered() {
+	ag := a.WtAgent(r, w)
+	info := r.WtInfo[w.Path]
+	st := app.WtStateOf(ag.State, w, info)
+	el := wui.Row(c).Height(28).Padding(0, 6, 0, 26).Gap(6).AlignItems(wui.Center).Radius(6).
+		Tooltip(wtTip(w, st)).ContextMenu(func(m *wui.Menu) { worktreeMenu(a, m, r, w) })
+	hover := el.Hovered()
+	if hover {
 		a.GitHover = row.Index
 	}
-	if el.RowDoubleClicked() { // 单击由列表选中（OnChangeSelected）
-		a.OnChangeSelected(true)
+	if el.RowDoubleClicked() { // 单击由列表选中（OnChangeSelected，展开）
+		a.OpenWorktree(w)
 	}
-	if !sel && r.Hist.RefPath == w.Path {
+	if st == app.WtMerged {
+		el.Opacity(0.5)
+	}
+	if !sel && a.WtExpanded(r, w) && !w.Main { // 展开着：强调色 20% 的底加左边 3px 的竖条
+		el.Background(t.Accent.Alpha(0.2)).BorderWidth(0, 0, 0, 3).BorderColor(t.Accent)
+	} else if !sel && r.Hist.RefPath == w.Path {
 		el.Background(t.Accent.Alpha(0.12))
 	}
-	info := r.WtInfo[w.Path]
 	el.Children(func() {
+		wui.Box(c).Size(16, 16).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Children(func() {
+			wtMark(c, st)
+		})
 		name := wui.Text(c, wtTitle(w)).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
-		if w.Prunable {
-			name.TextColor(muted)
+		if st == app.WtWaiting {
+			name.FontWeight(600)
 		}
-		if d := wtDir(w); d != "" {
-			wui.Text(c, d).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
-		}
-		wui.Spacer(c).Grow(1)
 		if w.Main {
-			pill(c, i18n.T("主"), t.TextMuted, sel).Tooltip(i18n.T("主工作树"))
+			wui.Icon(c, iconHome).FontSize(iconInline).TextColor(muted).Shrink(0).Label(i18n.T("主工作树")).Tooltip(i18n.T("主工作树"))
 		}
 		if a.WtRepo(w) != nil {
-			pill(c, i18n.T("已打开"), t.TextMuted, sel).Tooltip(i18n.T("已经是工作区里的一段：双击跳过去"))
-		}
-		if w.Prunable {
-			pill(c, i18n.T("可清理"), t.Warning, sel).Tooltip(i18n.T("目录已经不在了：右键清理"))
+			tip := i18n.T("已经是工作区里的一段：双击跳过去")
+			wui.Icon(c, iconLink).FontSize(iconInline).TextColor(muted).Shrink(0).Label(i18n.T("已打开")).Tooltip(tip)
 		}
 		if w.Locked {
 			tip := i18n.T("已锁定")
@@ -113,30 +117,77 @@ func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree) {
 			}
 			wui.Icon(c, iconLock).FontSize(iconInline).TextColor(muted).Shrink(0).Tooltip(tip).Label(tip)
 		}
-		switch {
-		case w.Prunable || w.Bare:
-		case info == nil:
-			if r.WtLoading {
-				wui.Text(c, "…").FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
-			}
-		case info.Err != nil:
-			pill(c, "!", t.Danger, sel).Tooltip(info.Err.Error())
-		default:
-			if info.Dirty > 0 {
-				n := strconv.Itoa(info.Dirty)
-				tip := i18n.Tf("%s 处未提交的改动", n)
-				wui.Row(c).Gap(4).AlignItems(wui.Center).Shrink(0).Tooltip(tip).Label(tip).Children(func() {
-					wui.Box(c).Size(6, 6).Radius(3).Background(dot).Shrink(0)
-					wui.Text(c, n).FontSize(sideSub).TextColor(muted).SingleLine()
-				})
-			}
-			if s := wtUpDown(info); s != "" {
-				wui.Text(c, s).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0).
-					Tooltip(i18n.T("和主工作树的 HEAD 比：↑ 领先、↓ 落后"))
-			}
+		wui.Spacer(c).Grow(1)
+		if showActions(a, row, hover) && wtActions(a, c, r, w, st, ag, g.do) {
+			return
 		}
+		wtTrailing(a, c, r, w, st, ag, info, sel, muted)
 	})
 }
+
+// wtTrailing 是工作树一行右边灰色的小数字：等你 / 运行中是多久，可合并是 ↑N，有改动是改动数徽标，没有 agent 是 ↑N ↓M。
+func wtTrailing(a *app.App, c *wui.Context, r *app.Repo, w app.Worktree, st app.WtState, ag app.AgentState, info *app.WtInfo, sel bool, muted wui.Color) {
+	t := c.Theme()
+	small := func(s, tip string) {
+		wui.Text(c, s).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0).FontFeatures("tnum").Tooltip(tip)
+	}
+	switch {
+	case w.Bare:
+	case info != nil && info.Err != nil:
+		pill(c, "!", t.Danger, sel).Tooltip(info.Err.Error())
+		return
+	case info == nil && r.WtLoading && st != app.WtWaiting && st != app.WtRunning:
+		small("…", "")
+		return
+	}
+	switch st {
+	case app.WtWaiting:
+		small(shortDur(a.Now().Sub(ag.Since())), i18n.T("等了多久"))
+	case app.WtRunning:
+		small(shortDur(a.Now().Sub(ag.Since())), i18n.T("跑了多久"))
+	case app.WtMergeable:
+		small("↑"+strconv.Itoa(info.Ahead), i18n.T("比主分支领先的提交数"))
+	case app.WtDirty:
+		n := strconv.Itoa(info.Dirty)
+		pill(c, n, t.Warning, sel).Tooltip(i18n.Tf("%s 处未提交的改动", n)).Label(i18n.Tf("%s 处未提交的改动", n))
+	case app.WtPlain:
+		if info != nil {
+			if s := wtUpDown(info); s != "" {
+				small(s, i18n.T("和主工作树的 HEAD 比：↑ 领先、↓ 落后"))
+			}
+		}
+	}
+}
+
+// wtActions 是指针在工作树一行上时右边的按钮（22 见方，图标加提示）：有 agent 的终端时是终端，可合并、有改动时是审查，
+// 已合并时是移除工作树。画了按钮返回真（就不画右边的数字）。
+func wtActions(a *app.App, c *wui.Context, r *app.Repo, w app.Worktree, st app.WtState, ag app.AgentState, do func(func())) bool {
+	any := false
+	if ag.Pane != nil {
+		any = true
+		squareButton(c.Key("term"), iconTerminal, i18n.T("跳到终端"), i18n.T("跳到这个工作树上的 agent 终端"), wtBtnSize, iconRow, false,
+			func() { do(func() { a.GoToPane(ag.Repo, ag.Tab, ag.Pane) }) })
+	}
+	if st == app.WtMergeable || st == app.WtDirty {
+		any = true
+		squareButton(c.Key("review"), iconEye, i18n.T("审查"), i18n.T("审查：在主区看它比主分支多出的改动（main...分支）"), wtBtnSize, iconRow, false,
+			func() { do(func() { a.ReviewWorktree(r, w) }) })
+	}
+	if st == app.WtMerged && !w.Main {
+		any = true
+		why := app.RemoveWorktreeWhy(r, w)
+		tip := i18n.T("移除工作树…（分支会留着）")
+		if why != "" {
+			tip = i18n.Tf("移除工作树：%s", why)
+		}
+		squareButton(c.Key("remove"), iconTrash, i18n.T("移除工作树…"), tip, wtBtnSize, iconRow, why != "",
+			func() { do(func() { a.RemoveWorktree(r, w) }) })
+	}
+	return any
+}
+
+// wtBtnSize 是工作树一行、摘要行上的图标按钮见方的边长。
+const wtBtnSize = 22
 
 // worktreeMenu 是一个工作树的右键菜单；主工作树只有打开、终端、访达、复制路径。
 func worktreeMenu(a *app.App, m *wui.Menu, r *app.Repo, w app.Worktree) {
@@ -190,20 +241,6 @@ func wtTitle(w app.Worktree) string {
 	return filepath.Base(w.Path)
 }
 
-// wtDir 是分支后面灰字的目录名：目录名就是分支（或分支最后一段），或者以"-分支最后一段"结尾（atlas 旁边的
-// atlas-kit-s5 是 wt/kit-s5，不一定带主仓库的全名）就不写，完整路径在悬停提示里。
-func wtDir(w app.Worktree) string {
-	dir := filepath.Base(w.Path)
-	if w.Branch == "" {
-		return dir
-	}
-	seg := path.Base(w.Branch)
-	if dir == w.Branch || dir == seg || strings.HasSuffix(dir, "-"+seg) {
-		return ""
-	}
-	return dir
-}
-
 // wtUpDown 是"↑3 ↓1"：只写不为 0 的。
 func wtUpDown(info *app.WtInfo) string {
 	var parts []string
@@ -216,9 +253,16 @@ func wtUpDown(info *app.WtInfo) string {
 	return strings.Join(parts, " ")
 }
 
-// wtTip 是工作树一行的悬停说明：路径、HEAD、锁定和可清理的原因。
-func wtTip(w app.Worktree) string {
-	lines := []string{w.Path}
+// wtTip 是工作树一行的悬停说明：状态、分支（分离 HEAD 写短哈希）、路径、主工作树、锁定和可清理的原因。
+func wtTip(w app.Worktree, st app.WtState) string {
+	lines := []string{wtStateName(st)}
+	if w.Branch != "" {
+		lines = append(lines, i18n.Tf("分支 %s", w.Branch))
+	}
+	if w.Main {
+		lines = append(lines, i18n.T("主工作树"))
+	}
+	lines = append(lines, w.Path)
 	if w.Head != "" {
 		lines = append(lines, "HEAD "+git.Short(w.Head))
 	}

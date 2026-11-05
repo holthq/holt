@@ -27,7 +27,7 @@ func sidebar(a *app.App, c *wui.Context) {
 			}
 		}
 		wui.Row(c).Height(headerHeight+4).Padding(0, 8).Gap(4).AlignItems(wui.Center).Shrink(0).Children(func() {
-			seg := segTabs(c, &mode, seg{iconFiles, i18n.T("文件"), app.Tip(i18n.T("文件"), "view.files")},
+			seg := segIconTabs(c, &mode, seg{iconFiles, i18n.T("文件"), app.Tip(i18n.T("文件"), "view.files")},
 				seg{iconSearch, i18n.T("搜索"), app.Tip(i18n.T("搜索"), "view.search")}, seg{iconBranch, "Git", app.Tip("Git", "view.git")},
 				seg{iconOutline, i18n.T("大纲"), i18n.T("当前文件的大纲")}).Grow(1)
 			if seg.Changed() {
@@ -314,6 +314,8 @@ func guidesFor(a *app.App) treeGuides {
 const (
 	sideFont = 14
 	sideSub  = 12
+	repoFont = 14.5 // Git 栏仓库段头的仓库名
+	syncSize = 24   // Git 栏仓库段头的拉取 / 推送按钮见方
 	sideMono = 12.5
 )
 

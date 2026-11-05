@@ -45,7 +45,7 @@ func TestGitBarAllRepos(t *testing.T) {
 	}
 	above(t, tt, "notes.md", "beta（仓库）")
 	above(t, tt, "beta.go", "gamma（仓库）")
-	if tt.HasText("没有未提交的变更") || tt.HasText("切换仓库（⌘1–9）") {
+	if tt.HasText("切换仓库（⌘1–9）") {
 		t.Errorf("gamma 应收着、不该有仓库切换器: %q", tt.Texts())
 	}
 	if got := tt.HasText(i18n.Tf("提交 %s 的改动…", "alpha")); !got || tt.HasText(i18n.Tf("提交 %s 的改动…", "gamma")) {
@@ -56,7 +56,7 @@ func TestGitBarAllRepos(t *testing.T) {
 	// ⌘3：跳到 gamma、展开它，当前仓库和右栏的历史跟着换
 	tt.Key(wui.Cmd, wui.Key3)
 	wait("gamma 的历史", func() bool { return tt.HasText("gamma 1") })
-	if a.Current() != gamma || !gamma.GitOpen() || !tt.HasText("没有未提交的变更") {
+	if a.Current() != gamma || !gamma.GitOpen() {
 		t.Fatalf("⌘3 后当前 %s，gamma 展开=%v", a.Current().Name, gamma.GitOpen())
 	}
 	if tt.HasText("alpha 3") {
@@ -77,11 +77,11 @@ func TestGitBarAllRepos(t *testing.T) {
 	mustText(t, tt, "alpha.txt")
 	// 工具条的"收起所有仓库" / "展开所有仓库"
 	mustClick(t, tt, "收起所有仓库")
-	if tt.HasText("alpha.txt") || tt.HasText("beta.go") || tt.HasText("没有未提交的变更") {
+	if tt.HasText("alpha.txt") || tt.HasText("beta.go") {
 		t.Errorf("全部收起后还有行: %q", tt.Texts())
 	}
 	mustClick(t, tt, "展开所有仓库")
-	for _, s := range []string{"alpha.txt", "beta.go", "没有未提交的变更"} {
+	for _, s := range []string{"alpha.txt", "beta.go"} {
 		mustText(t, tt, s)
 	}
 	// 分组标题：箭头收起这一组（标题和"+"还在），点标题再展开
@@ -136,9 +136,9 @@ func TestGitBarAllRepos(t *testing.T) {
 	if a.Current() != beta {
 		t.Errorf("⌘↩ 提交的是焦点所在段的仓库，当前应是 beta: %s", a.Current().Name)
 	}
-	// 点过"展开所有仓库"，干净了也还展开着，写一行说明（gamma 收着）
+	// 点过"展开所有仓库"，干净了也还展开着（干净由段头的勾表示，不再写说明行）
 	wait("beta 干净了", func() bool {
-		return tt.HasText("没有未提交的变更") && !tt.HasText(i18n.Tf("提交 %s 个文件", "1"))
+		return beta.Status.Count == 0 && beta.GitOpen() && !tt.HasText(i18n.Tf("提交 %s 个文件", "1"))
 	})
 }
 

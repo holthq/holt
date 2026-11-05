@@ -65,6 +65,8 @@ type Repo struct {
 	Linked     bool               // 自己是链接的工作树（git worktree add 出来的）
 	MainRoot   string             // 链接的工作树：主工作树的目录（主仓库是 bare 时为空）
 	WtOpen     bool               // Git 栏里"工作树"块展开着（记在会话的 wtOpen）
+	WtShut     bool               // 用户这次收起了默认展开（wtAuto）的工作树组（不保存）
+	wtAuto     bool               // 有工作树在等你、在跑或可合并：组默认展开（SyncWtAuto 每帧对）
 	WtInfo     map[string]*WtInfo // 工作树路径 → 懒算的改动数、领先 / 落后；nil 为还没算（块展开时算，重读状态时重算）
 	WtLoading  bool               // 正在算 WtInfo
 	WtErr      error              // 上一次读工作树列表失败的原因
@@ -194,6 +196,7 @@ type App struct {
 	gitDir      ChangeKey // Git 栏的选中停在这个未跟踪目录上（它那行的 Key），空为没有；和 gitStash 一样跟着 gitDirDoc
 	gitDirDoc   *docs.Doc
 	GitHover    int                     // 这一帧指针所在的行，用来区分点击和键盘移动
+	WtExp       *WtExpand               // Git 栏里展开着的工作树（wtstate.go），nil 为没有
 	GitChosen   ui.Selection[ChangeKey] // Git 栏里选中的行（⌘点、⇧点、⌘A 多选），见 ChosenChanges；单选时就是 GitSel 那行
 	Peek        Peek                    // 编辑器里就地看的那块改动（peek.go），一次只开一张
 	gitMulti    bool                    // 选着好几行（点击不预览），只要当前标签还是 gitMultiDoc 就留着，见 syncChangeSel

@@ -26,7 +26,7 @@ type wtWatcher struct {
 // syncWtWatch 让 r 的工作树监听和现在该看的对上（主线程）：展开状态、列表、工作区里开着哪些仓库变了之后调。
 func (a *App) syncWtWatch(r *Repo) {
 	want := map[string]bool{}
-	if a.watching && r.WtOpen && !r.gone() && slices.Contains(a.Repos, r) {
+	if a.watching && r.WtShown() && !r.gone() && slices.Contains(a.Repos, r) {
 		for _, w := range r.Worktrees {
 			if len(want) >= WtWatchMax {
 				break
@@ -123,7 +123,7 @@ func (r *Repo) WtWatching() int {
 // 块收起了、整块重算了（wtGen 变了）就扔掉。整块还在算（可能是变之前开始的）就整块重来。
 func (a *App) reloadWtInfo(r *Repo, path string) {
 	i := slices.IndexFunc(r.Worktrees, func(w Worktree) bool { return w.Path == path })
-	if !r.WtOpen || r.gone() || i < 0 {
+	if !r.WtShown() || r.gone() || i < 0 {
 		return
 	}
 	if r.WtLoading || r.WtInfo == nil {
@@ -145,7 +145,7 @@ func (a *App) reloadWtInfo(r *Repo, path string) {
 // 那一条的状态跟着重算（这种工作树不另开监听）。
 func (a *App) wtTouched(o *Repo) {
 	for _, r := range a.Repos {
-		if r == o || !r.WtOpen || len(r.Worktrees) == 0 {
+		if r == o || !r.WtShown() || len(r.Worktrees) == 0 {
 			continue
 		}
 		for _, w := range r.Worktrees {

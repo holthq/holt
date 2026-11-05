@@ -27,6 +27,9 @@ const (
 	RowWorktree                 // 一个工作树
 	RowOngoing                  // 段头下面的横幅：合并 / 变基 / 拣选 / 还原停在一半（ongoing.go），继续 / 跳过 / 中止
 	RowStashFile                // 展开的贮藏下面的一个文件（Stash 是那条贮藏，Change 是 InCommit 的文件）
+	RowWtSummary                // 展开的工作树下面的摘要行：提交数、文件数、行数，审查、合并到 main
+	RowWtFile                   // 展开的工作树比主分支多出的一个文件（main...分支，Change 是 Range 的）
+	RowWtTerm                   // 展开的工作树上的终端（有 agent 时）：前台进程、多久以前，点它跳过去
 )
 
 // 分组在 GroupToggled 和 state.json 里的键。
@@ -98,8 +101,10 @@ func (cr ChangeRow) Key() ChangeKey {
 		return ChangeKey{cr.Repo.Root, cr.Kind, 0, cr.Stash.Hash}
 	case RowStashFile:
 		return ChangeKey{cr.Repo.Root, cr.Kind, 0, cr.Stash.Hash + ":" + cr.Change.Path}
-	case RowWorktree:
+	case RowWorktree, RowWtSummary, RowWtTerm:
 		return ChangeKey{cr.Repo.Root, cr.Kind, 0, cr.Wt.Path}
+	case RowWtFile:
+		return ChangeKey{cr.Repo.Root, cr.Kind, 0, cr.Wt.Path + ":" + cr.Change.Path}
 	case RowNote: // 一个仓库段里可以有好几条说明（没有改动、展开的贮藏在读、展开的未跟踪目录还有更多）
 		return ChangeKey{cr.Repo.Root, cr.Kind, 0, cr.InDir + cr.Title}
 	}
@@ -179,7 +184,7 @@ func (a *App) GitRows() []ChangeRow {
 	n := 0
 	for _, r := range a.Repos {
 		n += 1 + len(r.Status.Changes) + 8 + len(r.Extra.Stashes) + len(r.StashFiles)
-		if r.WtOpen {
+		if r.WtShown() {
 			n += len(r.Worktrees)
 		}
 	}
@@ -193,15 +198,14 @@ func (a *App) GitRows() []ChangeRow {
 			rows = append(rows, ChangeRow{Kind: RowOngoing, Repo: r, Title: OngoingTitle(r)})
 		}
 		if r.Err == nil && r.Loaded && r.HasWorktrees() {
-			rows = appendWorktrees(rows, r)
+			rows = a.appendWorktrees(rows, r)
 		}
 		switch {
 		case r.Err != nil:
 			rows = append(rows, ChangeRow{Kind: RowNote, Repo: r, Title: r.Err.Error()})
 		case !r.Loaded:
 			// 段头在转圈
-		case r.Status.Count == 0:
-			rows = append(rows, ChangeRow{Kind: RowNote, Repo: r, Title: i18n.T("没有未提交的变更")})
+		case r.Status.Count == 0: // 干净由段头的勾表示，不再写一行"没有未提交的变更"
 			rows = appendStashes(rows, r)
 			if r.CommitShown() { // 干净的仓库也能修改上一次提交（只改信息）
 				rows = append(rows, ChangeRow{Kind: RowCommit, Repo: r})
@@ -215,14 +219,26 @@ func (a *App) GitRows() []ChangeRow {
 	return rows
 }
 
-// appendWorktrees 加上仓库的"工作树"块：一行标题，展开时下面每个工作树一行。
-func appendWorktrees(rows []ChangeRow, r *Repo) []ChangeRow {
+// appendWorktrees 加上仓库的"工作树"块：一行组头，展开时下面每个工作树一行（按状态排，SortedWorktrees）；
+// 展开着的那个工作树下面是摘要、比主分支多出的文件和（有 agent 时）终端。
+func (a *App) appendWorktrees(rows []ChangeRow, r *Repo) []ChangeRow {
 	rows = append(rows, ChangeRow{Kind: RowWorktrees, Repo: r, Title: i18n.T("工作树"), Count: len(r.Worktrees)})
-	if !r.WtOpen {
+	if !r.WtShown() {
 		return rows
 	}
-	for _, w := range r.Worktrees {
+	for _, w := range a.SortedWorktrees(r) {
 		rows = append(rows, ChangeRow{Kind: RowWorktree, Repo: r, Wt: w})
+		if !a.WtExpanded(r, w) || w.Main {
+			continue
+		}
+		x := a.WtExp
+		rows = append(rows, ChangeRow{Kind: RowWtSummary, Repo: r, Wt: w})
+		for _, f := range x.Files {
+			rows = append(rows, ChangeRow{Kind: RowWtFile, Repo: r, Wt: w, Change: f})
+		}
+		if ag := a.WtAgent(r, w); ag.Pane != nil {
+			rows = append(rows, ChangeRow{Kind: RowWtTerm, Repo: r, Wt: w})
+		}
 	}
 	return rows
 }
@@ -291,7 +307,7 @@ func groupCount(st git.Status, k git.Kind) int {
 // OnChangeSelected 处理 Git 栏里的点击 / 方向键：选中落在一项变更、一个工作树、一条贮藏或贮藏里的文件上。
 // 键盘走到段头、分组标题、说明或提交框时按方向跳到下一个能停的行（那边没有了就留在原处）；点在它们上面不算选中。
 // 选中一项变更（或贮藏里的文件）就把当前仓库切到它的仓库，在预览 Diff 标签里显示；pin（双击、回车）时固定这个标签。
-// 选中一个工作树是右栏看它的分支历史，开着的 Diff 不动；pin 是在工作区中打开它。
+// 选中一个工作树是展开它、右栏看它的分支历史，开着的 Diff 不动；回车展开 / 收起它（双击在工作区中打开由那一行管）。
 // 选中一条贮藏只是停在上面（点它展开 / 收起由那一行自己管），回车展开 / 收起。
 // 选了好几行（⌘点、⇧点、⌘A，见 gitchosen.go）时点击不预览，回车把选中的改动都开成固定的 Diff。
 func (a *App) OnChangeSelected(pin bool) {
@@ -342,14 +358,28 @@ func (a *App) OnChangeSelected(pin bool) {
 		}
 		return
 	}
-	if cr.Kind == RowWorktree {
+	if cr.Kind == RowWorktree { // 选中就展开（同时只展开一个）；回车展开 / 收起，双击在工作区中打开（那一行自己管）
 		a.gitWt, a.gitWtDoc = cr.Wt.Path, a.CurrentDoc()
 		if pin {
-			a.OpenWorktree(cr.Wt)
+			if a.GitHover != sel {
+				a.ToggleWorktree(cr.Repo, cr.Wt)
+			}
 			return
+		}
+		a.ExpandWorktree(cr.Repo, cr.Wt)
+		// 上面展开着的那个收起来了，行号会变：选中跟着这个工作树走
+		rows = a.GitRows()
+		if i := slices.IndexFunc(rows, func(r ChangeRow) bool { return r.Kind == RowWorktree && r.Key() == cr.Key() }); i >= 0 && i != sel {
+			a.GitSel, a.gitPrev = i, i
+			a.chooseGit(rows, i)
 		}
 		a.clearRefHistories(cr.Repo)
 		a.viewWorktree(cr.Repo, cr.Wt)
+		return
+	}
+	if cr.Kind == RowWtFile { // main...分支 的一个文件：开它的 Diff，选中跟着那个 Diff 标签（docChangeRow）
+		a.gitWt = ""
+		a.OpenDiff(cr.Repo, cr.Change, pin)
 		return
 	}
 	a.gitWt = ""
@@ -371,7 +401,7 @@ func (a *App) OnChangeSelected(pin bool) {
 
 // canStop 是 Git 栏的选中能停在这种行上：一项变更、一个工作树、一条贮藏或贮藏里的文件。
 func canStop(k RowKind) bool {
-	return k == RowChange || k == RowWorktree || k == RowStash || k == RowStashFile
+	return k == RowChange || k == RowWorktree || k == RowStash || k == RowStashFile || k == RowWtFile
 }
 
 // nextStop 是从 i 往 d 方向（1 下、-1 上）第一个能停的行，没有为 -1。
@@ -408,7 +438,9 @@ func (a *App) docChangeRow(rows []ChangeRow) int {
 	d := a.CurrentDoc()
 	if a.gitWt != "" {
 		if d == a.gitWtDoc {
-			if i := slices.IndexFunc(rows, func(cr ChangeRow) bool { return cr.Kind == RowWorktree && cr.Wt.Path == a.gitWt }); i >= 0 {
+			if i := slices.IndexFunc(rows, func(cr ChangeRow) bool {
+				return cr.Kind == RowWorktree && cr.Wt.Path == a.gitWt
+			}); i >= 0 {
 				return i
 			}
 		}
@@ -438,7 +470,8 @@ func (a *App) docChangeRow(rows []ChangeRow) int {
 		})
 	case d.Kind == docs.Diff:
 		return slices.IndexFunc(rows, func(cr ChangeRow) bool {
-			return cr.Kind == RowStashFile && cr.Repo.Root == d.Root && cr.Change.Commit == d.Change.Commit && cr.Change.Path == d.Change.Path
+			return (cr.Kind == RowStashFile || cr.Kind == RowWtFile) && cr.Repo.Root == d.Root &&
+				cr.Change.Commit == d.Change.Commit && cr.Change.Parent == d.Change.Parent && cr.Change.Path == d.Change.Path
 		})
 	case d.Kind == docs.File && d.Rel != "":
 		return slices.IndexFunc(rows, func(cr ChangeRow) bool {

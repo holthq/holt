@@ -194,3 +194,18 @@ func PruneList(ctx context.Context, root string) ([]string, error) {
 	}
 	return lines, nil
 }
+
+// BranchFiles 是 head 比 base 多出来的改动（`git diff base...head`，只读）：先求两边的 merge-base，再列
+// merge-base → head 改了的文件（带行数，Range 为真、Parent 是 merge-base）和中间的提交数。base 后来多出的提交不算。
+func BranchFiles(ctx context.Context, root, base, head string) (mb string, files []Change, commits int, err error) {
+	out, err := RunCtx(ctx, root, "merge-base", base, head)
+	if err != nil {
+		return "", nil, 0, err
+	}
+	mb = strings.TrimSpace(string(out))
+	if files, err = DiffFiles(ctx, root, mb, head); err != nil {
+		return mb, nil, 0, err
+	}
+	commits, err = Count(ctx, root, mb+".."+head)
+	return mb, files, commits, err
+}

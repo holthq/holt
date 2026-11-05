@@ -45,6 +45,8 @@ func gitView(a *app.App, c *wui.Context) {
 				iconButton(c, iconRefresh, app.Tip(i18n.T("重新读取所有仓库的 git 状态"), "git.refresh"), func() { a.Exec("git.refresh") })
 			}
 		})
+		a.SyncWtAuto()
+		needYouBar(a, c)
 		rows := a.GitRows()
 		a.ChangeList.Key = func(i int) any { return rows[i].Key() }
 		a.ChangeList.Header = func(i int) bool { return rows[i].Kind == app.RowRepo }
@@ -63,6 +65,12 @@ func gitView(a *app.App, c *wui.Context) {
 				return cr.Change.Path
 			case app.RowWorktree:
 				return i18n.Tf("工作树 %s", wtTitle(cr.Wt))
+			case app.RowWtSummary:
+				return i18n.Tf("%s 的摘要", wtTitle(cr.Wt))
+			case app.RowWtFile:
+				return cr.Change.Path
+			case app.RowWtTerm:
+				return i18n.Tf("%s 的终端", wtTitle(cr.Wt))
 			}
 			return cr.Title
 		}
@@ -137,7 +145,13 @@ func gitRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	case app.RowWorktrees:
 		worktreesHeader(a, row, cr)
 	case app.RowWorktree:
-		worktreeRow(a, row, cr.Repo, cr.Wt)
+		worktreeRow(a, row, cr.Repo, cr.Wt, g)
+	case app.RowWtSummary:
+		wtSummaryRow(a, row, cr, g)
+	case app.RowWtFile:
+		wtFileRow(a, row, cr)
+	case app.RowWtTerm:
+		wtTermRow(a, row, cr, g)
 	case app.RowOngoing:
 		ongoingRow(a, row, cr)
 	}
@@ -168,7 +182,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 	if !c.Vibrancy() {
 		bg = windowBg(t)
 	}
-	el := wui.Row(c).Height(32).Padding(0, 4, 0, 2).Gap(6).AlignItems(wui.Center).Background(bg).Cursor(wui.CursorPointer).
+	el := wui.Row(c).Height(34).Padding(0, 4, 0, 2).Gap(6).AlignItems(wui.Center).Background(bg).Cursor(wui.CursorPointer).
 		BorderWidth(1, 0, 0, 0).BorderColor(t.Border.Alpha(0.6)).ContextMenu(func(m *wui.Menu) { repoMenu(a, m, r, false) })
 	underBackdrop(a, c, el)
 	hover := el.Hovered()
@@ -182,7 +196,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		} else {
 			chevron(c, iconRow, open, r.Name, t.TextMuted, func() { a.ToggleGitRepo(r) })
 		}
-		name := wui.Text(c, r.Name).FontSize(sideFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		name := wui.Text(c, r.Name).FontSize(repoFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		switch {
 		case r.Plain:
 			name.TextColor(t.TextMuted)
@@ -228,13 +242,25 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		case !r.Loaded:
 		case r.Plain:
 			wui.Text(c, i18n.T("不是 Git 仓库")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
-		case st.Count == 0:
-			wui.Row(c).Gap(3).AlignItems(wui.Center).Shrink(0).Children(func() {
-				wui.Icon(c, iconCheck).FontSize(iconInline).TextColor(t.Success.Alpha(0.8))
-				wui.Text(c, i18n.T("工作区干净")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
-			})
+		case st.Count == 0: // 干净：一个绿色圈中勾，不写字
+			wui.Icon(c, iconCheck).FontSize(iconTool).TextColor(wtGreen(t)).Shrink(0).
+				Label(i18n.T("工作区干净")).Tooltip(i18n.T("工作区干净"))
 		default:
 			counts(c, st)
+		}
+		if r.Loaded && r.Err == nil && !r.Plain {
+			s := syncOf(a, r)
+			if s.behind > 0 || s.ahead > 0 {
+				ud := ""
+				if s.behind > 0 {
+					ud = "↓" + strconv.Itoa(s.behind)
+				}
+				if s.ahead > 0 {
+					ud = strings.TrimSpace(ud + " ↑" + strconv.Itoa(s.ahead))
+				}
+				wui.Text(c, ud).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Shrink(0).FontFeatures("tnum").
+					Tooltip(i18n.T("和上游比：↓ 落后、↑ 领先"))
+			}
 		}
 		if hover && r.Loaded && st.Conflicts+st.Unstaged+st.Untracked > 0 {
 			tip := app.Tip(i18n.T("全部暂存（git add -A）"), "git.stageAll")
@@ -242,11 +268,11 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		}
 		if r.Loaded && r.Err == nil && !r.Plain {
 			s := syncOf(a, r)
-			syncButton(c, "pull", iconPull, i18n.Tf("拉取 %s", r.Name), s.pullTip, "↓", s.behind, s.pullOff, s.pulling, func() {
+			syncButton(c, "pull", iconPull, i18n.Tf("拉取 %s", r.Name), s.pullTip, "↓", 0, s.pullOff, s.pulling, func() {
 				a.UseRepo(r)
 				a.Pull(r)
 			})
-			syncButton(c, "push", iconPush, i18n.Tf("推送 %s", r.Name), s.pushTip, "↑", s.ahead, s.pushOff, s.pushing, func() {
+			syncButton(c, "push", iconPush, i18n.Tf("推送 %s", r.Name), s.pushTip, "↑", 0, s.pushOff, s.pushing, func() {
 				a.UseRepo(r)
 				a.Push(r)
 			}).ContextMenu(func(m *wui.Menu) { pushMenu(a, m, r) })
@@ -259,7 +285,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 // tip 和标题栏的同一个按钮一样（syncOf）。带 key：指针移上段头时前面会多出"全部暂存"，不带 key 的话
 // 按下和松开时不是同一个元素，点不着。
 func syncButton(c *wui.Context, key string, ic *wui.SVG, label, tip, arrow string, n int, off, busy bool, fn func()) wui.Element {
-	b := wui.Row(c.Key(key)).Height(rowToolSize).MinWidth(rowToolSize).Gap(2).Label(label)
+	b := wui.Row(c.Key(key)).Height(syncSize).MinWidth(syncSize).Gap(2).Label(label)
 	tooltip(c, b, tip)
 	fg := toolStyle(c, b, false, off)
 	if n > 0 {
@@ -281,27 +307,15 @@ func syncButton(c *wui.Context, key string, ic *wui.SVG, label, tip, arrow strin
 	return b
 }
 
-// counts 是段头右边的计数胶囊：冲突 / 已暂存 / 未暂存 / 未跟踪，只列不为 0 的，颜色和分组标题前的点一样。
+// counts 是段头右边的改动数徽标：一个数（所有改动），橙色；有冲突时是红的。各组几条写在悬停提示里。
 func counts(c *wui.Context, st git.Status) {
 	t := c.Theme()
 	sum := changeSummary(st)
-	wui.Row(c).Gap(4).AlignItems(wui.Center).Padding(1, 7).Radius(999).Background(t.TextMuted.Alpha(0.12)).Shrink(0).
-		Tooltip(sum).Label(sum).Children(func() {
-		first := true
-		for _, g := range []struct {
-			k git.Kind
-			n int
-		}{{git.Conflict, st.Conflicts}, {git.Staged, st.Staged}, {git.Unstaged, st.Unstaged}, {git.Untracked, st.Untracked}} {
-			if g.n == 0 {
-				continue
-			}
-			if !first {
-				wui.Text(c, "·").FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.6))
-			}
-			first = false
-			wui.Text(c, strconv.Itoa(g.n)).FontSize(sideSub).FontWeight(600).TextColor(kindColor(t, g.k)).SingleLine()
-		}
-	})
+	color := kindColor(t, git.Unstaged)
+	if st.Conflicts > 0 {
+		color = kindColor(t, git.Conflict)
+	}
+	pill(c, strconv.Itoa(st.Count), color, false).Tooltip(sum).Label(sum)
 }
 
 // groupRow 是段里的分组标题：箭头、颜色点、组名、条数，右边是这一组的暂存 / 取消暂存 / 中止合并之类的图标按钮。
@@ -311,7 +325,14 @@ func groupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	t := c.Theme()
 	r := cr.Repo
 	groupHeader(a, row, cr, func() {
-		wui.Box(c).Size(6, 6).Radius(3).Background(kindColor(t, cr.Change.Kind)).Shrink(0)
+		switch cr.Change.Kind {
+		case git.Unstaged: // 橙色铅笔
+			wui.Icon(c, iconPencil).FontSize(iconRow).TextColor(kindColor(t, git.Unstaged)).Shrink(0).Label(cr.Title)
+		case git.Staged: // 绿色勾选框
+			wui.Icon(c, iconCheckSquare).FontSize(iconRow).TextColor(wtGreen(t)).Shrink(0).Label(cr.Title)
+		default:
+			wui.Box(c).Size(6, 6).Radius(3).Background(kindColor(t, cr.Change.Kind)).Shrink(0)
+		}
 	}, func() {
 		switch cr.Change.Kind {
 		case git.Conflict:
@@ -340,14 +361,16 @@ func stashGroupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 }
 
 // groupHeader 是分组标题的一行：箭头、mark（颜色点或图标）、组名、条数，actions 画在右边。点整行收起 / 展开。
+// 未暂存、已暂存两组不写组名（图标代替，读屏和悬停提示照旧是组名）。
 func groupHeader(a *app.App, row wui.ListRow, cr app.ChangeRow, mark, actions func()) {
 	r := cr.Repo
-	foldHeader(a, row, 26, cr.Title, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions)
+	iconOnly := cr.Kind == app.RowGroup && (cr.Change.Kind == git.Staged || cr.Change.Kind == git.Unstaged)
+	foldHeader(a, row, 26, cr.Title, iconOnly, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions)
 }
 
 // foldHeader 是能收起的标题行（分组标题、工作树块头）：h 高，箭头、mark、标题、count（条数，可以带说明），
-// actions 画在右边。点整行收起 / 展开。
-func foldHeader(a *app.App, row wui.ListRow, h float32, title, count string, open bool, toggle, mark, actions func()) {
+// actions 画在右边。点整行收起 / 展开。iconOnly 时不写标题（mark 是图标），标题只给读屏和悬停提示。
+func foldHeader(a *app.App, row wui.ListRow, h float32, title string, iconOnly bool, count string, open bool, toggle, mark, actions func()) {
 	c := row.Context
 	t := c.Theme()
 	el := wui.Row(c).Height(h).Padding(0, 4, 0, 14).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer)
@@ -357,10 +380,15 @@ func foldHeader(a *app.App, row wui.ListRow, h float32, title, count string, ope
 	if el.Clicked() {
 		toggle()
 	}
+	if iconOnly {
+		el.Tooltip(title)
+	}
 	el.Children(func() {
 		chevron(c, iconRow, open, title, t.TextMuted.Alpha(0.8), toggle)
 		mark()
-		wui.Text(c, title).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(0)
+		if !iconOnly {
+			wui.Text(c, title).FontSize(sideSub).FontWeight(600).TextColor(t.TextMuted).SingleLine().Shrink(0)
+		}
 		wui.Text(c, count).FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.7)).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		wui.Spacer(c).Grow(1)
 		if actions != nil {

@@ -69,12 +69,12 @@ func TestGitRowsAllRepos(t *testing.T) {
 	// 折叠 / 展开按仓库，干净的展开后是一行说明
 	a.ToggleGitRepo(alpha)
 	a.ToggleGitRepo(gamma)
-	want = "#alpha #beta =未暂存 beta.go ✎ #gamma ~没有未提交的变更"
+	want = "#alpha #beta =未暂存 beta.go ✎ #gamma" // 干净由段头的勾表示，没有说明行
 	if got := rowsSummary(a.GitRows()); got != want {
 		t.Fatalf("折叠后:\n got %s\nwant %s", got, want)
 	}
 	a.SetAllGitOpen(true)
-	if !a.AllGitOpen() || len(a.GitRows()) != len(rows)+1 {
+	if !a.AllGitOpen() || len(a.GitRows()) != len(rows) { // 干净的 gamma 展开了也没有说明行
 		t.Errorf("全部展开后 %s", rowsSummary(a.GitRows()))
 	}
 	a.SetAllGitOpen(false)
@@ -132,7 +132,7 @@ func TestJumpRepo(t *testing.T) {
 	if a.Current() != gamma || !gamma.GitOpen() || !gamma.Expanded {
 		t.Fatalf("⌘3 后当前 %s open=%v expanded=%v", a.Current().Name, gamma.GitOpen(), gamma.Expanded)
 	}
-	if got := rowsSummary(a.GitRows()); !strings.HasSuffix(got, "#gamma ~没有未提交的变更") {
+	if got := rowsSummary(a.GitRows()); !strings.HasSuffix(got, "#gamma") {
 		t.Errorf("跳到干净的 gamma 应展开它: %s", got)
 	}
 	a.Exec("repo.1")

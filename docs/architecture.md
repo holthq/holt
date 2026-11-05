@@ -261,6 +261,14 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 路径比较一律走 `git.SamePath` / `Under`（处理大小写和符号链接）。工作区里同时有主仓库和它的链接工作树时，嵌在主仓库里的那个不再单独算一个仓库（`dropNested`）。单击一个工作树在右栏看它分支的历史（`viewWorktree`），“在工作区中打开”把它加成一个仓库（`OpenWorktree`）。新建 / 锁定 / 解锁 / 移除 / 清理都是对话框 + `RunOp`；清理先 `prune --dry-run`，从 stderr 读要清掉哪些。
 
+工作树在 Git 栏里的样子按"工作树就是 agent 的工位"来（`app/wtstate.go`）：`WtStateOf` 把 agent 状态（`WtAgent`）和 `WtInfo`
+算成七种之一（等你 → 运行中 → 可合并 → 有改动 → 空闲 → 没有 agent → 已合并，值越小越需要你），`SortWts` 按它排（主工作树在最前），
+`WtTop` 是收起的组头放的那一档。"已合并"就是领先 0（`git branch --merged` 的意思），目录没了的也算。组默认展开（`Repo.WtShown`）=
+用户点开的（`WtOpen`，存会话）或有工作树在等你 / 在跑 / 可合并（`wtAuto`，每帧 `SyncWtAuto` 对一次）且这次没被收起（`WtShut`，不存）。
+同时只展开一个工作树（`App.WtExp`，不存）：`git.BranchFiles` 先求 merge-base 再列 merge-base → 分支的文件（就是 `main...分支`），
+行是 `RowWtSummary` / `RowWtFile` / `RowWtTerm`。"合并到 main"走 `App.Merge`，先 `Ask`；灰着的原因是 `MergeWorktreeWhy`。
+"需要你"条是 `NeedsYou`（先等你、再可合并；可合并只有算过 `WtInfo` 的组才认得出），上一个 / 下一个是 `StepNeedsYou` → `GoToWorktree`。
+
 展开着的工作树块里的工作树各有一个监听（`app/wtwatch.go`，`watch.StartTree`，最多 `WtWatchMax` 16 个），改了只刷新那一行。
 
 ### 子模块
@@ -329,7 +337,7 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 ### 外观
 
-侧栏（文件树、Git 栏、搜索、大纲、打开的编辑器）的字号统一用 `ui/sidebar.go` 的常量：正文 `sideFont` 14（文件名、仓库名、变更、结果），次要信息 `sideSub` 12（分支、计数、目录、分组标题、说明），搜索结果的代码行 `sideMono` 12.5。文件树的目录 / 文件行至少 `treeRowH` 24 高，吸顶层和“打开的编辑器”的行跟它对齐；Git 栏的仓库段头 32、分组标题和贮藏行 26、工作树块头 30。界面整体大小走界面缩放（⌘= / ⌘-），没有单独的侧栏字号设置。
+侧栏（文件树、Git 栏、搜索、大纲、打开的编辑器）的字号统一用 `ui/sidebar.go` 的常量：正文 `sideFont` 14（文件名、仓库名、变更、结果），次要信息 `sideSub` 12（分支、计数、目录、分组标题、说明），搜索结果的代码行 `sideMono` 12.5。文件树的目录 / 文件行至少 `treeRowH` 24 高，吸顶层和“打开的编辑器”的行跟它对齐；Git 栏的仓库段头 34（仓库名 `repoFont` 14.5）、分组标题、贮藏行和工作树组头 26、工作树行 28、展开的工作树摘要行 36。界面整体大小走界面缩放（⌘= / ⌘-），没有单独的侧栏字号设置。
 
 文件按状态上色（改了、新加、冲突、被忽略），`TreeNoStatusColors` 关掉。图标默认是 `ui/fileicons.go` 的彩色小方块（按扩展名；文件树和"打开的编辑器"那一档 `iconTool` 用 `quietGlyphOf`：不画底块、颜色往次级字色混 `quietMix`，一屏几十个不那么重），`TreeIconsPlain` 换成线条图标；目录图标按里面有没有改动淡淡上色（`folderTint`）。
 

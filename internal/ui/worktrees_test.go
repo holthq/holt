@@ -44,17 +44,18 @@ func TestWorktreeBlock(t *testing.T) {
 		t.Fatalf("块默认收着、不算状态：%q", tt.Texts())
 	}
 
-	// 展开：两行，状态懒算出来（改动、领先），块头写"2 · 1 有改动"；分离 HEAD 的写短哈希和灰的目录名
+	// 展开：两行，状态懒算出来；组头只有图标和个数。wt/feat 有改动（文件夹加改动数徽标），分离 HEAD 的写短哈希、
+	// 没有 agent（文件夹）；路径、分支都只在悬停提示里
 	mustClick(t, tt, "展开 工作树")
-	wait("懒算的状态", func() bool { return pr.WtInfo != nil && tt.HasText("↑1") })
-	for _, s := range []string{"wt/feat", app.WtDetachedName(head), "proj-demo", "2 · " + i18n.Tf("%s 有改动", "1")} {
+	wait("懒算的状态", func() bool { return pr.WtInfo != nil && tt.HasText(i18n.Tf("%s 处未提交的改动", "1")) })
+	for _, s := range []string{"wt/feat", app.WtDetachedName(head), "2", i18n.T("有改动"), i18n.T("没有 agent")} {
 		mustText(t, tt, s)
 	}
-	if tt.HasText("proj-feat") {
-		t.Error("目录名以 -<分支最后一段> 结尾，不该再写")
+	if tt.HasText("proj-demo") || tt.HasText("proj-feat") || tt.HasText(i18n.Tf("%s 有改动", "1")) {
+		t.Errorf("行里不写目录名，组头不写说明：%q", tt.Texts())
 	}
-	if _, ok := tt.Find(i18n.Tf("%s 处未提交的改动", "1")); !ok {
-		t.Error("wt/feat 那行没有改动数")
+	if tt.HasText(i18n.T("需要你")) {
+		t.Error("没有等你、可合并的工作树时不该有\"需要你\"条")
 	}
 	accessCheck(t, tt, "工作树块展开")
 
@@ -178,7 +179,10 @@ func TestWorktreeKeys(t *testing.T) {
 	wait("状态和工作树", func() bool { return loaded(a)() && pa.Status.Count == 2 && len(pr.Worktrees) == 2 })
 	mustClick(t, tt, "展开 工作树")
 	wait("懒算的状态", func() bool { return pr.WtInfo != nil && !pr.WtLoading })
-	w1, w2 := pr.Worktrees[0], pr.Worktrees[1]
+	tt.Frame()
+	mustText(t, tt, i18n.T("需要你")) // wt/feat 干净、领先 1：可合并，"需要你"条出现
+	ws := a.SortedWorktrees(pr)    // 组里按状态排：可合并的 wt/feat 在没有 agent 的分离 HEAD 前面
+	w1, w2 := ws[0], ws[1]
 	title := func(w app.Worktree) string {
 		if w.Branch != "" {
 			return w.Branch
@@ -224,7 +228,16 @@ func TestWorktreeKeys(t *testing.T) {
 	}
 	accessCheck(t, tt, "选中工作树的行")
 
-	// 再 ↓：下一个工作树
+	// 选中就展开：下面是摘要（不停）和 main...wt/feat 的文件 b.txt；再 ↓ 停在那个文件上，开它的 Diff
+	wait("读 main...wt/feat", func() bool { return a.WtExpanded(pr, w1) && !a.WtExp.Loading })
+	tt.Frame()
+	tt.Key(0, wui.KeyDown)
+	wait("↓ 到展开的工作树的文件", func() bool {
+		cr := selRow()
+		return cr.Kind == app.RowWtFile && cr.Change.Path == "b.txt" && cr.Wt.Path == w1.Path
+	})
+
+	// 再 ↓：下一个工作树（上一个收起来，选中仍在它上面）
 	tt.Key(0, wui.KeyDown)
 	onWt("↓ 到第二个工作树", w2)
 
@@ -235,11 +248,22 @@ func TestWorktreeKeys(t *testing.T) {
 		t.Fatalf("重读状态后选中跑到 %v %q", cr.Kind, cr.Wt.Path)
 	}
 
-	// 回车：在工作区中打开，多一段，段头有"工作树"标签
+	// 回车：收起 / 展开这个工作树（选中时已经展开了，回车收起）
+	if !a.WtExpanded(pr, w2) {
+		t.Fatalf("选中 %s 应展开它", title(w2))
+	}
 	tt.Key(0, wui.KeyEnter)
+	tt.Frame()
+	if a.WtExpanded(pr, w2) {
+		t.Errorf("回车应收起 %s", title(w2))
+	}
+
+	// 右键在工作区中打开：多一段，段头有"工作树"标签
+	tt.Advance(time.Second)
+	mustRightClick(t, tt, title(w2), i18n.T("在工作区中打开"))
 	wait("打开的工作树", func() bool { return len(a.Repos) == 3 && loaded(a)() })
 	if a.WtRepo(w2) == nil || !a.Repos[2].Linked {
-		t.Fatalf("回车没有在工作区中打开 %s", w2.Path)
+		t.Fatalf("没有在工作区中打开 %s", w2.Path)
 	}
 	tt.Frame()
 	if _, ok := tt.Find(i18n.T("链接的工作树")); !ok {
