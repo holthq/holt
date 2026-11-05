@@ -351,6 +351,9 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 - 鼠标（issue #46）：没选中的文件 / 目录行没按 ⌘ ⇧ 的单击由行自己接（`ui.treePress`，`HandleInput` 接下按下、移动、松开，不交给列表）：
   按下那一帧就选中（`PressTreeRow`）、画"按下"的底色（`pressFill`，叠在选中的底上），按着拖到别的行是拖着选（`DragTreePress`，按 `TreeSpans` 找行，
   不会在列表边上自动滚），松开才打开文件 / 展开目录（`ReleaseTreePress`）；那次松开 mygo 下一帧还会报成这一行的单击，`TreeRowClicked` 按 `eat` 吃掉。
+  `eat` 只管松开后紧接着的那一帧（`ApplyTreeClick` 每帧末尾清掉），不按时间算：按住多久再松开都只做一次（issue #50）。
+  只有文件行认双击（固定打开，`treeDoubleClick` 500 ms 内同一行的第二下）；目录 / 仓库行不认双击，每一下单击都展开 / 收起（同 VS Code、Zed），
+  行自己数的双击（第二下按下时报的 `DoubleClicked`）对目录不算，只看松开的 `Clicked`。
   ⌘ / ⇧ 点、双击、按在箭头上的照旧交给列表 / 箭头；已经选中的行照旧自己接（可拖）。右键不改选中（原来的多选留着），菜单只对那一行，
   那一行画 1 pt 强调色描边（`menuRing`：菜单开着、`TreeMenu.Owner` 是这一行，`menuOnRow` / `menuOwned`）。箭头不换手形光标。
 - 行的悬停提示不用 mygo 的 `Tooltip`（0.6 s，写死在 mygo 里）：`app.TreeTip` 记指针从什么时候起停在哪一行，停满 `TreeTipDelay`（0.5 s）
@@ -393,7 +396,7 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 | 到 `MaxViewBytes` 64 MB | 只读打开（`Doc.Big`），后台高亮 |
 | 更大 | 不打开，显示原因说明 |
 
-读文件在后台（`docs.Loaded`，`fresh` 判断读回来时标签还是不是那一版），读好了 `setText` 换上。读分两步，在同一个后台 goroutine 里：先 `ReadFileText` / `ReadVersionText` 读文字、`a.Update` 放上（这时 `Doc.BasePending`），再 `Loaded.LoadBase` 读 HEAD（历史版本：父提交）里的那份、`ApplyBase` 放上；`Gen` 变了（重读了）的基准丢掉，重读时槽里先留着原来的基准。标签读了 `loadingDelay`（150 ms）还没读完才置 `Doc.SlowLoad`、画"读取中…"，在那之前只露编辑区的底。只读的大文件外部改了，过 2 秒再重读（`reloadBig`），避免日志持续写入时频繁重读。
+读文件在后台（`docs.Loaded`，`fresh` 判断读回来时标签还是不是那一版），读好了 `setText` 换上。读分两步，在同一个后台 goroutine 里：先 `ReadFileText` / `ReadVersionText` 读文字、`a.Update` 放上（这时 `Doc.BasePending`），再 `Loaded.LoadBase` 读 HEAD（历史版本：父提交）里的那份、`ApplyBase` 放上；`Gen` 变了（重读了）的基准丢掉，重读时槽里先留着原来的基准。新开的文件 / 历史版本标签（`Loading`）主线程在 `readDoc` 里最多等 `quickLoad`（40 ms）：后台读完先试着把"放上去"经无缓冲 channel 交给等着的主线程，同步放上（预览换文件时编辑区不空一帧，issue #50）；没人等了（超时）就照旧走 `a.Update`。基准不在这一步等，还是后台接着读。标签读了 `loadingDelay`（150 ms）还没读完才置 `Doc.SlowLoad`、画"读取中…"，在那之前只露编辑区的底。只读的大文件外部改了，过 2 秒再重读（`reloadBig`），避免日志持续写入时频繁重读。
 
 大文件的高亮在 `internal/highlight`：mygo 自带的高亮器在主线程上每帧追 4 ms，64 MB 要追两三秒。这里一个 goroutine 从头分词、记下每行开头的状态，主线程只按记好的状态分看得见的几行；没算到的行先按状态 0 猜一份（`final` 为假）。`Highlight` 总是返回 true；编辑时停掉旧的 goroutine，从改动那行接着算。
 

@@ -114,7 +114,7 @@ func (k *treeKit) blank(last string) (float32, float32) {
 	return b.X, b.Y + 200
 }
 
-// 点击：目录单击就展开 / 收起，双击只切一次；箭头只切、不改选中；再点选中的文件重新预览，双击固定；
+// 点击：目录单击就展开 / 收起，双击切两次；箭头只切、不改选中；再点选中的文件重新预览，双击固定；
 // 点空白处一行也不选、键盘留在树上；Esc 不再多选、光标那行留着。
 func TestTreeClicks(t *testing.T) {
 	repo := testutil.NewRepo(t, "proj")
@@ -135,15 +135,16 @@ func TestTreeClicks(t *testing.T) {
 	if r.Files.Open["docs"] {
 		t.Fatal("再单击已经选中的目录应该收起")
 	}
-	// 双击目录只切一次：选中着的（行自己数）和没选中的（第一下列表接、第二下行接）都一样
+	// 目录不认双击（issue #50，同 VS Code）：每一下单击都切，双击就是切两次、回到原样。
+	// 选中着的（行自己数）和没选中的（第一下按下归行的 treePress、第二下行接）都一样
 	k.doubleClick("docs")
-	if !r.Files.Open["docs"] {
-		t.Fatal("双击选中着的目录应该只展开一次")
+	if r.Files.Open["docs"] {
+		t.Fatal("双击选中着的目录应该切两次（还收着）")
 	}
 	k.click(0, "b.txt")
 	k.doubleClick("docs")
 	if r.Files.Open["docs"] || k.sel() != "docs" {
-		t.Fatalf("双击没选中的目录：展开 %v（应该只收起一次），选中 %s", r.Files.Open["docs"], k.sel())
+		t.Fatalf("双击没选中的目录：展开 %v（应该切两次、还收着），选中 %s", r.Files.Open["docs"], k.sel())
 	}
 
 	// 箭头只展开 / 收起：选中不动、键盘不走

@@ -158,7 +158,12 @@ func TestSlowLoadAfterDelay(t *testing.T) {
 		t.Skip("建不了命名管道：", err)
 	}
 	a, wait := newTestApp(t, testutil.Workspace(t, dir))
+	start := time.Now()
 	d := a.OpenPath(fifo)
+	// 主线程最多等 quickLoad 就回来（issue #50：读得快的同步放上，读得慢的照旧在后台读），不卡死
+	if took := time.Since(start); took > quickLoad+testutil.Budget(500*time.Millisecond) {
+		t.Fatalf("打开读不完的文件在主线程上等了 %v", took)
+	}
 	if !d.Loading || d.SlowLoad {
 		t.Fatalf("刚开：loading=%v slow=%v", d.Loading, d.SlowLoad)
 	}

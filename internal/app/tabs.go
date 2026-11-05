@@ -297,6 +297,19 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 			}
 		})
 	}
+	// 新开的标签（Loading）读得快的不空一帧：主线程在下面最多等 quickLoad，后台读完先试着把"放上去"交给等着的主线程
+	// （无缓冲，没人等就走 a.Update，和原来一样）。对比基准照旧在后台接着读，不在主线程等 git。
+	var got chan func()
+	if d.Loading && quickLoad > 0 {
+		got = make(chan func())
+	}
+	hand := func(f func()) {
+		select {
+		case got <- f: // got 是 nil（不等）时这一支永远不选
+		default:
+			up(f)
+		}
+	}
 	switch d.Kind {
 	case docs.File:
 		go func() {
@@ -306,7 +319,7 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 			} else {
 				l = docs.ReadFileText(abs, root, rel, fresh, enc)
 			}
-			up(func() {
+			hand(func() {
 				if d.ApplyFile(gen, l) {
 					a.relink(d) // 镜像：重读换了缓冲区，别的几份跟上
 				}
@@ -321,7 +334,7 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 			} else {
 				l = docs.ReadVersionText(root, ch, fresh, enc)
 			}
-			up(func() { d.ApplyVersion(gen, l) })
+			hand(func() { d.ApplyVersion(gen, l) })
 			base(&l)
 		}()
 	case docs.Compare:
@@ -356,6 +369,15 @@ func (a *App) readDoc(d *docs.Doc, fresh bool) {
 				}
 			})
 		}()
+	}
+	if got != nil && (d.Kind == docs.File || d.Kind == docs.Version) {
+		t := time.NewTimer(quickLoad)
+		select {
+		case f := <-got:
+			f()
+		case <-t.C: // 读得慢：后台读完走 a.Update，过了 loadingDelay 画"读取中…"
+		}
+		t.Stop()
 	}
 }
 
@@ -785,6 +807,10 @@ func (a *App) syncFile(r *Repo, d *docs.Doc) {
 
 // loadingDelay 是标签读了多久还没读完才画"读取中…"（Doc.SlowLoad）：读得快的（绝大多数）不闪转圈。
 var loadingDelay = 150 * time.Millisecond
+
+// quickLoad 是新开的文件 / 历史版本标签主线程最多等多久读完、同步放上内容（这样预览换文件时编辑区不空一帧）；
+// 过了这么久还没读完照旧在后台读。0 是不等（测试改它）。
+var quickLoad = 40 * time.Millisecond
 
 // bigReloadGap 是一直在变的大文件（日志）两次重读之间至少隔多久：期间的变化合并，到点读最新的。
 var bigReloadGap = 2 * time.Second

@@ -489,7 +489,7 @@ const treeDoubleClick = 500 * time.Millisecond
 // treeClick 是文件树里选中的行自己接到的一次点击：选中的行可以拖（Drag），按下归它，列表收不到这次点击、
 // 也就不选、不报 Changed；列表建好之后 ApplyTreeClick 照列表的规矩补上。key / at 是上一次单击的行和时间：
 // 第一下点在没选中的行上是列表接的，第二下那行已经选中、归它自己，系统数的双击在两个元素之间重新数，
-// 这里按时间认出来。toggled 是上一次单击把那行（目录 / 仓库行）展开或收起了：双击的第二下不再切。
+// 这里按时间认出来。只有文件行认双击（固定打开）；目录 / 仓库行每一下单击都展开 / 收起（VS Code、Zed 也是），双击就是切两次。
 // dbl / dblAt 是上一次双击的行和时间：行自己数的双击在第二下按下时报，松开时还报一次单击，那次不算。
 // anchor 是 ⇧点从哪行选起，own 是它是这里记的：行自己接的单击 / ⌘点列表不知道（mygo 没有设锚点的接口），
 // 列表的锚点还在它上一次自己接的那行，那行可能已经收起看不见了；列表下一次自己接到没按 ⇧ 的改动时不再是。
@@ -501,7 +501,6 @@ type treeClick struct {
 	now         time.Time
 	key         FileKey
 	at          time.Time
-	toggled     bool
 	dbl         FileKey
 	dblAt       time.Time
 	anchor      FileKey
@@ -513,9 +512,9 @@ type treeClick struct {
 	pressAlt bool
 	pressing bool
 	dragged  bool
-	// eat / eatAt：松开时已经照单击做了的那行；那次松开 mygo 还会在下一帧报成这一行的一次单击（TreeRowClicked），不再做一遍。
-	eat   FileKey
-	eatAt time.Time
+	// eat：松开时已经照单击做了的那行；那次松开 mygo 还会在紧接着的那一帧报成这一行的一次单击（TreeRowClicked），不再做一遍。
+	// 只管那一帧（ApplyTreeClick 每帧末尾清掉），按住多久再松开都只做一次。
+	eat FileKey
 }
 
 // PressTreeRow 是鼠标在第 i 行（没选中的文件 / 目录行，没按 ⌘ ⇧）上按下：选中这一帧就挪过去（VS Code 也是按下选中），
@@ -562,16 +561,24 @@ func (a *App) ReleaseTreePress() {
 	if tc.dragged || !ok || row.Key() != tc.press {
 		return
 	}
-	tc.eat, tc.eatAt = row.Key(), tc.at
+	tc.eat = row.Key()
 	a.FileHover = a.FileSel // 松开时指针在它上面（ClickTreeRow 拿这个分点击和按键）
 	a.ClickTreeRow(false, tc.pressAlt)
 }
 
-// TreeRowClicked 记下第 i 行（选中、可拖的那种）自己接到的点击：mods 是按着的键，double 是它自己数到的双击，
-// now 是这一帧的时间。
-func (a *App) TreeRowClicked(i int, mods ui.Modifiers, double bool, now time.Time) {
+// TreeRowClicked 记下第 i 行（选中、可拖的那种）自己接到的点击：mods 是按着的键，clicked 是这一帧松开了一次
+// （el.Clicked），double 是它自己数到的双击（第二下按下时报，el.DoubleClicked），now 是这一帧的时间。
+// 目录 / 仓库行不认双击：只看松开的那次，按下时报的双击不算（不然第二下切两次）。
+func (a *App) TreeRowClicked(i int, mods ui.Modifiers, clicked, double bool, now time.Time) {
 	tc := &a.treeClick
-	if row, ok := a.TreeRowAt(i); ok && !double && mods&^ui.Alt == 0 && row.Key() == tc.eat && now.Sub(tc.eatAt) < treeDoubleClick {
+	row, ok := a.TreeRowAt(i)
+	if ok && row.Dir {
+		if !clicked {
+			return
+		}
+		double = false
+	}
+	if ok && !double && mods&^ui.Alt == 0 && row.Key() == tc.eat {
 		tc.eat = FileKey{} // PressTreeRow / ReleaseTreePress 已经做了
 		return
 	}
@@ -619,9 +626,11 @@ func (a *App) extendFrom(i int) {
 
 // ApplyTreeClick 在列表建好之后照列表的规矩做记下的点击：⇧点从锚点选到它，⌘点把它从选中里去掉，
 // 单击把多选收成只选它、照点没选中的行那样做（目录展开 / 收起，文件切到它的标签或重新预览，⌥点在侧边打开），
-// 双击文件固定打开（同列表的 Submitted），双击目录只切第一下那一次。
+// 双击文件固定打开（同列表的 Submitted）；目录 / 仓库行不认双击，每一下单击都展开 / 收起。
+// 每帧在文件树的行画完之后调：顺带清掉 ReleaseTreePress 记的 eat（只管松开后紧接着的那一帧）。
 func (a *App) ApplyTreeClick() {
 	tc := &a.treeClick
+	tc.eat = FileKey{}
 	if !tc.pending {
 		return
 	}
@@ -644,8 +653,10 @@ func (a *App) ApplyTreeClick() {
 		tc.anchor, tc.own = row.Key(), true
 		return
 	}
-	double := tc.double || tc.key == row.Key() && tc.now.Sub(tc.at) < treeDoubleClick
+	double := !row.Dir && (tc.double || tc.key == row.Key() && tc.now.Sub(tc.at) < treeDoubleClick)
 	switch {
+	case row.Dir:
+		tc.key, tc.dbl = FileKey{}, FileKey{}
 	case !double && tc.dbl == row.Key() && tc.now.Sub(tc.dblAt) < treeDoubleClick:
 		tc.dbl = FileKey{}
 		return // 双击第二下松开时的那次单击
@@ -661,12 +672,9 @@ func (a *App) ApplyTreeClick() {
 	}
 	a.FileSel = tc.row
 	tc.anchor, tc.own = row.Key(), true
-	switch {
-	case double && row.Dir && tc.toggled:
-		// 第一下已经展开 / 收起了
-	case double:
+	if double {
 		a.ClickTreeRow(true, false)
-	default:
+	} else {
 		a.ClickTreeRow(false, tc.alt)
 	}
 }

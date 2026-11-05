@@ -167,3 +167,97 @@ func rowIndex(t *testing.T, k *treeKit, rel string) int {
 	t.Fatalf("树里没有 %s", rel)
 	return -1
 }
+
+// 连点同一个目录（issue #50）：每一下都切（开 / 关 / 开 / 关 / 开），不当成双击吞掉；按住很久再松开只切一次。
+// 文件双击照旧固定打开（TestTreeClicks）。
+func TestTreeRapidDirClicks(t *testing.T) {
+	repo := testutil.NewRepo(t, "proj")
+	repo.Write("a.txt", "a\n")
+	repo.Write("b.txt", "b\n")
+	repo.Write("sub/x.txt", "x\n")
+	repo.Commit("init")
+	k := newTreeKit(t, repo.Root)
+	a, tt := k.a, k.tt
+	r := k.repo("proj")
+	a.Exec("file.closeAll")
+	tt.Frame()
+	tt.Advance(time.Second)
+	b, ok := tt.Find("sub")
+	if !ok {
+		t.Fatal("找不到 sub")
+	}
+	x, y := b.X+b.W/2, b.Y+b.H/2
+	tt.Move(x, y)
+	tt.Frame()
+	click := func(hold, gap time.Duration) {
+		tt.Press(x, y)
+		tt.Frame()
+		tt.Advance(hold)
+		tt.Release(x, y)
+		tt.Frame()
+		tt.Frame()
+		tt.Advance(gap)
+	}
+	want := false
+	for i := 1; i <= 5; i++ {
+		click(60*time.Millisecond, 180*time.Millisecond)
+		want = !want
+		if got := r.Files.Open["sub"]; got != want {
+			t.Fatalf("连点第 %d 下：展开 %v，应该 %v", i, got, want)
+		}
+	}
+	// 按住 700 ms（过了认双击的间隔）再松开：只切一次
+	tt.Advance(time.Second)
+	for i := range 2 {
+		click(700*time.Millisecond, time.Second)
+		want = !want
+		if got := r.Files.Open["sub"]; got != want {
+			t.Fatalf("按住 700 ms 松开（第 %d 次，选中着=%v）：展开 %v，应该 %v", i+1, i > 0, got, want)
+		}
+	}
+	// 再换到没选中时按住
+	k.click(0, "a.txt")
+	b, _ = tt.Find("sub")
+	x, y = b.X+b.W/2, b.Y+b.H/2
+	tt.Move(x, y)
+	tt.Frame()
+	click(700*time.Millisecond, time.Second)
+	want = !want
+	if got := r.Files.Open["sub"]; got != want {
+		t.Fatalf("按住没选中的目录 700 ms 松开：展开 %v，应该 %v", got, want)
+	}
+}
+
+// 点文件不闪（issue #50）：小文件松开后的第一帧就有内容（不是 Loading、编辑区不空一帧），预览换文件也一样。
+func TestTreeClickNoBlank(t *testing.T) {
+	repo := testutil.NewRepo(t, "proj")
+	repo.Write("a.txt", "alpha\n")
+	repo.Write("b.txt", "beta\n")
+	repo.Commit("init")
+	k := newTreeKit(t, repo.Root)
+	a, tt := k.a, k.tt
+	a.Exec("file.closeAll")
+	tt.Frame()
+	tt.Advance(time.Second)
+	for _, name := range []string{"a.txt", "b.txt"} {
+		b, ok := tt.Find(name)
+		if !ok {
+			t.Fatalf("找不到 %q", name)
+		}
+		x, y := b.X+b.W/2, b.Y+b.H/2
+		tt.Move(x, y)
+		tt.Press(x, y)
+		tt.Frame()
+		tt.Advance(60 * time.Millisecond)
+		tt.Release(x, y)
+		tt.Frame()
+		d := a.CurrentDoc()
+		if d == nil || d.Rel != name {
+			t.Fatalf("松开没打开 %s：%+v", name, d)
+		}
+		if d.Loading || d.Buf == nil || d.Buf.String() == "" {
+			t.Fatalf("%s 松开后的第一帧还在读（Loading=%v）", name, d.Loading)
+		}
+		tt.Advance(time.Second)
+	}
+}

@@ -442,7 +442,6 @@ func (a *App) ClickTreeRow(submit, alt bool) {
 	}
 	click := a.FileHover == a.FileSel
 	r := row.Repo
-	a.treeClick.toggled = false
 	switch {
 	case row.Root && (submit || click):
 		i := slices.Index(a.Repos, r)
@@ -450,11 +449,9 @@ func (a *App) ClickTreeRow(submit, alt bool) {
 			a.SelectRepo(i)
 		} else if !a.Filtering() {
 			a.ToggleRepo(r)
-			a.treeClick.toggled = !submit
 		}
 	case row.Dir && (submit || click):
 		r.Files.ToggleRow(row.Row)
-		a.treeClick.toggled = !submit
 	case row.Sub != 0 && submit:
 		a.UseRepo(r)
 		a.OpenSubmodule(r, row.Path)

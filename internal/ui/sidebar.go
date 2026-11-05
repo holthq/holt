@@ -434,7 +434,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 		el.Drag(dragOf(tr))
 		pressed = pressed || el.Pressed() && !el.Dragging()
 		if el.Clicked() || el.DoubleClicked() {
-			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.DoubleClicked(), c.Now())
+			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.Clicked(), el.DoubleClicked(), c.Now())
 			a.TreeTip.Dismiss()
 		}
 		if el.Dragging() {
@@ -786,7 +786,7 @@ func repoRow(a *app.App, c *wui.Context, row wui.ListRow, tr app.TreeRow, filter
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		el.Drag(app.RepoDrag{Repo: r}) // 和文件行一样：按下归这一行，点击转给 ApplyTreeClick
 		if el.Clicked() || el.DoubleClicked() {
-			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.DoubleClicked(), c.Now())
+			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.Clicked(), el.DoubleClicked(), c.Now())
 			a.TreeTip.Dismiss()
 		}
 		if el.Dragging() {
