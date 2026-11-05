@@ -5,7 +5,6 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
-	"strings"
 	"testing"
 
 	wui "github.com/egoist/mygo/ui"
@@ -159,7 +158,8 @@ func TestGitOps(t *testing.T) {
 	// "Git 操作"菜单 → 新建分支… → 对话框里敲名字回车
 	mustClick(t, tt, "Git 操作")
 	menu = tt.Menu()
-	for _, want := range []string{"抓取（fetch --prune）", "推送", "暂存全部", "贮藏改动（stash）", "新建分支…", "运行 git 命令…"} {
+	for _, want := range []string{"抓取（fetch --prune）（没有远程）", "推送并设置上游（没有上游，也没有 origin）", "暂存全部",
+		"贮藏改动（stash）（没有可贮藏的改动）", "新建分支…", "运行 git 命令…"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("Git 菜单里没有 %q: %v", want, menu)
 		}
@@ -252,16 +252,13 @@ func TestGitOps(t *testing.T) {
 	}
 	mustText(t, tt, "工作区干净")
 
-	// 出错会弹提示：没有上游时 pull 按钮不可用，直接调也会报错
+	// 没有上游时拉取按钮灰着；直接调（点时再查）也不跑，提示原因
 	a.Pull(r)
-	wait("拉取失败的提示", func() bool { return idle(r)() && a.AlertOpen })
-	if !strings.Contains(a.AlertTitle, "拉取") || !tt.HasText(a.AlertTitle) {
-		t.Errorf("错误提示: title=%q msg=%q", a.AlertTitle, a.AlertMsg)
+	tt.Frame()
+	if r.Running() != nil || len(r.Queue) > 0 || a.AlertOpen {
+		t.Error("没有上游时拉取不该跑")
 	}
-	mustClick(t, tt, "好")
-	if a.AlertOpen {
-		t.Error("点好后提示还开着")
-	}
+	mustText(t, tt, "没有上游")
 
 	// 区域：⌘J 关底栏，右栏的 × 关右栏，标题栏按钮再开；设置写进 state.json，重开生效
 	tt.Key(wui.Cmd, wui.KeyJ)

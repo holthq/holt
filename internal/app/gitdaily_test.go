@@ -431,6 +431,9 @@ func TestSync(t *testing.T) {
 	repo := testutil.NewRepo(t, "sync")
 	repo.Write("a.txt", "1\n")
 	repo.Commit("base")
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	repo.Git("init", "-q", "--bare", "-b", "main", bare)
+	repo.Git("remote", "add", "origin", bare) // 有 origin、没上游：同步就是推送并设置上游
 	a, r, wait := dailyApp(t, repo)
 	a.Sync(r)
 	if r.Busy != "推送（设置上游 origin）" && !strings.Contains(strings.Join(outputsFor(a, "sync"), "\n"), "push -u origin HEAD") {
@@ -439,10 +442,10 @@ func TestSync(t *testing.T) {
 	wait("推送", idle(r))
 	a.AlertOpen = false
 
-	remote := bareRemote(t, repo)
+	remote := bare
 	refresh(a, r, wait)
 	a.Sync(r)
-	if a.Toast != "已经和上游一致（按上次抓取）" || r.Busy != "" || len(r.Queue) != 0 {
+	if a.Toast != "和 origin 一致" || r.Busy != "" || len(r.Queue) != 0 {
 		t.Fatalf("一致时只提示：toast %q busy %q", a.Toast, r.Busy)
 	}
 

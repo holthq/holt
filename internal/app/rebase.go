@@ -121,8 +121,7 @@ func canRebaseHere(a *App) bool {
 	if !ok {
 		return false
 	}
-	_, why := a.RebaseRange(r, cm)
-	return why == ""
+	return a.RebaseWhy(r, cm) == ""
 }
 
 // RebaseHere 是命令"交互式变基…"：对右栏历史里选中的提交开向导。

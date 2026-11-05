@@ -393,6 +393,9 @@ func (a *App) commandItems(q string) ([]PaletteItem, string) {
 		if l := a.FileUndoLabel(); c.ID == "tree.undo" && l != "" {
 			detail += " · " + l // 要撤的是什么
 		}
+		if why := a.WhyNot(c); why != "" {
+			detail += " · " + why // 灰着的 Git 操作写上为什么
+		}
 		hs = append(hs, hit{PaletteItem{Kind: ItemCommand, Text: title, Hits: hits, Detail: detail, Keys: ShownKeys(c),
 			Off: !a.CanRun(c), cmd: c}, sc})
 	}
@@ -538,7 +541,7 @@ func (a *App) acceptPalette(i int, side bool) {
 		a.FocusDoc = true
 	case ItemCommand:
 		if it.Off {
-			a.Toast = i18n.Tf("“%s”现在不能用", it.Text)
+			a.Toast = cmp.Or(a.WhyNot(it.cmd), i18n.Tf("“%s”现在不能用", it.Text))
 			return
 		}
 		a.ClosePalette()

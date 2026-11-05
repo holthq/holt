@@ -117,7 +117,7 @@ func TestTitleBarAlign(t *testing.T) {
 		t.Errorf("红绿灯的中心 %.1f 不在标题栏的中线 %.1f 上", mid, barHeight/2.0)
 	}
 	for _, label := range []string{"侧栏（⌘B）", "工作区 demo", "后退（⌃-）", "前进（⌃⇧-）", "位置 demo/a.txt", "快速打开",
-		"分支 main", "抓取（git fetch --prune）", "Git 操作", "右栏（历史）（⌥⌘B）", "底栏（终端 / 输出）（⌘J）"} {
+		"分支 main", "抓取（没有远程）", "Git 操作", "右栏（历史）（⌥⌘B）", "底栏（终端 / 输出）（⌘J）"} {
 		rect, ok := tt.Find(label)
 		if !ok {
 			t.Errorf("找不到 %q", label)

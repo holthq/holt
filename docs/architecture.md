@@ -221,7 +221,12 @@ Diff 里 ⌥J / ⌥K 跳上一个 / 下一个文件，上下一处改动是 `app
 
 合并、变基、拣选、还原、bisect 停在一半时，仓库段顶上有横幅（`RowOngoing`），带进度（`ReadProgress`：变基第几步共几步）。按钮是继续 / 跳过 / 中止（`app/ongoing.go`：`ContinueOngoing`、`SkipOngoing`、`AbortOngoing`）。继续和跳过走 `runStep`：退出码非 0 且输出里有 `CONFLICT (` 当成又停下了，不报错；别的非 0 才是失败。
 
-日常操作（`app/gitdaily.go`）：`Merge`、`RebaseOnto`、`CherryPick`、`Revert`、`ResetTo`（soft / mixed / hard，hard 要确认）、`UndoCommit`（软重置一个提交，把信息填回提交框）、`PushForce`（`--force-with-lease`）、`Sync`（拉了再推）。每个操作都有对应的 `*Why` 函数，说明禁用原因（`RefWhy`、`PickWhy`、`ResetWhy`…），菜单里括号显示。停在冲突上时交给横幅（`stopOp`）。`inHead` 判断某提交在不在当前分支上。
+日常操作（`app/gitdaily.go`）：`Merge`、`RebaseOnto`、`CherryPick`、`Revert`、`ResetTo`（soft / mixed / hard，hard 要确认）、`UndoCommit`（软重置一个提交，把信息填回提交框）、`PushForce`（`--force-with-lease`）、`Sync`（拉了再推）。不能做的原因都在 `app/gitwhy.go`：每种 Git 操作一个 `XxxWhy`（`FetchWhy`、`PullWhy`、`PushWhy`、`PushForceWhy`、`SyncWhy`、
+`StageAllWhy`、`StashWhy`、`RefWhy` / `MergeWhy` / `RebaseOntoWhy`、`SwitchWhy`、`DeleteBranchWhy`、`RemoveWorktreeWhy`、`UndoWhy`、
+`PickWhy`、`ResetWhy`、`RebaseWhy`…），空串 = 能做，按"最根本的先"的固定顺序只报一条。原生菜单用 ui 的 `whyItem` / `withWhy` 括在标签后面，
+按钮写进提示（`syncOf`），命令注册表的 `Command.Why` 给命令面板（写在灰着的命令后面）和菜单栏（点了提示原因）；
+动作本身开头再查一次（`a.Blocked(XxxWhy(…))`：不为空就 toast、不执行），菜单开着时状态变了也不会照做。
+提交后自动推送、同步拉完再推用不查的 `pushNow`（那时状态还没刷新）。停在冲突上时交给横幅（`stopOp`）。`inHead` 判断某提交在不在当前分支上。
 
 提交和修改上一次提交在 `app/commit.go`。
 

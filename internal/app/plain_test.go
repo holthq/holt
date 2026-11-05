@@ -80,8 +80,8 @@ func TestPlainFolder(t *testing.T) {
 		t.Errorf("git status：toast %q", a.Toast)
 	}
 	a.UseRepo(gr)
-	if !a.CanRun(Find("git.fetch")) {
-		t.Error("切回仓库后抓取还是不能用")
+	if !a.CanRun(Find("git.newBranch")) { // 抓取要有远程（FetchWhy），这里看新建分支
+		t.Error("切回仓库后新建分支还是不能用")
 	}
 
 	// 搜索：普通文件夹也搜（列目录）

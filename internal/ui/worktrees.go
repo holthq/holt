@@ -171,7 +171,7 @@ func worktreeMenu(a *app.App, m *wui.Menu, r *app.Repo, w app.Worktree) {
 	} else if m.Item(i18n.T("锁定…")).Chosen() {
 		a.LockWorktree(r, w)
 	}
-	if m.Item(i18n.T("移除工作树…")).Disabled(w.Prunable).Chosen() {
+	if whyItem(m, i18n.T("移除工作树…"), app.RemoveWorktreeWhy(r, w)).Chosen() {
 		a.RemoveWorktree(r, w)
 	}
 	if w.Prunable && m.Item(i18n.T("清理")).Chosen() {

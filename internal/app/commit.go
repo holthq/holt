@@ -109,7 +109,7 @@ func (a *App) Commit(r *Repo) {
 				r.Amend, r.amendKeep, r.amendMsg = false, "", ""
 			}
 			if a.St.Settings.AutoPush && !amend {
-				a.Push(r)
+				a.pushNow(r) // 刚提交完状态还没刷新，领先数是旧的：不查 PushWhy
 			}
 		}, args...)
 	}

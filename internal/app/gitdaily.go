@@ -22,32 +22,6 @@ func CurrentBranch(r *Repo) (b git.Branch, ok bool) {
 	return git.Branch{}, false
 }
 
-// RefWhy 是分支下拉里"合并到当前分支 / 把当前分支变基到"灰着的原因（括在菜单标签后面）；能用为空。
-func RefWhy(r *Repo) string {
-	if op := r.Extra.Ongoing; op != git.NoOp {
-		return i18n.Tf("先处理进行中的%s", op.String())
-	}
-	if _, ok := CurrentBranch(r); !ok {
-		return i18n.T("HEAD 不在分支上")
-	}
-	return ""
-}
-
-// PickWhy 是历史右键"拣选这个提交"灰着的原因；能用为空。
-func PickWhy(r *Repo, cm git.Commit) string {
-	switch {
-	case r.Extra.Ongoing != git.NoOp:
-		return i18n.T("有进行中的操作")
-	case cm.Hash == r.Extra.Head:
-		return i18n.T("就是 HEAD")
-	case len(cm.Parents) > 1:
-		return i18n.T("合并提交")
-	case inHead(r, cm.Hash):
-		return i18n.T("HEAD 里已经有了")
-	}
-	return ""
-}
-
 // inHead 是 hash 在 HEAD 往前的历史里：照右栏读进来的历史走父提交，读到的范围外的算不在。
 // 只看当前分支的历史时每一行都在；拣选这样的提交只会停在空提交上。
 func inHead(r *Repo, hash string) bool {
@@ -74,31 +48,9 @@ func inHead(r *Repo, hash string) bool {
 	return false
 }
 
-// RevertWhy 是"还原这个提交…"灰着的原因；能用为空。合并提交要选按哪一边还原（-m），留给终端。
-func RevertWhy(r *Repo, cm git.Commit) string {
-	switch {
-	case r.Extra.Ongoing != git.NoOp:
-		return i18n.T("有进行中的操作")
-	case len(cm.Parents) > 1:
-		return i18n.T("合并提交，到终端里 revert -m")
-	}
-	return ""
-}
-
-// ResetWhy 是"重置到这个提交"整个子菜单灰着的原因；能用为空。
-func ResetWhy(r *Repo, cm git.Commit) string {
-	switch {
-	case r.Extra.Ongoing != git.NoOp:
-		return i18n.T("有进行中的操作")
-	case cm.Hash == r.Extra.Head:
-		return i18n.T("就是 HEAD")
-	}
-	return ""
-}
-
 // Merge 把分支 b 合并进当前分支（git merge b），不问：停在冲突上有横幅，合并的方式照用户的 git 配置。
 func (a *App) Merge(r *Repo, b git.Branch) {
-	if RefWhy(r) != "" {
+	if a.Blocked(MergeWhy(r, b)) {
 		return
 	}
 	a.stopOp(r, i18n.Tf("合并 %s", b.Name), "merge", b.Name)
@@ -108,7 +60,7 @@ func (a *App) Merge(r *Repo, b git.Branch) {
 // 其中几个推送过，再问；没有未提交的改动也带着 --autostash（有的话 git 先贮藏、做完放回）。
 func (a *App) RebaseOnto(r *Repo, b git.Branch) {
 	cur, ok := CurrentBranch(r)
-	if !ok || RefWhy(r) != "" {
+	if a.Blocked(RebaseOntoWhy(r, b)) || !ok {
 		return
 	}
 	ctx, root, up := r.ctx, r.Root, a.Update
@@ -150,7 +102,7 @@ func (a *App) RebaseOnto(r *Repo, b git.Branch) {
 
 // CherryPick 把这个提交的改动拣到当前分支上（git cherry-pick），不问。
 func (a *App) CherryPick(r *Repo, cm git.Commit) {
-	if PickWhy(r, cm) != "" {
+	if a.Blocked(PickWhy(r, cm)) {
 		return
 	}
 	a.stopOp(r, i18n.Tf("拣选 %s", cm.Short), "cherry-pick", cm.Hash)
@@ -158,7 +110,7 @@ func (a *App) CherryPick(r *Repo, cm git.Commit) {
 
 // Revert 生成一个把这个提交的改动反过来的新提交（git revert --no-edit），先问。
 func (a *App) Revert(r *Repo, cm git.Commit) {
-	if RevertWhy(r, cm) != "" {
+	if a.Blocked(RevertWhy(r, cm)) {
 		return
 	}
 	a.Ask(i18n.Tf("还原 %s？", cm.Short), i18n.Tf("会生成一个新的提交把 %s 的改动反过来（“%s”）。", cm.Short, cm.Subject),
@@ -190,7 +142,7 @@ func (m ResetMode) ask(short string) string {
 // ResetTo 把 HEAD（和当前分支）重置到这个提交，三档都先问：先在后台数 HEAD 上会离开的提交和其中推送过的，
 // 硬重置再加上工作区里会丢的改动（已跟踪的文件；未跟踪的 git reset --hard 不动）。
 func (a *App) ResetTo(r *Repo, cm git.Commit, mode ResetMode) {
-	if ResetWhy(r, cm) != "" {
+	if a.Blocked(ResetWhy(r, cm)) {
 		return
 	}
 	ctx, root, up := r.ctx, r.Root, a.Update
@@ -236,25 +188,10 @@ func (a *App) ResetTo(r *Repo, cm git.Commit, mode ResetMode) {
 	}()
 }
 
-// UndoWhy 是"撤销上次提交"灰着的原因；能用为空。
-func UndoWhy(r *Repo) string {
-	switch {
-	case r.Extra.Head == "":
-		return i18n.T("还没有提交")
-	case r.Extra.HeadRoot:
-		return i18n.T("第一个提交，没有上一个")
-	case r.Extra.Ongoing != git.NoOp:
-		return i18n.T("有进行中的操作")
-	case r.Committing():
-		return i18n.T("提交在队列里")
-	}
-	return ""
-}
-
 // UndoCommit 撤销上一次提交（git reset --soft HEAD~1）：改动留在暂存区，提交信息回到提交框——框里已经有字的
 // 不覆盖，放进提交信息历史（空框里按 ↑ 取）。只在这个提交已经推送过时先问。
 func (a *App) UndoCommit(r *Repo) {
-	if UndoWhy(r) != "" {
+	if a.Blocked(UndoWhy(r)) {
 		return
 	}
 	run := func() {
@@ -294,21 +231,13 @@ func (a *App) refillCommit(r *Repo, msg string) {
 	a.Toast = i18n.T("信息已复制到提交信息历史（↑）")
 }
 
-// PushForceWhy 是"强制推送"灰着的原因；能用为空。
-func PushForceWhy(r *Repo) string {
-	if Upstream(r) == "" {
-		return i18n.T("没有上游")
-	}
-	return ""
-}
-
 // PushForce 强制推送当前分支（git push --force-with-lease），先问：远程分支自从上次抓取后被别人推过就会被拒绝。
 func (a *App) PushForce(r *Repo) {
-	upstream := Upstream(r)
-	b, _ := CurrentBranch(r)
-	if upstream == "" {
+	if a.Blocked(PushForceWhy(r)) {
 		return
 	}
+	upstream := Upstream(r)
+	b, _ := CurrentBranch(r)
 	a.AskDanger(i18n.Tf("强制推送 %s → %s？", b.Name, upstream),
 		i18n.Tf("用 --force-with-lease：远程分支自从上次抓取后被别人改过就会被拒绝。本地领先 %d、落后 %d。", r.Status.Ahead, r.Status.Behind),
 		i18n.T("强制推送"), func() { a.RunOp(r, i18n.T("强制推送"), "push", "--force-with-lease") })
@@ -318,12 +247,11 @@ func (a *App) PushForce(r *Repo) {
 // 没有上游时和推送一样（推到 origin 并设置上游）；领先落后都是 0（按上次抓取）时只提示。
 func (a *App) Sync(r *Repo) {
 	switch {
+	case a.Blocked(SyncWhy(r)):
 	case Upstream(r) == "":
-		a.Push(r)
-	case r.Status.Ahead == 0 && r.Status.Behind == 0:
-		a.Toast = i18n.T("已经和上游一致（按上次抓取）")
+		a.pushNow(r)
 	default:
-		a.RunOpThen(r, i18n.T("拉取"), func(string) { a.Push(r) }, PullArgs(a.St.Settings.PullMode)...)
+		a.RunOpThen(r, i18n.T("拉取"), func(string) { a.pushNow(r) }, PullArgs(a.St.Settings.PullMode)...)
 	}
 }
 

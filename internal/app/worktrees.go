@@ -593,7 +593,7 @@ func (a *App) UnlockWorktree(r *Repo, w Worktree) {
 
 // RemoveWorktree 打开"移除工作树"对话框：写着路径、分支、有几处未提交的改动，一个"同时删除分支"的勾（默认不勾）。
 func (a *App) RemoveWorktree(r *Repo, w Worktree) {
-	if w.Main {
+	if a.Blocked(RemoveWorktreeWhy(r, w)) {
 		return
 	}
 	a.WtDialog = WorktreeDialog{Open: true, Kind: WtRemove, Repo: r, Wt: w}

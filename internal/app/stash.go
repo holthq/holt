@@ -15,8 +15,7 @@ import (
 
 // Stash 贮藏改动。
 func (a *App) Stash(r *Repo) {
-	if r.Status.Staged+r.Status.Unstaged == 0 {
-		a.Toast = i18n.T("没有可贮藏的改动")
+	if a.Blocked(StashWhy(r)) {
 		return
 	}
 	a.RunOp(r, i18n.T("贮藏"), "stash", "push", "-q")
@@ -24,8 +23,7 @@ func (a *App) Stash(r *Repo) {
 
 // StashPop 弹出最新的贮藏。
 func (a *App) StashPop(r *Repo) {
-	if len(r.Extra.Stashes) == 0 {
-		a.Toast = i18n.T("没有贮藏")
+	if a.Blocked(StashPopWhy(r)) {
 		return
 	}
 	a.RunOp(r, i18n.T("弹出贮藏"), "stash", "pop", "-q")

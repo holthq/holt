@@ -375,7 +375,11 @@ func repoControls(a *app.App, c *wui.Context, r *app.Repo) {
 	}
 	branchButton(a, c, r)
 	s := syncOf(a, r)
-	toolButton(c, iconFetch, i18n.T("抓取（git fetch --prune）"), false, func() { a.Fetch(r) })
+	fetchTip, fetchWhy := i18n.T("抓取（git fetch --prune）"), app.FetchWhy(r)
+	if fetchWhy != "" {
+		fetchTip = withWhy(i18n.T("抓取"), fetchWhy)
+	}
+	toolButton(c, iconFetch, fetchTip, fetchWhy != "", func() { a.Fetch(r) })
 	toolButton(c, iconPull, s.pullTip, s.pullOff, func() { a.Pull(r) })
 	toolButton(c, iconPush, s.pushTip, s.pushOff, func() { a.Push(r) }).ContextMenu(func(m *wui.Menu) { pushMenu(a, m, r) })
 	more := wui.ButtonBase(c).Label(i18n.T("Git 操作")).Size(toolSize, toolSize).Tooltip(i18n.T("更多 git 操作"))
@@ -407,7 +411,6 @@ func syncOf(a *app.App, r *app.Repo) syncState {
 		pushing:    r.Pushing(),
 	}
 	if s.noUpstream {
-		s.pullTip = i18n.T("当前分支没有上游，不能拉取")
 		s.pushTip = i18n.T("推送并设置上游（git push -u origin）")
 	}
 	if s.behind > 0 {
@@ -416,23 +419,28 @@ func syncOf(a *app.App, r *app.Repo) syncState {
 	if s.ahead > 0 {
 		s.pushTip += i18n.Tf("，领先 %s", strconv.Itoa(s.ahead))
 	}
+	// 不能做的原因都从 app 的 PullWhy / PushWhy 来（和菜单、命令面板同一处）
+	if why := app.PullWhy(r); why != "" {
+		s.pullTip, s.pullOff = withWhy(i18n.T("拉取"), why), true
+	}
+	if why := app.PushWhy(r); why != "" {
+		s.pushTip, s.pushOff = withWhy(i18n.T("推送"), why), true
+	}
 	if s.pulling {
 		s.pullTip = i18n.Tf("正在%s…", i18n.T("拉取"))
 	}
 	if s.pushing {
 		s.pushTip = i18n.Tf("正在%s…", i18n.T("推送"))
 	}
-	s.pullOff = s.noUpstream || s.pulling
-	s.pushOff = s.pushing
 	return s
 }
 
 // pushMenu 是推送按钮的右键菜单：强制推送、同步。
 func pushMenu(a *app.App, m *wui.Menu, r *app.Repo) {
-	if why := app.PushForceWhy(r); m.Item(withWhy(i18n.T("强制推送（--force-with-lease）…"), why)).Disabled(why != "").Chosen() {
+	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
 		a.PushForce(r)
 	}
-	if m.Item(i18n.T("同步（拉取再推送）")).Chosen() {
+	if whyItem(m, i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
 		a.Sync(r)
 	}
 }

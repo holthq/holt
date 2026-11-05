@@ -66,36 +66,40 @@ func gitMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 		queueMenu(a, m, r)
 		m.Separator()
 	}
-	if m.Item(i18n.T("抓取（fetch --prune）")).Chosen() {
+	if whyItem(m, i18n.T("抓取（fetch --prune）"), app.FetchWhy(r)).Chosen() {
 		a.Fetch(r)
 	}
-	if m.Item(i18n.T("拉取")).Disabled(app.Upstream(r) == "").Chosen() {
+	if whyItem(m, i18n.T("拉取"), app.PullWhy(r)).Chosen() {
 		a.Pull(r)
 	}
-	if m.Item(i18n.T("推送")).Chosen() {
+	push := i18n.T("推送")
+	if app.Upstream(r) == "" {
+		push = i18n.T("推送并设置上游")
+	}
+	if whyItem(m, push, app.PushWhy(r)).Chosen() {
 		a.Push(r)
 	}
-	if why := app.PushForceWhy(r); m.Item(withWhy(i18n.T("强制推送（--force-with-lease）…"), why)).Disabled(why != "").Chosen() {
+	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
 		a.PushForce(r)
 	}
-	if m.Item(i18n.T("同步（拉取再推送）")).Chosen() {
+	if whyItem(m, i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
 		a.Sync(r)
 	}
 	m.Separator()
-	if m.Item(i18n.T("暂存全部")).Disabled(r.Status.Conflicts+r.Status.Unstaged+r.Status.Untracked == 0).Chosen() {
+	if whyItem(m, i18n.T("暂存全部"), app.StageAllWhy(r)).Chosen() {
 		a.StageAll(r)
 	}
-	if m.Item(i18n.T("取消全部暂存")).Disabled(r.Status.Staged == 0).Chosen() {
+	if whyItem(m, i18n.T("取消全部暂存"), app.UnstageAllWhy(r)).Chosen() {
 		a.UnstageAll(r)
 	}
-	if m.Item(i18n.T("丢弃所有未暂存改动…")).Disabled(r.Status.Unstaged == 0).Chosen() {
+	if whyItem(m, i18n.T("丢弃所有未暂存改动…"), app.DiscardAllWhy(r)).Chosen() {
 		a.DiscardAll(r)
 	}
 	m.Separator()
-	if m.Item(i18n.T("贮藏改动（stash）")).Disabled(r.Status.Staged+r.Status.Unstaged == 0).Chosen() {
+	if whyItem(m, i18n.T("贮藏改动（stash）"), app.StashWhy(r)).Chosen() {
 		a.Stash(r)
 	}
-	if m.Item(i18n.T("弹出贮藏（stash pop）")).Disabled(len(r.Extra.Stashes) == 0).Chosen() {
+	if whyItem(m, i18n.T("弹出贮藏（stash pop）"), app.StashPopWhy(r)).Chosen() {
 		a.StashPop(r)
 	}
 	if w := a.WebOf(r); w.OK() {
@@ -130,11 +134,11 @@ func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 		if b.Upstream != "" {
 			label += "  → " + b.Upstream
 		}
-		elsewhere := b.CheckedOutElsewhere(r.Root)
-		if elsewhere { // 在别的工作树里检出着，git switch 会拒绝
-			label = b.Name + " · " + i18n.Tf("在 %s 检出", filepath.Base(b.Worktree))
+		why := app.SwitchWhy(r, b)
+		if b.CheckedOutElsewhere(r.Root) { // 在别的工作树里检出着，git switch 会拒绝
+			label = b.Name + " · " + why
 		}
-		if m.Item(label).Checked(b.Current).Disabled(b.Current || elsewhere).Chosen() {
+		if m.Item(label).Checked(b.Current).Disabled(why != "").Chosen() {
 			a.SwitchBranch(r, b)
 		}
 	}
@@ -171,21 +175,17 @@ func branchMenu(a *app.App, m *wui.Menu, r *app.Repo) {
 	m.Separator()
 	why := app.RefWhy(r)
 	m.Submenu(withWhy(i18n.T("合并到当前分支"), why), func(m *wui.Menu) {
-		refItems(m, r, func(b git.Branch) { a.Merge(r, b) })
+		refItems(m, r, app.MergeWhy, func(b git.Branch) { a.Merge(r, b) })
 	}).Disabled(why != "")
 	m.Submenu(withWhy(i18n.T("把当前分支变基到"), why), func(m *wui.Menu) {
-		refItems(m, r, func(b git.Branch) { a.RebaseOnto(r, b) })
+		refItems(m, r, app.RebaseOntoWhy, func(b git.Branch) { a.RebaseOnto(r, b) })
 	}).Disabled(why != "")
 	m.Separator()
 	if m.Item(i18n.T("新建分支…")).Chosen() {
 		a.Branch = app.BranchDialog{Open: true}
 	}
 	cur, onBranch := app.CurrentBranch(r)
-	renameWhy := ""
-	if !onBranch {
-		renameWhy = i18n.T("HEAD 不在分支上")
-	}
-	if m.Item(withWhy(i18n.T("重命名当前分支…"), renameWhy)).Disabled(!onBranch).Chosen() {
+	if whyItem(m, i18n.T("重命名当前分支…"), app.RenameBranchWhy(r)).Chosen() {
 		a.OpenRenameBranch(r)
 	}
 	if onBranch && cur.Upstream == "" && app.HasRemote(r, "origin") && m.Item(i18n.T("发布到 origin（推送并设置上游）")).Chosen() {
@@ -222,8 +222,7 @@ func deleteBranchItems(a *app.App, m *wui.Menu, r *app.Repo) {
 		if n++; n > 30 {
 			continue
 		}
-		why := app.DeleteBranchWhy(r, b)
-		if m.Item(withWhy(b.Name, why)).Disabled(why != "").Chosen() {
+		if whyItem(m, b.Name, app.DeleteBranchWhy(r, b)).Chosen() {
 			a.DeleteBranch(r, b)
 		}
 	}
@@ -233,6 +232,12 @@ func deleteBranchItems(a *app.App, m *wui.Menu, r *app.Repo) {
 	if n == 0 {
 		m.Item(i18n.T("没有别的本地分支")).Disabled(true)
 	}
+}
+
+// whyItem 是一项 Git 操作的菜单项：why（app 的 XxxWhy）不空时灰着、原因括在标签后面。
+// 点下去时动作自己再查一次（app.Blocked），菜单开着时状态变了也不会照做。
+func whyItem(m *wui.Menu, label, why string) *wui.MenuItem {
+	return m.Item(withWhy(label, why)).Disabled(why != "")
 }
 
 // withWhy 把灰着的原因括在菜单标签后面（原生菜单项没有悬停说明）；why 为空原样。
@@ -248,8 +253,8 @@ func withWhy(label, why string) string {
 }
 
 // refItems 是"合并到当前分支 / 把当前分支变基到"子菜单的内容：别的本地分支（最多 30 个）、分隔、远程分支
-// （最多 60 个），当前分支不列；选了一个就 pick 它。
-func refItems(m *wui.Menu, r *app.Repo, pick func(b git.Branch)) {
+// （最多 60 个），当前分支不列；why（MergeWhy / RebaseOntoWhy）不空的灰着带原因，选了一个就 pick 它。
+func refItems(m *wui.Menu, r *app.Repo, why func(*app.Repo, git.Branch) string, pick func(b git.Branch)) {
 	local, remote := 0, 0
 	for _, b := range r.Branches {
 		if b.Current {
@@ -260,7 +265,7 @@ func refItems(m *wui.Menu, r *app.Repo, pick func(b git.Branch)) {
 			continue
 		}
 		local++
-		if local <= 30 && m.Item(b.Name).Chosen() {
+		if local <= 30 && whyItem(m, b.Name, why(r, b)).Chosen() {
 			pick(b)
 		}
 	}
@@ -283,7 +288,7 @@ func refItems(m *wui.Menu, r *app.Repo, pick func(b git.Branch)) {
 			m.Item(i18n.Tf("…还有 %s 个", strconv.Itoa(remote-60))).Disabled(true)
 			break
 		}
-		if m.Item(b.Name).Chosen() {
+		if whyItem(m, b.Name, why(r, b)).Chosen() {
 			pick(b)
 		}
 	}
@@ -317,13 +322,7 @@ func tagItems(a *app.App, m *wui.Menu, r *app.Repo) {
 		a.OpenNewTag(r, "")
 	}
 	rm := app.TagRemote(r)
-	pushWhy := ""
-	switch {
-	case rm == "":
-		pushWhy = i18n.T("没有远程")
-	case len(r.Tags) == 0:
-		pushWhy = i18n.T("没有标签")
-	}
+	pushWhy := app.PushTagWhy(r)
 	push := i18n.T("推送标签")
 	if rm != "" {
 		push = i18n.Tf("推送标签到 %s", rm)
@@ -409,7 +408,7 @@ func repoMenu(a *app.App, m *wui.Menu, r *app.Repo, tree bool) {
 		a.ShowCommit(r)
 	}
 	if r.Extra.Head != "" {
-		if why := app.UndoWhy(r); m.Item(withWhy(i18n.T("撤销上次提交"), why)).Disabled(why != "").Chosen() {
+		if whyItem(m, i18n.T("撤销上次提交"), app.UndoWhy(r)).Chosen() {
 			a.UndoCommit(r)
 		}
 	}
@@ -880,7 +879,7 @@ func commitMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
 	}).Disabled(why != "")
 	if a.RebaseView(r) { // 只在当前分支的历史里（不筛、不是所有分支 / 所有仓库）
 		m.Separator()
-		_, why := a.RebaseRange(r, cm)
+		why := a.RebaseWhy(r, cm)
 		label := i18n.T("从这里开始交互式变基…")
 		if why != "" {
 			label = i18n.Tf("从这里开始交互式变基（%s）", why) // 原生菜单项没有悬停说明，原因括在后面

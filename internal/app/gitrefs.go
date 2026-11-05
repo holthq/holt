@@ -1,7 +1,6 @@
 package app
 
 import (
-	"path/filepath"
 	"slices"
 	"strings"
 
@@ -65,10 +64,10 @@ func splitRemote(r *Repo, name string) (remote, branch string) {
 
 // OpenRenameBranch 打开"重命名当前分支…"，名字框里是当前名。
 func (a *App) OpenRenameBranch(r *Repo) {
-	b, ok := CurrentBranch(r)
-	if !ok {
+	if a.Blocked(RenameBranchWhy(r)) {
 		return
 	}
+	b, _ := CurrentBranch(r)
 	a.RefDlg = RefDialog{Open: true, Kind: DlgRenameBranch, Repo: r, Old: b.Name, Name: b.Name}
 }
 
@@ -94,21 +93,10 @@ func (a *App) RenameBranch(r *Repo, old, name string) {
 	}, "branch", "-m", old, name)
 }
 
-// DeleteBranchWhy 是"删除分支"子菜单里这个分支灰着的原因；能删为空。
-func DeleteBranchWhy(r *Repo, b git.Branch) string {
-	switch {
-	case b.Current:
-		return i18n.T("当前分支")
-	case b.CheckedOutElsewhere(r.Root):
-		return i18n.Tf("在 %s 检出", filepath.Base(b.Worktree))
-	}
-	return ""
-}
-
 // DeleteBranch 删本地分支：先在后台数它上面不在 HEAD 里的提交、其中没推送过的，问过再 git branch -d；
 // git 说没合并时再问一次强制删除（worktrees.go 的 deleteBranch）。
 func (a *App) DeleteBranch(r *Repo, b git.Branch) {
-	if b.Remote || DeleteBranchWhy(r, b) != "" {
+	if b.Remote || a.Blocked(DeleteBranchWhy(r, b)) {
 		return
 	}
 	ctx, root, up := r.ctx, r.Root, a.Update
@@ -203,10 +191,10 @@ func (a *App) NewTag(r *Repo, name, msg, from string) {
 
 // PushTag 把一个标签推到 TagRemote；name 空推全部（--tags）。
 func (a *App) PushTag(r *Repo, name string) {
-	remote := TagRemote(r)
-	if remote == "" {
+	if a.Blocked(PushTagWhy(r)) {
 		return
 	}
+	remote := TagRemote(r)
 	if name == "" {
 		a.RunOp(r, i18n.Tf("推送全部标签到 %s", remote), "push", remote, "--tags")
 		return

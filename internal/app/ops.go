@@ -47,6 +47,9 @@ func (a *App) Unstage(r *Repo, paths ...string) {
 
 // StageAll 暂存全部，包括未跟踪的。有冲突的文件时先问：暂存会把它们（连同冲突标记）标成已解决。
 func (a *App) StageAll(r *Repo) {
+	if a.Blocked(StageAllWhy(r)) {
+		return
+	}
 	do := func() { a.RunOp(r, i18n.T("暂存全部"), "add", "-A") }
 	if n := r.Status.Conflicts; n > 0 {
 		a.Ask(i18n.Tn("暂存全部，包括 %d 个有冲突的文件？", n), i18n.T("有冲突的文件暂存后就算已解决；里面的冲突标记（<<<<<<< 等）还在的话会原样进提交。"), i18n.T("全部暂存"), do)
@@ -59,7 +62,12 @@ func (a *App) StageAll(r *Repo) {
 func (a *App) StageTracked(r *Repo) { a.RunOp(r, i18n.T("暂存全部"), "add", "-u") }
 
 // UnstageAll 取消全部暂存。
-func (a *App) UnstageAll(r *Repo) { a.RunOp(r, i18n.T("取消全部暂存"), "reset", "-q") }
+func (a *App) UnstageAll(r *Repo) {
+	if a.Blocked(UnstageAllWhy(r)) {
+		return
+	}
+	a.RunOp(r, i18n.T("取消全部暂存"), "reset", "-q")
+}
 
 // StageUntracked 暂存所有未跟踪的文件（"未跟踪"分组的"全部暂存"）。
 func (a *App) StageUntracked(r *Repo) {
@@ -107,8 +115,7 @@ func (a *App) discardSub(r *Repo, ch git.Change) {
 
 // DiscardAll 丢掉所有未暂存的改动；先问。
 func (a *App) DiscardAll(r *Repo) {
-	if r.Status.Unstaged == 0 {
-		a.Toast = i18n.T("没有未暂存的改动")
+	if a.Blocked(DiscardAllWhy(r)) {
 		return
 	}
 	a.AskDanger(i18n.Tn("丢弃 %d 项未暂存的改动？", r.Status.Unstaged), i18n.T("已暂存和未跟踪的不动；工作区里其余修改会恢复成暂存区的样子，不能撤销。"), i18n.T("丢弃"), func() {
@@ -130,8 +137,11 @@ func (a *App) SwitchBranch(r *Repo, b git.Branch) {
 			args = []string{"switch", "-c", target, "--track", b.Name}
 		}
 	}
-	if b.CheckedOutElsewhere(r.Root) { // git 会拒绝：一个分支只能在一个工作树里检出
+	if b.CheckedOutElsewhere(r.Root) { // git 会拒绝：一个分支只能在一个工作树里检出（SwitchWhy 的第二条，这里说全一点）
 		a.Toast = i18n.Tf("%s 已在 %s 检出", b.Name, filepath.Base(b.Worktree))
+		return
+	}
+	if a.Blocked(SwitchWhy(r, b)) {
 		return
 	}
 	label := i18n.Tf("切换到 %s", target)
@@ -164,7 +174,12 @@ func (a *App) Checkout(r *Repo, c git.Commit) {
 }
 
 // Fetch 抓取（git fetch --prune）。
-func (a *App) Fetch(r *Repo) { a.RunOp(r, i18n.T("抓取"), "fetch", "--prune") }
+func (a *App) Fetch(r *Repo) {
+	if a.Blocked(FetchWhy(r)) {
+		return
+	}
+	a.RunOp(r, i18n.T("抓取"), "fetch", "--prune")
+}
 
 // FetchRemote 只抓取一个远程（仓库菜单"远程"里的"抓取 origin"）。
 func (a *App) FetchRemote(r *Repo, name string) {
@@ -172,10 +187,24 @@ func (a *App) FetchRemote(r *Repo, name string) {
 }
 
 // Pull 按设置里的拉取方式拉取（默认 git pull --ff-only）。
-func (a *App) Pull(r *Repo) { a.RunOp(r, i18n.T("拉取"), PullArgs(a.St.Settings.PullMode)...) }
+func (a *App) Pull(r *Repo) {
+	if a.Blocked(PullWhy(r)) {
+		return
+	}
+	a.RunOp(r, i18n.T("拉取"), PullArgs(a.St.Settings.PullMode)...)
+}
 
 // Push 推送当前分支；没有上游时推到 origin 并设置上游。
+// 点下去时先再查一次 PushWhy（菜单开着时状态可能变了）。
 func (a *App) Push(r *Repo) {
+	if a.Blocked(PushWhy(r)) {
+		return
+	}
+	a.pushNow(r)
+}
+
+// pushNow 是不查 PushWhy 的推送：提交后推送、同步拉完再推时状态还没刷新（领先数是旧的），由调用方保证该推。
+func (a *App) pushNow(r *Repo) {
 	if Upstream(r) == "" {
 		a.RunOp(r, i18n.T("推送（设置上游 origin）"), "push", "-u", "origin", "HEAD")
 		return

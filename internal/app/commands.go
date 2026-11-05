@@ -51,6 +51,9 @@ type Command struct {
 	Hint    string // Key 为 0 时命令面板里显示的键：编辑器自己接的（mygo 的默认键），这里只显示、不登记
 
 	Enabled func(a *App) bool // nil = 总能用
+	// Why 是 Git 操作现在不能做的原因（gitwhy.go，空 = 能做）：不空时也算不能用，命令面板把它写在灰着的命令后面，
+	// 从菜单栏点了提示它。Enabled 管"有没有当前仓库"这种前提，Why 管仓库的状态。
+	Why     func(a *App) string
 	Checked func(a *App) bool // 非 nil = 菜单里是勾选项
 	Run     func(a *App)      // nil = 由界面元素自己处理（如提交框的 ⌘↩），这里只登记快捷键
 	Local   bool              // 有 Run 也不在窗口上登记键：键由界面元素自己接（编辑器的 ⇧⌥F、编辑器自带的命令），Run 给命令面板
@@ -285,13 +288,13 @@ func buildCommands() []*Command {
 		{ID: "term.daemonStop", Title: "停止终端后台进程…", Group: "终端", Sep: true, Enabled: termdRunning, Run: (*App).StopTermDaemon},
 
 		// Git
-		{ID: "git.fetch", Title: "抓取（fetch --prune）", Group: "Git", Enabled: hasRepo, Run: withRepo((*App).Fetch)},
+		{ID: "git.fetch", Title: "抓取（fetch --prune）", Group: "Git", Enabled: hasRepo, Why: repoWhy(FetchWhy), Run: withRepo((*App).Fetch)},
 		{ID: "git.pull", Title: "拉取", Group: "Git", Mods: shift | cmd, Key: ui.KeyU,
-			Enabled: hasRepo, Run: withRepo((*App).Pull)},
-		{ID: "git.push", Title: "推送", Group: "Git", Mods: alt | cmd, Key: ui.KeyP, Enabled: hasRepo, Run: withRepo((*App).Push)},
+			Enabled: hasRepo, Why: repoWhy(PullWhy), Run: withRepo((*App).Pull)},
+		{ID: "git.push", Title: "推送", Group: "Git", Mods: alt | cmd, Key: ui.KeyP, Enabled: hasRepo, Why: repoWhy(PushWhy), Run: withRepo((*App).Push)},
 		{ID: "git.pushForce", Title: "强制推送（--force-with-lease）…", Group: "Git",
-			Enabled: func(a *App) bool { r := a.Current(); return r != nil && PushForceWhy(r) == "" }, Run: withRepo((*App).PushForce)},
-		{ID: "git.sync", Title: "同步（拉取再推送）", Group: "Git", Enabled: hasRepo, Run: withRepo((*App).Sync)},
+			Enabled: hasRepo, Why: repoWhy(PushForceWhy), Run: withRepo((*App).PushForce)},
+		{ID: "git.sync", Title: "同步（拉取再推送）", Group: "Git", Enabled: hasRepo, Why: repoWhy(SyncWhy), Run: withRepo((*App).Sync)},
 		{ID: "git.fetchAll", Title: "全部抓取", Group: "Git", Sep: true, Mods: shift | cmd, Key: ui.KeyR,
 			Enabled: hasGitRepo, Run: (*App).FetchAll},
 		{ID: "git.pullAll", Title: "全部拉取", Group: "Git", Mods: alt | shift | cmd, Key: ui.KeyU,
@@ -300,15 +303,15 @@ func buildCommands() []*Command {
 			Enabled: func(a *App) bool { r := a.Current(); return r != nil && r.Running() != nil }, Run: withRepo((*App).CancelOp)},
 		{ID: "git.stopAll", Title: "停止全部抓取 / 拉取", Group: "Git",
 			Enabled: func(a *App) bool { return a.Batch != nil }, Run: (*App).StopBatch},
-		{ID: "git.stageAll", Title: "暂存全部", Group: "Git", Sep: true, Enabled: hasRepo, Run: withRepo((*App).StageAll)},
-		{ID: "git.unstageAll", Title: "取消全部暂存", Group: "Git", Enabled: hasRepo, Run: withRepo((*App).UnstageAll)},
-		{ID: "git.discardAll", Title: "丢弃所有未暂存改动…", Group: "Git", Enabled: hasRepo, Run: withRepo((*App).DiscardAll)},
+		{ID: "git.stageAll", Title: "暂存全部", Group: "Git", Sep: true, Enabled: hasRepo, Why: repoWhy(StageAllWhy), Run: withRepo((*App).StageAll)},
+		{ID: "git.unstageAll", Title: "取消全部暂存", Group: "Git", Enabled: hasRepo, Why: repoWhy(UnstageAllWhy), Run: withRepo((*App).UnstageAll)},
+		{ID: "git.discardAll", Title: "丢弃所有未暂存改动…", Group: "Git", Enabled: hasRepo, Why: repoWhy(DiscardAllWhy), Run: withRepo((*App).DiscardAll)},
 		{ID: "git.amend", Title: "修改上一次提交…", Group: "Git", Sep: true,
 			Enabled: func(a *App) bool { r := a.Current(); return r != nil && r.Extra.Head != "" },
 			Checked: func(a *App) bool { r := a.Current(); return r != nil && r.Amend },
 			Run:     withRepo(func(a *App, r *Repo) { a.SetAmend(r, !r.Amend); a.ShowCommit(r) })},
 		{ID: "git.undoCommit", Title: "撤销上次提交", Group: "Git",
-			Enabled: func(a *App) bool { r := a.Current(); return r != nil && UndoWhy(r) == "" }, Run: withRepo((*App).UndoCommit)},
+			Enabled: hasRepo, Why: repoWhy(UndoWhy), Run: withRepo((*App).UndoCommit)},
 		{ID: "git.continue", Title: "继续合并 / 变基", Group: "Git",
 			Enabled: func(a *App) bool {
 				r := a.Current()
@@ -322,9 +325,9 @@ func buildCommands() []*Command {
 			Enabled: func(a *App) bool { r := a.Current(); return r != nil && r.Extra.Ongoing != git.NoOp },
 			Run:     withRepo((*App).AbortOngoing)},
 		{ID: "git.rebaseInteractive", Title: "交互式变基…", Group: "Git", Enabled: canRebaseHere, Run: (*App).RebaseHere},
-		{ID: "git.stash", Title: "贮藏改动（stash）", Group: "Git", Sep: true, Enabled: hasRepo, Run: withRepo((*App).Stash)},
+		{ID: "git.stash", Title: "贮藏改动（stash）", Group: "Git", Sep: true, Enabled: hasRepo, Why: repoWhy(StashWhy), Run: withRepo((*App).Stash)},
 		{ID: "git.stashPop", Title: "弹出贮藏（stash pop）", Group: "Git",
-			Enabled: func(a *App) bool { return hasRepo(a) && len(a.Current().Extra.Stashes) > 0 }, Run: withRepo((*App).StashPop)},
+			Enabled: hasRepo, Why: repoWhy(StashPopWhy), Run: withRepo((*App).StashPop)},
 		{ID: "git.openWeb", Title: "在网页打开仓库", Group: "Git", Sep: true,
 			Enabled: func(a *App) bool { r := a.Current(); return r != nil && r.Extra.Web.OK() },
 			Run:     withRepo(func(a *App, r *Repo) { a.OpenWeb(a.WebOf(r).Base) })},
@@ -596,7 +599,13 @@ func (a *App) Exec(id string) {
 }
 
 func (a *App) run(c *Command) {
-	if c.Run == nil || !a.CanRun(c) {
+	if c.Run == nil {
+		return
+	}
+	if !a.CanRun(c) {
+		if why := a.WhyNot(c); why != "" { // 菜单栏不置灰：点了不能做的 Git 操作说为什么
+			a.Toast = why
+		}
 		return
 	}
 	c.Run(a)
@@ -607,7 +616,15 @@ func (a *App) CanRun(c *Command) bool {
 	if c.Context == DiffTab && !onDiffTab(a) || c.Context == Terminal && !a.TermFocused || c.Context == FileTree && !a.TreeFocused {
 		return false
 	}
-	return c.Enabled == nil || c.Enabled(a)
+	return (c.Enabled == nil || c.Enabled(a)) && a.WhyNot(c) == ""
+}
+
+// WhyNot 是命令现在不能做的原因（Why，只在 Enabled 为真时算）；没有原因或能做为空。
+func (a *App) WhyNot(c *Command) string {
+	if c.Why == nil || c.Enabled != nil && !c.Enabled(a) {
+		return ""
+	}
+	return c.Why(a)
 }
 
 // windowKey 是快捷键由窗口（菜单栏或窗口根）分派的命令：全局、Diff 标签和编辑器的。
