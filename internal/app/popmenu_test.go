@@ -366,3 +366,106 @@ func TestPopMenuFlipAndScroll(t *testing.T) {
 		t.Fatalf("在菜单上滚该滚它：%+v", l)
 	}
 }
+
+// 菜单开着时在别处右键：关掉这份，在右键的那一块（登记过的、Z 最大的）开一份新的，也是按着右键开的；
+// 左键和别的键点外面只关、被吞掉；右键落在没登记的地方只关。
+func TestPopMenuRightClickElsewhere(t *testing.T) {
+	k := newPopKit(t)
+	var other []string
+	otherBuild := func(m MenuSink) {
+		if m.Item("Other").Chosen() {
+			other = append(other, "Other")
+		}
+	}
+	// 列表（空白处，也是裁剪）0..300 × 0..600；一行 0..300 × 200..220；钉住的一行盖在 0..300 × 0..20
+	frame := func() {
+		k.m.AddTarget(MenuRect{0, 200, 300, 20}, 1, "row2", otherBuild)
+		k.m.AddTarget(MenuRect{0, 0, 300, 600}, 0, "blank", k.build)
+		k.m.AddTarget(MenuRect{0, 0, 300, 20}, 3, "pin", k.build)
+		k.m.AddTarget(MenuRect{0, 590, 300, 40}, 1, "half", k.build) // 一半露在列表外面
+		k.m.EndFrame()
+	}
+	frame()
+	k.open(true)
+	k.now = k.now.Add(time.Second)
+	k.m.Up(100, 100, 1, k.now) // 刚开的那一下松开（太快，菜单留着）
+
+	// 右键另一行：新菜单对着它、开在指针处
+	if !k.m.Down(10, 210, 1, k.now) {
+		t.Fatal("右键外面也要吞掉（新菜单接着这一下的拖和松开）")
+	}
+	if !k.m.IsOpen() || k.m.Owner != "row2" {
+		t.Fatalf("右键别的行该在那里开新菜单：open=%v owner=%v", k.m.IsOpen(), k.m.Owner)
+	}
+	if r := k.m.Levels()[0].Rect; r.X != 10 || r.Y != 210 {
+		t.Fatalf("新菜单该开在指针处：%+v", r)
+	}
+	// 新菜单是按着右键开的：拖到项上过一会儿松开选它
+	k.now = k.now.Add(300 * time.Millisecond)
+	k.moveTo(0, 0)
+	x, y := k.center(0, 0)
+	k.m.Up(x, y, 1, k.now)
+	k.run()
+	if len(other) != 1 {
+		t.Fatalf("新菜单按住拖到项上松开该选它：%v", other)
+	}
+
+	// Z 大的盖住小的：钉住的那行在空白处上面
+	frame()
+	k.open(false)
+	k.m.Down(50, 10, 1, k.now)
+	if k.m.Owner != "pin" {
+		t.Fatalf("钉住的行该盖住底下：%v", k.m.Owner)
+	}
+	// 空白处
+	k.m.Down(50, 400, 1, k.now)
+	if k.m.Owner != "blank" {
+		t.Fatalf("右键空白处该开空白处的菜单：%v", k.m.Owner)
+	}
+	// 露在列表外面的那半行不算
+	k.m.Down(50, 620, 1, k.now)
+	if k.m.IsOpen() {
+		t.Fatalf("右键列表外面（没登记的地方）只关：%v", k.m.Owner)
+	}
+
+	// 左键、中键点在别的行上：只关、吞掉，不开新的
+	for _, b := range []int{0, 2} {
+		k.open(false)
+		if !k.m.Down(10, 210, b, k.now) || k.m.IsOpen() {
+			t.Fatalf("键 %d 点外面该关掉并吞掉：open=%v", b, k.m.IsOpen())
+		}
+	}
+}
+
+// ⇧F10 / 菜单键打开的：第一个能选的项高亮着，↓ 跳过灰的和分隔线，回车选。
+func TestPopMenuOpenByKey(t *testing.T) {
+	k := newPopKit(t)
+	k.m.OpenByKey("row", k.build, 100, 120, 1000, 800, k.now)
+	l := k.m.Levels()
+	if len(l) != 1 || l[0].Hot != 0 {
+		t.Fatalf("键盘开的第一项该高亮：%+v", l)
+	}
+	if r := l[0].Rect; r.X != 100 || r.Y != 120 {
+		t.Fatalf("该开在给的位置：%+v", r)
+	}
+	if _, _, _, ok := k.m.Tip(k.now.Add(time.Second)); ok {
+		t.Fatal("键盘挪的高亮不出提示")
+	}
+	k.m.Key(ui.KeyDown, "", k.now) // 跳过 Gray、分隔线
+	if h := k.m.Levels()[0].Hot; h != 3 {
+		t.Fatalf("↓ 该跳到 More（3）：%d", h)
+	}
+	k.m.Key(ui.KeyDown, "", k.now)
+	k.m.Key(ui.KeyEnter, "", k.now)
+	k.run()
+	if len(k.chosen) != 1 || k.chosen[0] != "Copy" {
+		t.Fatalf("回车该选 Copy：%v", k.chosen)
+	}
+	// 菜单关了，登记的地方还在
+	k.m.AddTarget(MenuRect{0, 0, 10, 10}, 0, "blank", k.build)
+	k.m.EndFrame()
+	k.m.Close()
+	if _, ok := k.m.TargetAt(5, 5); !ok {
+		t.Fatal("关菜单不该清掉登记的地方")
+	}
+}

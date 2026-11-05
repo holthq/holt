@@ -128,13 +128,75 @@ type PopMenu struct {
 
 	choice    int // 选中的项（seq），0 是没选
 	choiceLbl string
+
+	// 文件树里能开菜单的地方（界面每帧登记，上一帧的位置）：菜单开着时在别处右键，关掉它、在那里开一份新的
+	targets, nextTargets []MenuTarget
+}
+
+// MenuTarget 是窗口里一块能右键开菜单的地方：一行、合并行的一段、钉在顶上的行、列表的空白处。
+// Z 大的盖住小的（空白处 0 < 行 < 段 < 钉住的）；Z 为 0 的那几块（列表）同时是裁剪：别的块只算落在它们里面的部分。
+type MenuTarget struct {
+	Rect  MenuRect
+	Z     int
+	Owner any
+	Build func(MenuSink)
+}
+
+// AddTarget 登记一块能右键开菜单的地方（界面建元素时调，r 是它上一帧的位置）。
+func (m *PopMenu) AddTarget(r MenuRect, z int, owner any, build func(MenuSink)) {
+	if r.W > 0 && r.H > 0 {
+		m.nextTargets = append(m.nextTargets, MenuTarget{r, z, owner, build})
+	}
+}
+
+// EndFrame 是这一帧登记完了：之后的事件按这一帧登记的找。
+func (m *PopMenu) EndFrame() {
+	m.targets, m.nextTargets = m.nextTargets, m.targets[:0]
+}
+
+// TargetAt 是窗口的 (x, y) 处能开菜单的那块（Z 最大的），没有返回 false。
+func (m *PopMenu) TargetAt(x, y float32) (MenuTarget, bool) {
+	clipped, inClip := false, false
+	for _, t := range m.targets {
+		if t.Z == 0 {
+			clipped = true
+			inClip = inClip || t.Rect.has(x, y)
+		}
+	}
+	best, ok := MenuTarget{}, false
+	for _, t := range m.targets {
+		if !t.Rect.has(x, y) || t.Z > 0 && clipped && !inClip {
+			continue
+		}
+		if !ok || t.Z >= best.Z {
+			best, ok = t, true
+		}
+	}
+	return best, ok
+}
+
+// reset 把菜单清成关着的，留下量字的函数和登记的地方。
+func (m *PopMenu) reset() {
+	*m = PopMenu{Measure: m.Measure, targets: m.targets, nextTargets: m.nextTargets}
 }
 
 // Open 在窗口的 (x, y) 打开菜单，build 建它的项；held 是右键按下打开的（还按着）。
 func (m *PopMenu) Open(owner any, build func(MenuSink), x, y, winW, winH float32, held bool, now time.Time) {
 	*m = PopMenu{Owner: owner, build: build, open: true, Measure: m.Measure, winW: winW, winH: winH, ax: x, ay: y,
-		held: held, openAt: now, downLvl: -1, downIdx: -1, px: x, py: y, hasPtr: true, hotSince: now}
+		held: held, openAt: now, downLvl: -1, downIdx: -1, px: x, py: y, hasPtr: true, hotSince: now,
+		targets: m.targets, nextTargets: m.nextTargets}
 	m.Refresh(winW, winH)
+}
+
+// OpenByKey 是键盘（⇧F10、菜单键）打开的：在 (x, y) 打开，第一个能选的项高亮着，↑↓ 回车马上能用。
+func (m *PopMenu) OpenByKey(owner any, build func(MenuSink), x, y, winW, winH float32, now time.Time) {
+	m.Open(owner, build, x, y, winW, winH, false, now)
+	if !m.open || len(m.levels) == 0 {
+		return
+	}
+	m.byKey = true
+	m.hasPtr = false // 指针不在菜单上：不当它在打开处（不算安全三角的起点）
+	m.levels[0].Hot = next(m.levels[0].Items, -1, 1)
 }
 
 // IsOpen 报菜单开着。
@@ -143,7 +205,7 @@ func (m *PopMenu) IsOpen() bool { return m != nil && m.open }
 // Close 关掉菜单（不选）。
 func (m *PopMenu) Close() {
 	if m.open {
-		*m = PopMenu{Measure: m.Measure}
+		m.reset()
 	}
 }
 
@@ -446,14 +508,22 @@ func (m *PopMenu) Tip(now time.Time) (lv, idx int, why string, ok bool) {
 	return lv, idx, m.levels[lv].Items[idx].Why, true
 }
 
-// Down 是指针在窗口的 (x, y) 按下：菜单外面的关掉菜单、吞掉这一下（不落到底下）；返回 true 都是吞了。
+// Down 是指针在窗口的 (x, y) 按下（button 1 是右键，⌃左键由界面当右键传）：菜单外面的关掉菜单、吞掉这一下
+// （不落到底下）；右键落在别的能开菜单的地方（AddTarget 登记的）时在那里开一份新的，和系统菜单、VS Code 一样，
+// 新菜单也是按着右键开的（按住拖到项上松开选它）。返回 true 都是吞了。
 func (m *PopMenu) Down(x, y float32, button int, now time.Time) bool {
 	if !m.open {
 		return false
 	}
 	lv, idx := m.hit(x, y)
 	if lv < 0 {
+		winW, winH := m.winW, m.winH
 		m.Close()
+		if button == 1 {
+			if t, ok := m.TargetAt(x, y); ok {
+				m.Open(t.Owner, t.Build, x, y, winW, winH, true, now)
+			}
+		}
 		return true
 	}
 	m.held = false
@@ -521,7 +591,7 @@ func (m *PopMenu) RunChoice() {
 	}
 	s := &menuCollect{choose: m.choice, label: m.choiceLbl}
 	build := m.build
-	*m = PopMenu{Measure: m.Measure}
+	m.reset()
 	build(s)
 }
 

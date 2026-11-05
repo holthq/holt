@@ -1,6 +1,9 @@
 package ui
 
 import (
+	"math"
+	"time"
+
 	wui "github.com/egoist/mygo/ui"
 
 	"github.com/lemoeade/grove/internal/app"
@@ -13,6 +16,9 @@ import (
 //     （treeMenuPress）；按下归了那一行，按着拖的移动和松开都还送到那一行，转给菜单（按住拖到项上松开选它）。
 //   - 开着时窗口上盖一层透明的接收层（gmenuView）：点外面关掉菜单、这一下被吞掉（不落到底下的行上），
 //     在外面滚动（滚文件树）、Esc、窗口失去焦点都关；键盘的 ↑↓→←、回车、打字跳项也是它接。
+//   - 开着时在文件树别处右键（或 ⌃点）：关掉这份、在那里开一份新的（treeMenuPress 每帧把能开菜单的地方登记给
+//     PopMenu.AddTarget）；左键和别的键点外面只关、被吞掉。
+//   - 文件树有键盘时 ⇧F10 / 菜单键在光标那一行下面打开它（openTreeMenuByKey），第一项高亮着。
 //   - 建菜单的函数和系统菜单共用（menus.go 用 menu / menuItem 接口），别处的 ContextMenu 不变。
 //
 // 为什么不用 mygo 的 PopoverMenu：它不能按住右键拖到项上松开，子菜单没有悬停延迟和安全三角，灰着的项说不了原因，
@@ -81,6 +87,8 @@ const (
 func treeMenuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func(menu), other func(wui.InputEvent) bool) {
 	held := false    // 这次右键按下是这个元素接的
 	b := el.Bounds() // 上一帧的位置（事件里不能再用元素）
+	// 登记成能开菜单的地方：菜单开着时右键这里，关掉那份、在这里开新的（接收层盖着，事件到不了这个元素）
+	a.TreeMenu.AddTarget(app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, menuZ(owner), owner, build)
 	el.HandleInput(func(ev wui.InputEvent) bool {
 		m := &a.TreeMenu
 		x, y := b.X+ev.X, b.Y+ev.Y
@@ -113,6 +121,47 @@ func treeMenuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build 
 	})
 }
 
+// menuZ 是 owner 那块盖在谁上面：空白处（列表）0、行 1、合并行的一段 2，钉在顶上的再加 2（盖着底下滚过去的行）。
+func menuZ(owner any) int {
+	o, ok := owner.(treeOwner)
+	if !ok || o.Blank {
+		return 0
+	}
+	z := 1
+	if o.Seg != "" {
+		z = 2
+	}
+	if o.Pin {
+		z += 2
+	}
+	return z
+}
+
+// isMenuKey 报 ev 是键盘开右键菜单的键：菜单键，或者 ⇧F10（和 mygo 给 ContextMenu / PopoverMenu 的一样）。
+func isMenuKey(ev wui.InputEvent) bool {
+	return ev.Kind == wui.InputKeyDown && (ev.Key == wui.KeyContextMenu && ev.Mods == 0 || ev.Key == wui.KeyF10 && ev.Mods == wui.Shift)
+}
+
+// openTreeMenuByKey 是文件树有键盘时按了 ⇧F10 / 菜单键：在光标那一行左边、紧挨着它下面打开那一行的菜单
+// （和右键它的一样，多选里的一行对选中的全部），第一个能选的项高亮着；没有光标行（或它不在视野里）时开空白处的菜单，
+// 在列表左上角。关菜单时没选什么（Esc、点外面）键盘回到文件树（gmenuView）。list 是列表上一帧的位置。
+func openTreeMenuByKey(a *app.App, c *wui.Context, rows []app.TreeRow, list wui.Rect, now time.Time) {
+	a.TreeTip.Dismiss()
+	root := c.Root().Bounds()
+	gmenuMeasure(a, c)
+	owner, build := any(treeOwner{Blank: true}), func(m menu) { treeMenu(a, m) }
+	x, y := list.X+8, list.Y+4
+	if i := a.FileSel; i >= 0 && i < len(rows) {
+		if r, ok := a.TreeSpans[i]; ok && r.H > 0 && r.Y+r.H > list.Y && r.Y < list.Y+list.H {
+			tr := rows[i]
+			owner, build = treeOwner{Key: tr.Key()}, treeRowBuild(a, tr)
+			x, y = r.X, min(r.Y+r.H, list.Y+list.H)
+		}
+	}
+	a.TreeMenu.OpenByKey(owner, build, x, y, root.W, root.H, now)
+	a.MenuByKey = true
+}
+
 // gmenuMeasure 设好量字的函数（按菜单的字号）。
 func gmenuMeasure(a *app.App, c *wui.Context) {
 	a.TreeMenu.Measure = func(s string) float32 {
@@ -129,12 +178,17 @@ func menuOwned(a *app.App, owner any) bool {
 // gmenuView 画开着的菜单（在 root 里，所有东西之后）；刚选了一项的话先执行它。
 func gmenuView(a *app.App, c *wui.Context) {
 	m := &a.TreeMenu
-	if m.Chosen() {
+	m.EndFrame() // 这一帧的树已经建完，能开菜单的地方都登记了
+	chose := m.Chosen()
+	if chose {
 		m.RunChoice()
 		c.Invalidate()
 	}
 	if !m.IsOpen() {
-		a.MenuShown = 0
+		if a.MenuByKey && a.MenuShown > 0 && !chose {
+			a.FocusTree = true // 键盘开的菜单没选就关了：键盘回到文件树
+		}
+		a.MenuShown, a.MenuByKey = 0, false
 		return
 	}
 	root := c.Root().Bounds()
@@ -158,7 +212,15 @@ func gmenuView(a *app.App, c *wui.Context) {
 		catcher.HandleInput(func(ev wui.InputEvent) bool {
 			switch ev.Kind {
 			case wui.InputPointerDown:
-				return m.Down(ev.X, ev.Y, ev.Button, ev.Time)
+				b := ev.Button
+				if b == 0 && ev.Mods&wui.Ctrl != 0 {
+					b = 1 // ⌃点和右键一样
+				}
+				if b == 1 && !m.Contains(ev.X, ev.Y) {
+					a.TreeTip.Dismiss()
+					a.MenuByKey = false // 右键在别处开的新菜单是鼠标开的
+				}
+				return m.Down(ev.X, ev.Y, b, ev.Time)
 			case wui.InputPointerUp:
 				m.Up(ev.X, ev.Y, ev.Button, ev.Time)
 			case wui.InputPointerMove:
@@ -193,6 +255,45 @@ func gmenuView(a *app.App, c *wui.Context) {
 			}
 		})
 	})
+}
+
+// gmenuHot 是高亮项的底和字：实心的强调色（文件树实心选中的那块），字是白的。强调色太亮、白字不到 4.5:1 时
+// （深色主题的强调色都是调亮了的）往黑里调到够为止，和系统菜单一样是深一些的强调色底、白字。
+// 浅色主题里配深字也够 4.5:1 的（石墨之类）照旧。
+func gmenuHot(t *wui.Theme) (bg, fg wui.Color) {
+	bg, fg = t.Accent, t.AccentText
+	white, black := wui.RGBA(255, 255, 255, 1), wui.RGBA(0, 0, 0, 1)
+	if contrast(white, bg) >= 4.5 {
+		return bg, white
+	}
+	if !t.Dark && contrast(fg, bg) >= 4.5 {
+		return bg, fg
+	}
+	base := bg
+	for k := float32(0.05); k <= 1 && contrast(white, bg) < 4.5; k += 0.05 {
+		bg = base.Mix(black, k)
+	}
+	return bg, white
+}
+
+// contrast 是两个颜色的对比度（WCAG 的算法，1–21），不看透明度。
+func contrast(a, b wui.Color) float64 {
+	la, lb := luminance(a), luminance(b)
+	if la < lb {
+		la, lb = lb, la
+	}
+	return (la + 0.05) / (lb + 0.05)
+}
+
+func luminance(c wui.Color) float64 {
+	ch := func(v uint8) float64 {
+		f := float64(v) / 255
+		if f <= 0.03928 {
+			return f / 12.92
+		}
+		return math.Pow((f+0.055)/1.055, 2.4)
+	}
+	return 0.2126*ch(c.R) + 0.7152*ch(c.G) + 0.0722*ch(c.B)
 }
 
 // gmenuBg 是菜单面板的底色：浅色白、深色比卡片亮一档。
@@ -239,8 +340,9 @@ func gmenuItem(c *wui.Context, t *wui.Theme, it app.MenuEntry, hot bool) {
 		fg, muted = t.TextMuted.Alpha(0.6), t.TextMuted.Alpha(0.45)
 		row.Disabled(true)
 	case hot:
-		row.Background(t.Accent)
-		fg, muted = t.AccentText, t.AccentText.Alpha(0.75)
+		bg, text := gmenuHot(t)
+		row.Background(bg)
+		fg, muted = text, text.Alpha(0.75)
 	}
 	switch {
 	case it.HasSub:

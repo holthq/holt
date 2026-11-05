@@ -161,7 +161,14 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 			box := wui.Column(c).Grow(1).MinHeight(0).Clip() // 吸顶栈叠在列表上面
 			box.Children(func() {
 				list = sideList(a, c, &a.FileList, len(rows), func(row wui.ListRow) { treeRow(a, row, rows[row.Index], dragOf, g) })
-				treeMenuPress(a, c, list, treeOwner{Blank: true}, func(m menu) { treeMenu(a, m) }, treeCommands(a)) // 行下面的空白处
+				cmds, lb := treeCommands(a), list.Bounds()
+				treeMenuPress(a, c, list, treeOwner{Blank: true}, func(m menu) { treeMenu(a, m) }, func(ev wui.InputEvent) bool { // 行下面的空白处
+					if isMenuKey(ev) && a.Edit == nil {
+						openTreeMenuByKey(a, c, rows, lb, ev.Time)
+						return true
+					}
+					return cmds(ev)
+				})
 				stickyStack(a, c, rows, box.Bounds())
 			})
 			if a.FileHover < 0 {
@@ -421,7 +428,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if pressing || !a.FileChosen.Has(tr.Key()) {
 		press = treePress(a, row.Index, tr, indent)
 	}
-	treeMenuPress(a, c, el, treeOwner{Key: tr.Key()}, func(m menu) { rowMenu(a, m, tr, tr.Row) }, press)
+	treeMenuPress(a, c, el, treeOwner{Key: tr.Key()}, treeRowBuild(a, tr), press)
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		// 按下归这一行了（列表接不到点击），点击记下来等列表建好再照列表的规矩做（ApplyTreeClick）
 		el.Drag(dragOf(tr))
@@ -562,6 +569,22 @@ func codeLetter(c *wui.Context, t *wui.Theme, code byte, sel bool) {
 		col = t.AccentText
 	}
 	wui.Text(c, string(code)).Font(mono()).FontSize(sideSub).FontWeight(700).TextColor(col).Shrink(0)
+}
+
+// treeRowBuild 是列表里 tr 这一行（整行，不是合并行的一段）的右键菜单：仓库行是仓库菜单，文件 / 目录行是 rowMenu；
+// 多选里的一行都对选中的全部。右键和 ⇧F10 / 菜单键（openTreeMenuByKey）共用。
+func treeRowBuild(a *app.App, tr app.TreeRow) func(menu) {
+	if tr.Root {
+		return func(m menu) {
+			a.TreeTip.Dismiss()
+			if rows := a.MenuRows(tr); len(rows) > 1 {
+				chosenMenu(a, m, tr, rows)
+			} else {
+				repoMenu(a, m, tr.Repo, true)
+			}
+		}
+	}
+	return func(m menu) { rowMenu(a, m, tr, tr.Row) }
 }
 
 // rowMenu 是文件树里文件 / 目录行的右键菜单：选了好几行、右键的是其中一行时对选中的全部（chosenMenu），
@@ -751,14 +774,7 @@ func repoRow(a *app.App, c *wui.Context, row wui.ListRow, tr app.TreeRow, filter
 	// 外面这层接拖着的仓库行（调顺序）：一个元素只接一种拖的东西，里面那行接文件（TreeDrag）
 	slot := wui.Column(c)
 	slot.Children(func() {
-		el = repoLine(a, c, tr, onAccent(a, row.Selected()), filtering, false, func(m menu) {
-			a.TreeTip.Dismiss()
-			if rows := a.MenuRows(tr); len(rows) > 1 {
-				chosenMenu(a, m, tr, rows)
-			} else {
-				repoMenu(a, m, r, true)
-			}
-		})
+		el = repoLine(a, c, tr, onAccent(a, row.Selected()), filtering, false, treeRowBuild(a, tr))
 	})
 	if b := span(a, row, el); b.H > 0 {
 		a.TreeRootH = b.H

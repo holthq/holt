@@ -321,7 +321,11 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
   `popmenu_test.go` 直接喂事件测（Tester 按不住右键）。选中一项后再跑一遍建菜单的函数，选中那项的 `Chosen()` 报真（和 mygo 的菜单一样）。
 - `ui/gmenu.go` 喂事件和画：`treeMenuPress` 给树里的元素挂 `HandleInput`，右键按下打开菜单，按住时的移动和松开（归按下的那个元素）转给菜单；
   `gmenuView`（`root` 里、`pending` 之前）执行选中的项、画各层面板，开着时在 Overlay 里铺一层全窗口的接收层：点外面关菜单并吞掉这一下，
-  滚动、Esc、失去焦点关，键盘也是它接。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
+  滚动、Esc、失去焦点关，键盘也是它接。接收层盖着整个窗口，事件到不了底下的元素，所以 `treeMenuPress` 每帧把挂了菜单的元素
+  （位置、`menuZ` 算的叠放次序、建菜单的函数）登记给 `PopMenu.AddTarget`：开着时在别处右键（`Down` 的 button 1，⌃点当右键），
+  按登记的找到那一块（列表空白处兼作裁剪），关掉旧的、在指针处开新的；左键和别的键只关、吞掉。文件树有键盘时 ⇧F10 / 菜单键由
+  列表的 `HandleInput` 接（`openTreeMenuByKey`，用 `TreeSpans` 里光标行的位置），`PopMenu.OpenByKey` 开、第一项高亮；
+  没选就关了，`App.MenuByKey` 让键盘回到文件树。高亮项的底是实心强调色，白字不够 4.5:1 时往黑里调（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
 - 建菜单的函数（`menus.go`）都收 `menu` 接口（`app.MenuSink`），系统菜单（`ContextMenu` / `Menu`）经 `nativeMenu(m)` 适配，所以两边共用；
   灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Grove 画的悬停提示。
 

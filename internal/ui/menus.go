@@ -426,7 +426,8 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 			a.CollapseOtherRepos(r)
 		}
 	}
-	// 和拖仓库行一样（MoveRepo）：只在同一组里挪，到头了灰着；⇧F10 打开这个菜单就是键盘走法
+	// 和拖仓库行一样（MoveRepo）：只在同一组里挪，到头了灰着。键盘走法：文件树里光标停在仓库行上按 ⇧F10 / 菜单键，
+	// 在那一行下面打开 Grove 画的这份菜单（openTreeMenuByKey，第一项高亮），↑↓ 挪到上移 / 下移、回车
 	i := slices.Index(a.Repos, r)
 	if m.Item(i18n.T("上移")).Disabled(!a.CanMoveRepo(r, i-1)).Chosen() {
 		a.MoveReq = &app.RepoMove{Repo: r, To: i - 1}

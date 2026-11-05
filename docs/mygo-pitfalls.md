@@ -516,6 +516,10 @@
   吞掉点外面那一下靠 Overlay 里铺满窗口的接收层（`Absolute` + 窗口大小 + `HandleInput` 接下按下）；它 `Focus()` 每帧拿着焦点接键盘，
   `Element.Focused()` 在窗口失去焦点时报假（mygo 的 `windowFocus`），拿它当"失去焦点就关"。回调里的坐标是相对元素的，换成窗口坐标用建界面时记下的
   `Bounds()`（上一帧的），回调里不能再碰元素。
+  接收层的回调返回 false 也不会把按下让给它底下的元素（`hitChain` 只往这一层的祖先走，到不了 Overlay 外面），所以"开着时右键别处开新菜单"
+  得自己按登记的位置找（`PopMenu.AddTarget` / `TargetAt`）；文件树以外的地方右键只关菜单。
+  ⇧F10 / 菜单键：mygo 只给挂了 `ContextMenu` / `PopoverMenu` 的元素开菜单（`menuKey`），去掉 `PopoverMenu` 以后它们就没用了，
+  要在有焦点的元素的 `HandleInput` 里自己接（`InputKeyDown` 先送给它，接了 mygo 就不再找菜单）。
 - 列表行的按下（issue #46）：`ListState.DragSelecting()` 只在按着拖远了以后才报真，不能拿来判断"还按着"；列表在按下时就选中没选中的行，
   按下和松开对应用分不开。要按下选中、松开打开，就让行自己用 `HandleInput` 接 `InputPointerDown`（接了以后移动和松开都归它），
   而且松开之前每帧都要接着挂 `HandleInput`（不挂，状态上的回调就没了，松开送不到）。回调里不能用建界面时的 `wui.Element`（会 panic

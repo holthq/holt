@@ -2,6 +2,7 @@ package ui
 
 import (
 	"os"
+	"slices"
 	"testing"
 	"time"
 
@@ -160,5 +161,166 @@ func TestTreeGroveMenu(t *testing.T) {
 	tt.Frame()
 	if dd := a.CurrentDoc(); dd == nil || dd.Rel != "menu.txt" {
 		t.Fatalf("↓ 回车该选“打开”：%v", dd)
+	}
+}
+
+// ⇧F10 / 菜单键：文件树有键盘时在光标那一行左边、紧挨着它下面打开它的菜单，第一项高亮，↓ 回车马上能用；
+// Esc 关了键盘回到文件树。
+func TestTreeGroveMenuByKey(t *testing.T) {
+	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
+	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
+	tt, a := k.tt, k.a
+
+	for _, key := range []struct {
+		mods wui.Modifiers
+		key  wui.Key
+	}{{wui.Shift, wui.KeyF10}, {0, wui.KeyContextMenu}} {
+		a.FileSel = rowIndex(t, k, "beta.go")
+		a.FocusTree = true
+		tt.Frame()
+		tt.Frame()
+		if !a.TreeFocused {
+			t.Fatal("文件树该有键盘")
+		}
+		tt.Key(key.mods, key.key)
+		tt.Frame()
+		if !a.TreeMenu.IsOpen() || !menuOnRow(a, rowKey(t, k, "beta.go")) {
+			t.Fatalf("%v：该开 beta.go 的菜单：open=%v owner=%+v", key, a.TreeMenu.IsOpen(), a.TreeMenu.Owner)
+		}
+		row := a.TreeSpans[a.FileSel]
+		ms := popMenus(t, tt)
+		if len(ms) != 1 {
+			t.Fatalf("开了 %d 层", len(ms))
+		}
+		p := ms[0].Panel
+		if abs(p.X-float64(max(row.X, app.MenuMargin))) > 1 || abs(p.Y-float64(row.Y+row.H)) > 1 { // 离窗口边至少 MenuMargin
+			t.Fatalf("菜单该在那一行左边、紧挨着下面：面板 (%.0f, %.0f)，行 %+v", p.X, p.Y, row)
+		}
+		if h := a.TreeMenu.Levels()[0].Hot; h != 0 {
+			t.Fatalf("第一项该高亮：%d", h)
+		}
+		tt.Key(0, wui.KeyEscape)
+		tt.Frame()
+		tt.Frame()
+		if a.TreeMenu.IsOpen() {
+			t.Fatal("Esc 该关")
+		}
+		if !a.TreeFocused {
+			t.Fatal("键盘开的菜单关了，键盘该回到文件树")
+		}
+	}
+
+	// 回车选第一项（打开）
+	a.FileSel = rowIndex(t, k, "beta.go")
+	tt.Frame()
+	tt.Key(wui.Shift, wui.KeyF10)
+	tt.Frame()
+	tt.Key(0, wui.KeyEnter)
+	tt.Frame()
+	tt.Frame()
+	if d := a.CurrentDoc(); d == nil || d.Rel != "beta.go" {
+		t.Fatalf("⇧F10 回车该打开 beta.go：%v", d)
+	}
+}
+
+// 菜单开着时在文件树别处右键：关掉这份、在右键的那一行（或空白处）、指针处开一份新的；右键多选外面的一行照旧：
+// 那一行描边、选中不清。左键点外面只关、被吞掉（TestTreeGroveMenu 测了）。
+func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
+	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
+	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
+	tt, a := k.tt, k.a
+
+	tt.Click("alpha.txt")
+	tt.Frame()
+	if err := tt.ClickWith(wui.Cmd, "notes.md"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if a.FileChosen.Len() != 2 {
+		t.Fatalf("该选着两行：%d", a.FileChosen.Len())
+	}
+	sel := a.FileSel
+	if err := tt.RightClick("notes.md"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if !menuOnRow(a, rowKey(t, k, "notes.md")) {
+		t.Fatalf("菜单该对着 notes.md：%+v", a.TreeMenu.Owner)
+	}
+
+	// 右键选中外面的 beta.go：菜单换成它的，开在指针处
+	b, ok := tt.Find("beta.go")
+	if !ok {
+		t.Fatal("找不到 beta.go")
+	}
+	x, y := b.X+2, b.Y+b.H/2 // 名字的左头：菜单开在 notes.md 名字的中间，盖不到这里
+	if p := popMenus(t, tt)[0].Panel; float64(x) >= p.X && float64(x) < p.X+p.W && float64(y) >= p.Y && float64(y) < p.Y+p.H {
+		t.Fatal("测不到：beta.go 在菜单底下")
+	}
+	tt.RightClickAt(x, y)
+	tt.Frame()
+	if !a.TreeMenu.IsOpen() || !menuOnRow(a, rowKey(t, k, "beta.go")) {
+		t.Fatalf("右键别的行该开它的菜单：open=%v owner=%+v", a.TreeMenu.IsOpen(), a.TreeMenu.Owner)
+	}
+	ms := popMenus(t, tt)
+	if len(ms) != 1 {
+		t.Fatalf("该只有一份菜单：%d 层", len(ms))
+	}
+	if p := ms[0].Panel; abs(p.X-float64(x)) > 1 && abs(p.X+p.W-float64(x)) > 1 {
+		t.Fatalf("新菜单该开在指针处：面板 %+v，指针 (%.0f, %.0f)", p, x, y)
+	}
+	if a.FileChosen.Len() != 2 || a.FileSel != sel {
+		t.Fatalf("右键多选外面的行不该改选中：%d 行，光标 %d→%d", a.FileChosen.Len(), sel, a.FileSel)
+	}
+	if len(a.Docs) > 1 {
+		t.Fatalf("右键不该打开文件：%d 个标签", len(a.Docs))
+	}
+
+	// 右键行下面的空白处：空白处的菜单
+	last := a.TreeSpans[len(a.TreeRows())-1]
+	p := popMenus(t, tt)[0].Panel
+	by := max(float64(last.Y+last.H+30), p.Y+p.H+20) // 别落在开着的菜单上
+	tt.RightClickAt(last.X+20, float32(by))
+	tt.Frame()
+	if o, ok := a.TreeMenu.Owner.(treeOwner); !a.TreeMenu.IsOpen() || !ok || !o.Blank {
+		t.Fatalf("右键空白处该开空白处的菜单：open=%v owner=%+v", a.TreeMenu.IsOpen(), a.TreeMenu.Owner)
+	}
+	if !slices.Contains(shownMenu(t, tt), "显示被忽略的文件") {
+		t.Fatalf("空白处的菜单：%q", shownMenu(t, tt))
+	}
+	closeMenu(t, tt)
+}
+
+func abs(f float64) float64 {
+	if f < 0 {
+		return -f
+	}
+	return f
+}
+
+// 高亮项的字和底至少 4.5:1：每个强调色、浅色深色都量（深色主题的强调色调亮了，白字不够时底往黑里调）。
+// 浅色主题里本来就够的不动（青色的浅色白字只有 4.2:1，也调深一点）。
+func TestGroveMenuHotContrast(t *testing.T) {
+	white := wui.RGBA(255, 255, 255, 1)
+	for name, k := range accentColors {
+		for _, dark := range []bool{false, true} {
+			th := &wui.Theme{Dark: dark, Accent: k.light, AccentText: white}
+			if dark {
+				th.Accent = k.dark
+				if k.darkText.A > 0 {
+					th.AccentText = k.darkText
+				}
+			}
+			bg, fg := gmenuHot(th)
+			if r := contrast(fg, bg); r < 4.5 {
+				t.Errorf("%s dark=%v：高亮项 %v 上的字 %v 只有 %.2f:1", name, dark, bg, fg, r)
+			}
+			if dark && fg != white {
+				t.Errorf("%s 深色：高亮项该是白字：%v", name, fg)
+			}
+			if !dark && contrast(th.AccentText, th.Accent) >= 4.5 && bg != th.Accent {
+				t.Errorf("%s 浅色：强调色本来就够，不该改底：%v → %v", name, th.Accent, bg)
+			}
+		}
 	}
 }
