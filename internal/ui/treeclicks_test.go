@@ -193,14 +193,15 @@ func TestTreeClicks(t *testing.T) {
 		t.Fatalf("Esc 之后选中 %d 项，光标 %s", len(rows), k.sel())
 	}
 
-	// 右键没选中的行：先只选中它，不预览；右键多选里的一行：选中不动，菜单对全部
+	// 右键没选中的行：选中不动（菜单只对它，那行画描边），不预览；右键多选里的一行：选中不动，菜单对全部
 	a.Exec("file.closeAll")
 	tt.Frame()
+	was := k.sel()
 	if err := tt.RightClick("d.md"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if k.sel() != "docs/d.md" || a.FileChosen.Len() != 1 || a.CurrentDoc() != nil {
+	if k.sel() != was || a.FileChosen.Len() != 1 || a.CurrentDoc() != nil {
 		t.Fatalf("右键 d.md：选中 %s / %d 项，当前标签 %v", k.sel(), a.FileChosen.Len(), a.CurrentDoc())
 	}
 	closeMenu(t, tt)

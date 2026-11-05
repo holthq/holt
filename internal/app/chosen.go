@@ -69,16 +69,6 @@ func (a *App) ClearTreeChosen() {
 	}
 }
 
-// MenuSelect 是右键第 i 行：没选中的先只选它（不预览），菜单就对它；已经在选中里就不动，菜单对选中的全部。
-func (a *App) MenuSelect(i int) {
-	row, ok := a.TreeRowAt(i)
-	if !ok || row.Note != "" || row.Edit || a.FileChosen.Has(row.Key()) {
-		return
-	}
-	a.FileSel = i
-	a.chooseOnly(i)
-}
-
 // chooseOnly 把选中换成第 i 行（应用自己选的：显示文件、新建、重命名之后，键盘 ← →）；-1 清掉。⇧点从它选起。
 func (a *App) chooseOnly(i int) {
 	a.FileChosen.Clear()

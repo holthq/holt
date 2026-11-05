@@ -7,6 +7,7 @@ import (
 	"slices"
 	"strconv"
 	"testing"
+	"time"
 
 	wui "github.com/egoist/mygo/ui"
 
@@ -17,7 +18,7 @@ import (
 )
 
 // 文件树多选，三个临时仓库跨着选：点一行预览；⌘点加一行、再 ⌘点取消都不预览；右键选中的一行是多选菜单
-// （复制路径一行一个、在 Finder 中显示、看有改动的 diff），右键没选中的一行只对它、选中不变；回车把选中的文件都固定打开；
+// （复制路径一行一个、在 Finder 中显示、看有改动的 diff），右键没选中的一行只对它、原来的多选不变；回车把选中的文件都固定打开；
 // F2 只对一项；新建放在光标行的目录；⇧点选一段（跨仓库连仓库行，这时 ⌘⌫ 不动）；⌘⌫ 只问一次、废纸篓收到全部、选了目录又选了它里面的只移目录；
 // ⌘A 全选；筛选时筛掉的不算、清掉筛选又回来；移除仓库清掉选中。
 func TestTreeMultiSelect(t *testing.T) {
@@ -70,6 +71,7 @@ func TestTreeMultiSelect(t *testing.T) {
 		t.Helper()
 		a.Exec("file.closeAll")
 		tt.Frame()
+		tt.Advance(time.Second) // 和上一次点隔开，不算双击
 		if err := tt.ClickWith(mods, name); err != nil {
 			t.Fatalf("点 %q: %v", name, err)
 		}
@@ -130,12 +132,15 @@ func TestTreeMultiSelect(t *testing.T) {
 		d := a.CurrentDoc()
 		return len(a.Docs) == 1 && d != nil && d.Kind == docs.Diff && d.Rel == "alpha.txt"
 	})
-	// 右键没选中的一行：先只选中它，菜单对它
+	// 右键没选中的一行：菜单只对它，原来的多选留着（VS Code 也这样）
+	before := chosen()
 	menu("notes.md", "复制仓库内路径")
 	if copied != "notes.md" {
 		t.Fatalf("右键没选中的行复制了 %q", copied)
 	}
-	expect("右键没选中的行之后", "alpha:notes.md")
+	if got := chosen(); !slices.Equal(got, before) {
+		t.Fatalf("右键没选中的行改了选中：%q → %q", before, got)
+	}
 	// 用默认应用打开：经 a.ShowPath（不真的打开），打不开的是应用自己的提示
 	var shown []string
 	a.ShowPath = func(p string) error { shown = append(shown, p); return nil }

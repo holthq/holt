@@ -506,6 +506,14 @@
   窗口本身都放不下才滚。代价是样子跟着主题、不是系统菜单的毛玻璃。别处的右键菜单还是系统的，碰到同样的问题照这样换。
   `PopoverMenu` 的菜单 Tester 的 `Menu()` / `ChooseMenuItem` 看不见：测试统一用 `popmenu_test.go` 的 `shownMenu` / `chooseMenu` / `closeMenu`
   （两种都认，画出来的从无障碍树里找 RoleMenu / RoleMenuItem），`mustRightClick` 已经换成它们了。
+- `PopoverMenu`（v0.7.4）在 macOS 上右键按下就开（`menuPress`），开的时候没有元素被"按着"，所以按住右键移动时项的悬停高亮跟着走；
+  但松开右键不会选中指针下的项（项只认左键的 `Clicked`），子菜单悬停立刻开、没有安全三角，灰掉的项没有提示，点外面关掉的那一下照样落到下面的元素上。
+  这些要自己画菜单才做得到（issue #46）。Tester 只有左键的 `Press` / `Release`，右键只有 `RightClickAt`（按下松开一起），按住右键拖测不了。
+- 列表行的按下（issue #46）：`ListState.DragSelecting()` 只在按着拖远了以后才报真，不能拿来判断"还按着"；列表在按下时就选中没选中的行，
+  按下和松开对应用分不开。要按下选中、松开打开，就让行自己用 `HandleInput` 接 `InputPointerDown`（接了以后移动和松开都归它），
+  而且松开之前每帧都要接着挂 `HandleInput`（不挂，状态上的回调就没了，松开送不到）。回调里不能用建界面时的 `wui.Element`（会 panic
+  "element from pass … used in pass …"），要位置用上一帧记下的矩形。挂了 `HandleInput` 的元素，即使回调把按下让出去，mygo 数双击也按它数
+  （`countPress` 取 handler 和 target 里靠里的那个），⇧点之后马上单击同一行会被数成双击；测试里两次点之间 `Advance` 一下。
 - 无头 Tester 每帧都软件画整窗，一帧的底约 1.8 ms，量出来的帧时间比真窗口的高。后台高亮追色的帧一帧 0.1 ms，Tester 连着画，1800 帧不到 1 s 就走完了，
   后台还没算完。所以量时间别数帧：`TestMeasureBigFile` 量的是墙上时间（1800 帧和 30 s 都过了才停），"几帧完成"只对照 60 Hz 的真窗口看。
 

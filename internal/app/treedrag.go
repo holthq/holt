@@ -506,12 +506,75 @@ type treeClick struct {
 	dblAt       time.Time
 	anchor      FileKey
 	own         bool
+	// press 是鼠标按下、还没松开的那行（PressTreeRow），pressing 是还按着，pressAlt 是按下时按着 ⌥，
+	// dragged 是按着拖到了别的行（拖着选），松开时就不打开。
+	press    FileKey
+	pressRow int
+	pressAlt bool
+	pressing bool
+	dragged  bool
+	// eat / eatAt：松开时已经照单击做了的那行；那次松开 mygo 还会在下一帧报成这一行的一次单击（TreeRowClicked），不再做一遍。
+	eat   FileKey
+	eatAt time.Time
+}
+
+// PressTreeRow 是鼠标在第 i 行（没选中的文件 / 目录行，没按 ⌘ ⇧）上按下：选中这一帧就挪过去（VS Code 也是按下选中），
+// 提示收起；打开文件 / 展开目录等松开（ReleaseTreePress）。alt 是按着 ⌥（松开时在侧边打开），now 是按下的时间。
+func (a *App) PressTreeRow(i int, alt bool, now time.Time) {
+	row, ok := a.TreeRowAt(i)
+	if !ok || row.Note != "" || row.Edit {
+		return
+	}
+	a.FocusTree = true
+	a.chooseOnly(i)
+	a.FileSel = i
+	tc := &a.treeClick
+	tc.anchor, tc.own = row.Key(), true
+	tc.press, tc.pressRow, tc.pressAlt, tc.pressing, tc.dragged = row.Key(), i, alt, true, false
+	tc.key, tc.at = row.Key(), now // 第二下按在它上面时（那时它已经选中、归它自己）认成双击
+	a.TreeTip.Dismiss()
+}
+
+// TreePressed 是按下还没松开、也没拖走的那行（PressTreeRow 记的），没有时第二个值为假。界面拿它画"按下"的底色。
+func (a *App) TreePressed() (FileKey, bool) {
+	tc := &a.treeClick
+	return tc.press, tc.pressing && !tc.dragged
+}
+
+// DragTreePress 是按着拖到了第 j 行（-1 是不在任何一行上）：拖到别的行就是拖着选，选中从按下的那行到 j。
+func (a *App) DragTreePress(j int) {
+	tc := &a.treeClick
+	if !tc.pressing || j < 0 || j == tc.pressRow && !tc.dragged {
+		return
+	}
+	tc.dragged = true
+	a.extendFrom(j)
+}
+
+// ReleaseTreePress 是按下的那次松开了：没拖走就照单击做按下的那行（文件预览 / 切到它的标签，⌥ 在侧边打开，目录展开 / 收起）。
+func (a *App) ReleaseTreePress() {
+	tc := &a.treeClick
+	if !tc.pressing {
+		return
+	}
+	tc.pressing = false
+	row, ok := a.TreeRowAt(a.FileSel)
+	if tc.dragged || !ok || row.Key() != tc.press {
+		return
+	}
+	tc.eat, tc.eatAt = row.Key(), tc.at
+	a.FileHover = a.FileSel // 松开时指针在它上面（ClickTreeRow 拿这个分点击和按键）
+	a.ClickTreeRow(false, tc.pressAlt)
 }
 
 // TreeRowClicked 记下第 i 行（选中、可拖的那种）自己接到的点击：mods 是按着的键，double 是它自己数到的双击，
 // now 是这一帧的时间。
 func (a *App) TreeRowClicked(i int, mods ui.Modifiers, double bool, now time.Time) {
 	tc := &a.treeClick
+	if row, ok := a.TreeRowAt(i); ok && !double && mods&^ui.Alt == 0 && row.Key() == tc.eat && now.Sub(tc.eatAt) < treeDoubleClick {
+		tc.eat = FileKey{} // PressTreeRow / ReleaseTreePress 已经做了
+		return
+	}
 	tc.pending, tc.row, tc.mods, tc.double, tc.now = true, i, mods&^ui.Alt, double, now
 	tc.alt = mods&ui.Alt != 0
 }

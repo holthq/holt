@@ -333,8 +333,14 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 - 复制 / 粘贴 / 创建副本（`app/treeclip.go`）：重名时用 `freeName` 起“名字 副本”“名字 副本 2”。
 - 新建、重命名、移到废纸篓在 `app/fileops.go`。文件树的 ⌘Z（`app/fileundo.go`）：重命名 / 移动改回去，新建 / 复制进来的移到废纸篓；移到废纸篓的不记（放回靠访达），没有重做；`undoStale` 发现磁盘在那之后变了就不撤。
 - 悬停目录显示大小和最近改动（`app/dirtip.go`）：只 `Lstat` 树里列着的文件，第一次悬停时在后台算，有上限。
-- 行的悬停提示不用 mygo 的 `Tooltip`（0.6 s、有"热身"，都写死在 mygo 里）：`app.TreeTip` 记指针从什么时候起停在哪一行，停满 `TreeTipDelay`（1 s）
-  `ui/treetip.go` 才在 Overlay 里画，贴在行的下方（`AttachTo`，底下放不下自己翻上去）；换一行重新等，点了那行（`Dismiss`）指针离开前不再出，
+- 鼠标（issue #46）：没选中的文件 / 目录行没按 ⌘ ⇧ 的单击由行自己接（`ui.treePress`，`HandleInput` 接下按下、移动、松开，不交给列表）：
+  按下那一帧就选中（`PressTreeRow`）、画"按下"的底色（`pressFill`，叠在选中的底上），按着拖到别的行是拖着选（`DragTreePress`，按 `TreeSpans` 找行，
+  不会在列表边上自动滚），松开才打开文件 / 展开目录（`ReleaseTreePress`）；那次松开 mygo 下一帧还会报成这一行的单击，`TreeRowClicked` 按 `eat` 吃掉。
+  ⌘ / ⇧ 点、双击、按在箭头上的照旧交给列表 / 箭头；已经选中的行照旧自己接（可拖）。右键不改选中（原来的多选留着），菜单只对那一行，
+  那一行画 1 pt 强调色描边（`menuRing`：`PopoverMenu` 开着时每帧同步建菜单，建菜单的函数顺手设个标记）。箭头不换手形光标。
+- 行的悬停提示不用 mygo 的 `Tooltip`（0.6 s，写死在 mygo 里）：`app.TreeTip` 记指针从什么时候起停在哪一行，停满 `TreeTipDelay`（0.5 s）
+  `ui/treetip.go` 才在 Overlay 里画，贴在行的下方（`AttachTo`，底下放不下自己翻上去）；出过一条以后换一行直接出（暖启动，指针离开所有行、
+  按下 / 右键以后又要等），点了那行（`Dismiss`）指针离开前不再出，
   行里自己带提示的小图标（改动的点、链接图标）悬停时让给它们。名字被截断（`cutName` 量字宽）时提示第一行是全名。
 - 仓库段头能拖动排序（`RepoDrag`），改的是工作区文件里 `folders` 的顺序（`workspace.Reorder`）。拖动和移除仓库在界面里只发请求（`MoveReq` / `RemoveReq`），`pending()` 在帧外统一处理，避免在一帧绘制过程中修改列表。
 - 树里的行拖到编辑器组上是在那组打开（`OpenDropped`），拖到终端上是贴绝对路径，都不写盘、不问。别的应用拖进来的（`app/datadrop.go`）：拖到编辑器里插入文字或打开文件（`DropOnDoc`），拖到终端里插入路径（`DropOnTerm` / `ShellFiles`）。

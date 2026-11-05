@@ -66,31 +66,25 @@ func TestTreeRowTip(t *testing.T) {
 	if tipOf("b.txt") == "" {
 		t.Fatal("b.txt 没有提示")
 	}
-	tt.Advance(600 * time.Millisecond)
+	tt.Advance(300 * time.Millisecond)
 	if _, ok := shown("b.txt"); ok {
-		t.Fatal("停了 0.6 s 树行的提示就出了，应该等 1 s")
+		t.Fatal("停了 0.3 s 树行的提示就出了，应该等 0.5 s")
 	}
-	tt.Advance(500 * time.Millisecond)
+	tt.Advance(300 * time.Millisecond)
 	tip, ok := shown("b.txt")
 	if !ok {
-		t.Fatalf("停了 1.1 s 树行的提示还没出：%q", tt.Texts())
+		t.Fatalf("停了 0.6 s 树行的提示还没出：%q", tt.Texts())
 	}
 	if tip.Y < row.Y+row.H {
 		t.Errorf("提示 %v 不在行 %v 的下方，盖住了上一行", tip, row)
 	}
 
-	// 挪到下一行：刚有提示消失也不立刻弹，还是从头等
-	hover("c.txt")
-	if _, ok := shown("b.txt"); ok {
-		t.Error("指针离开 b.txt，它的提示还在")
-	}
-	tt.Advance(600 * time.Millisecond)
-	if _, ok := shown("c.txt"); ok {
-		t.Error("从有提示的行挪到下一行，0.6 s 就弹了（热身）")
-	}
-	tt.Advance(500 * time.Millisecond)
-	if _, ok := shown("c.txt"); !ok {
-		t.Error("c.txt 停了 1.1 s 没出提示")
+	// 挪到下一行：暖启动，提示直接换到新行、不再等
+	crow := hover("c.txt")
+	if tip, ok := shown("c.txt"); !ok {
+		t.Error("从有提示的行挪到下一行，提示没直接出（暖启动）")
+	} else if tip.Y < crow.Y+crow.H {
+		t.Errorf("提示 %v 还在 b.txt 下面，没换到 c.txt（%v）", tip, crow)
 	}
 
 	// 点了就收掉，指针不动不再出

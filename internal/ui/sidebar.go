@@ -389,8 +389,13 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if filtering {
 		indent = 22
 	}
-	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).PopoverMenu(func(m *wui.Menu) { rowMenu(a, m, row.Index, tr, tr.Row) })
+	menuOn := false // 这一行（或合并行的一段）的右键菜单开着：画一圈描边
+	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, indent).Gap(treeGap).AlignItems(wui.Center).PopoverMenu(func(m *wui.Menu) {
+		menuOn = true
+		rowMenu(a, m, tr, tr.Row)
+	})
 	drawGuides(el, tr, g)
+	menuRing(el, &menuOn)
 	if b := span(a, row, el); b.H > 0 {
 		a.TreeRowH = b.H
 	}
@@ -398,9 +403,16 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if hov {
 		a.FileHover = row.Index
 	}
+	k, pressing := a.TreePressed()
+	pressing = pressing && k == tr.Key() // 按下时选中了这一行，还按着：松开之前接着收它的移动和松开
+	pressed := pressing && hov
+	if pressing || !a.FileChosen.Has(tr.Key()) {
+		el.HandleInput(treePress(a, row.Index, tr, indent))
+	}
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		// 按下归这一行了（列表接不到点击），点击记下来等列表建好再照列表的规矩做（ApplyTreeClick）
 		el.Drag(dragOf(tr))
+		pressed = pressed || el.Pressed() && !el.Dragging()
 		if el.Clicked() || el.DoubleClicked() {
 			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.DoubleClicked(), c.Now())
 			a.TreeTip.Dismiss()
@@ -421,6 +433,9 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	} else if !tr.Dir && el.RowDoubleClicked() {
 		a.OpenFile(r, tr.Path, true)
 		a.TreeTip.Dismiss()
+	}
+	if pressed {
+		el.Radius(rowRadius).Background(pressFill(a, t))
 	}
 	if tr.Dir && !filtering && !tr.Linked && !tr.DirLink() { // 不往链接指的地方放
 		treeDropTarget(a, c, el, tr)
@@ -454,7 +469,10 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 			folderGlyph(a, c, dirsOf(tr.Row), tr.Open, tr.Ignored, sel)
 			nameCol := dirNameColor(a, t, tr, muted, sel)
 			if len(tr.Chain) > 0 {
-				chainName(c, tr, muted, nameCol, func(m *wui.Menu, seg files.Row) { rowMenu(a, m, row.Index, tr, seg) })
+				chainName(c, tr, muted, nameCol, func(m *wui.Menu, seg files.Row) {
+					menuOn = true
+					rowMenu(a, m, tr, seg)
+				})
 			} else {
 				nameEl, hasName = wui.Text(c, tr.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0), true
 				if nameCol != nil {
@@ -537,9 +555,10 @@ func codeLetter(c *wui.Context, t *wui.Theme, code byte, sel bool) {
 }
 
 // rowMenu 是文件树里文件 / 目录行的右键菜单：选了好几行、右键的是其中一行时对选中的全部（chosenMenu），
-// 否则对 row（合并行里右键的那一段，或整行）。右键没选中的行（第 i 行）先只选中它（MenuSelect，不预览）。
-func rowMenu(a *app.App, m *wui.Menu, i int, tr app.TreeRow, row files.Row) {
-	a.MenuSelect(i)
+// 否则对 row（合并行里右键的那一段，或整行）。右键没选中的行不改选中（原来的多选留着，VS Code 也是），
+// 菜单只对它，那一行画一圈描边（menuRing）表示菜单是对它开的。
+func rowMenu(a *app.App, m *wui.Menu, tr app.TreeRow, row files.Row) {
+	a.TreeTip.Dismiss()
 	if rows := a.MenuRows(tr); len(rows) > 1 {
 		at := tr
 		at.Row = row
@@ -703,7 +722,7 @@ func chevron(c *wui.Context, size float32, open bool, name string, color wui.Col
 	if open {
 		label = i18n.Tf("收起 %s", name)
 	}
-	b := wui.Box(c).Size(16, 16).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Cursor(wui.CursorPointer).Label(label)
+	b := wui.Box(c).Size(16, 16).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Label(label) // 光标保持箭头（VS Code、访达都是）
 	b.Children(func() {
 		ic := wui.Icon(c, iconChevronRight).FontSize(size).TextColor(color)
 		if open {
@@ -723,7 +742,7 @@ func repoRow(a *app.App, c *wui.Context, row wui.ListRow, tr app.TreeRow, filter
 	slot := wui.Column(c)
 	slot.Children(func() {
 		el = repoLine(a, c, tr, onAccent(a, row.Selected()), filtering, func(m *wui.Menu) {
-			a.MenuSelect(row.Index)
+			a.TreeTip.Dismiss()
 			if rows := a.MenuRows(tr); len(rows) > 1 {
 				chosenMenu(a, m, tr, rows)
 			} else {
@@ -1077,7 +1096,12 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 	if sel {
 		muted, mark, ok = t.AccentText.Alpha(0.75), t.AccentText, t.AccentText
 	}
-	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center).PopoverMenu(menu)
+	menuOn := false
+	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center).PopoverMenu(func(m *wui.Menu) {
+		menuOn = true
+		menu(m)
+	})
+	menuRing(el, &menuOn)
 	el.Children(func() {
 		if filtering {
 			wui.Box(c).Width(16).Shrink(0)
@@ -1119,4 +1143,69 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering bool, m
 		}
 	})
 	return el
+}
+
+// menuRing 在文件树的一行 el 上画一圈 1 pt 强调色描边，*on 是这一帧它的右键菜单开着（PopoverMenu 开着时每帧建菜单，
+// 建菜单的函数把它设上）：右键没选中的行时菜单对它，选中不挪，靠这圈描边看出菜单是对哪行开的；菜单关了就没有了。
+func menuRing(el wui.Element, on *bool) {
+	el.DrawOver(func(p *wui.Painter, r wui.Rect) {
+		if !*on {
+			return
+		}
+		t := p.Theme()
+		p.Stroke(wui.Rect{X: r.X + 0.5, Y: r.Y + 0.5, W: r.W - 1, H: r.H - 1}, t.Accent, rowRadius, 1)
+	})
+}
+
+// pressFill 是文件树行按下（还没松开）时盖在行上的底色，比悬停深一档（wu 的 ghost_element_active）：
+// 淡底选中时是字色 8%（深色 10%），叠在选中的淡底上；实心选中时是按下的强调色（AccentPressed）。
+func pressFill(a *app.App, t *wui.Theme) wui.Color {
+	if a.St.Settings.SolidSelection {
+		return t.AccentPressed
+	}
+	if t.Dark {
+		return t.Text.Alpha(0.10)
+	}
+	return t.Text.Alpha(0.08)
+}
+
+// treePress 是没选中的文件 / 目录行（第 i 行）自己接的鼠标按下：没按 ⌘ ⇧ ⌃ 的单击，按下那一帧就选中它
+// （PressTreeRow，这一帧就画成选中加"按下"的底色），按着拖到别的行是拖着选（DragTreePress），松开时才打开
+// （ReleaseTreePress）。原来交给列表时，列表在按下时选中、Grove 在同一帧就打开了文件，按下和点击分不开。
+// 按 ⌘ ⇧ 的、双击、右键、按在目录的箭头上的不接，照旧交给列表 / 箭头 / 菜单。
+func treePress(a *app.App, i int, tr app.TreeRow, indent float32) func(ev wui.InputEvent) bool {
+	return func(ev wui.InputEvent) bool {
+		switch ev.Kind {
+		case wui.InputPointerDown:
+			if ev.Button != 0 || ev.Clicks > 1 || ev.Mods&(wui.Cmd|wui.Shift|wui.Ctrl) != 0 || a.FileChosen.Has(tr.Key()) {
+				return false
+			}
+			if tr.Dir && !a.Filtering() && ev.X >= indent-2 && ev.X <= indent+18 {
+				return false // 箭头：只展开收起，不挪选中
+			}
+			a.PressTreeRow(i, ev.Mods&wui.Alt != 0, ev.Time)
+			return true
+		case wui.InputPointerMove:
+			if ev.Button == 0 {
+				if b, ok := a.TreeSpans[i]; ok { // ev 是相对这一行的；元素本身在事件里不能用
+					a.DragTreePress(treeRowAtY(a, b.Y+ev.Y))
+				}
+			}
+			return true
+		case wui.InputPointerUp:
+			a.ReleaseTreePress()
+			return true
+		}
+		return false
+	}
+}
+
+// treeRowAtY 是上一帧画在窗口纵坐标 y 处的那一行（TreeSpans 记的），没有时 -1。
+func treeRowAtY(a *app.App, y float32) int {
+	for i, r := range a.TreeSpans {
+		if y >= r.Y && y < r.Y+r.H {
+			return i
+		}
+	}
+	return -1
 }
