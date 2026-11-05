@@ -13,9 +13,11 @@ func wt(name string, main bool) Worktree {
 	return Worktree{Worktree: git.Worktree{Path: "/w/" + name, Branch: name, Head: "h-" + name, Main: main}}
 }
 
-// 七种状态怎么算：agent 的压过改动，有改动压过可合并，领先 0 的是已合并，目录没了的也算已合并。
+// 七种状态怎么算：agent 的压过改动，有改动压过可合并，领先 0、落后 ≥ 1 的是已合并，目录没了的也算已合并；
+// 刚建、还没提交的（领先、落后都是 0）不算已合并。
 func TestWtStateOf(t *testing.T) {
 	clean := &WtInfo{}
+	merged := &WtInfo{Behind: 1}
 	ahead := &WtInfo{Ahead: 2}
 	dirty := &WtInfo{Dirty: 3, Ahead: 2}
 	gone := wt("gone", false)
@@ -36,9 +38,10 @@ func TestWtStateOf(t *testing.T) {
 		{"有改动", AgentNone, wt("a", false), dirty, WtDirty},
 		{"空闲", AgentIdle, wt("a", false), clean, WtIdle},
 		{"还没算", AgentNone, wt("a", false), nil, WtPlain},
-		{"已合并", AgentNone, wt("a", false), clean, WtMerged},
+		{"已合并", AgentNone, wt("a", false), merged, WtMerged},
+		{"刚建的不算已合并", AgentNone, wt("a", false), clean, WtPlain},
 		{"可清理并进已合并", AgentNone, gone, nil, WtMerged},
-		{"分离 HEAD 不算已合并", AgentNone, detached, clean, WtPlain},
+		{"分离 HEAD 不算已合并", AgentNone, detached, merged, WtPlain},
 		{"主工作树不会可合并", AgentNone, wt("main", true), ahead, WtPlain},
 		{"主工作树有改动", AgentNone, wt("main", true), dirty, WtDirty},
 	} {

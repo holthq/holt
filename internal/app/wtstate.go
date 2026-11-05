@@ -24,7 +24,8 @@ const (
 	WtDirty                    // 有未提交的改动，没有 agent 在跑
 	WtIdle                     // 前台是 agent，但闲着
 	WtPlain                    // 别的情况（没有 agent）
-	WtMerged                   // 分支已经合进主分支（git branch --merged 的意思：领先 0），目录没了的（可清理）也算
+	WtMerged                   // 分支已经合进主分支、主分支又往前走了（领先 0、落后 ≥ 1），目录没了的（可清理）也算；
+	//                            刚建、还没提交的工作树（领先、落后都是 0）不算已合并，是 WtPlain
 )
 
 // WtStateOf 是工作树 w 的状态：ag 是它上面的 agent（WtAgent），info 是懒算的改动数和领先 / 落后（还没算为 nil）。
@@ -47,7 +48,7 @@ func WtStateOf(ag AgentKind, w Worktree, info *WtInfo) WtState {
 		return WtMergeable
 	case ag == AgentIdle:
 		return WtIdle
-	case known && !w.Main && w.Branch != "" && w.Head != "" && info.Ahead == 0:
+	case known && !w.Main && w.Branch != "" && w.Head != "" && info.Ahead == 0 && info.Behind > 0:
 		return WtMerged
 	}
 	return WtPlain
