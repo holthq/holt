@@ -655,8 +655,10 @@ func TestScreenshotTitlebarQueue(t *testing.T) {
 
 // TestScreenshotHistoryGraph 渲染历史提交图的截图（WORKBENCH_SHOT=目录）：
 //
-//	history-graph.png  右栏历史开着"所有分支"（graphRepo）：feature/login、feature/search 两次合并（空心节点）、
-//	                   没合并的 topic，HEAD（main）外面一圈，"未提交的改动"一条虚线连到 HEAD；选中展开的是"合并 feature/login"
+//	history-graph.png  右栏历史开着"所有分支"（graphRepo）：头部是仓库名、分支和图标开关；一个提交一行、按日期分段，
+//	                   feature/login、feature/search 两次合并（空心节点、标题次要色），没合并的 topic，HEAD（main）
+//	                   实心点外面一圈、分支标记是强调色；"未提交的改动"是橙色铅笔加改动数，橙色虚线圈用虚线连到 HEAD；
+//	                   选中展开的是"合并 feature/login"，下面的卡片里是短哈希、作者、三个按钮和它改的文件
 func TestScreenshotHistoryGraph(t *testing.T) {
 	dir := os.Getenv("WORKBENCH_SHOT")
 	if dir == "" {

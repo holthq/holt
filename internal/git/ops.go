@@ -244,6 +244,7 @@ type Commit struct {
 	Refs        []string // 指向它的分支 / 标签，HEAD -> 的那个在最前
 	Subject     string
 	Body        string
+	Agent       string // 正文的 Co-Authored-By: trailer 认出的编码 agent（AgentOf），不是为空
 }
 
 const LogPage = 200
@@ -478,6 +479,7 @@ func logRun(ctx context.Context, root string, q LogQuery, rev string, extra ...s
 			continue
 		}
 		c := Commit{Hash: f[0], Short: f[1], Author: f[3], Email: f[4], Subject: f[7], Body: strings.TrimSpace(f[8])}
+		c.Agent = AgentOf(c.Body)
 		if f[2] != "" {
 			c.Parents = strings.Fields(f[2])
 		}

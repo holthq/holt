@@ -463,7 +463,7 @@ func TestTermClearFindScrollback(t *testing.T) {
 	// 把键盘挪到右栏的历史搜索框，⌘K 照旧带着 >git 开命令面板
 	mustClick(t, tt, "搜索历史")
 	tt.Frame()
-	if a.TermFocused || !tt.Focused("搜索历史") {
+	if a.TermFocused || !tt.Focused("搜索提交") {
 		t.Fatalf("键盘没离开终端：term=%v", a.TermFocused)
 	}
 	tt.Key(wui.Cmd, wui.KeyK)

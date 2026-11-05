@@ -89,7 +89,6 @@ func TestGitOps(t *testing.T) {
 		t.Fatalf("历史顺序不对: %+v", h.Commits)
 	}
 	mustText(t, tt, "加 a.txt")
-	mustText(t, tt, "测试")
 	mustClick(t, tt, "加 a.txt")
 	second := h.Commits[1].Hash
 	wait("提交的文件列表", func() bool { return h.FilesFor == second && !h.FilesLoading })
@@ -304,7 +303,7 @@ func TestHistoryPaging(t *testing.T) {
 	if len(h.Commits) != git.LogPage || h.Done {
 		t.Fatalf("第一页 %d 条 done=%v", len(h.Commits), h.Done)
 	}
-	mustText(t, tt, "200+")
+	mustText(t, tt, i18n.Tf("已显示 %d 条", 200))
 	mustClick(t, tt, "再读 200 条")
 	wait("第二页", func() bool { return !h.Loading && h.Done })
 	if len(h.Commits) != 200 || h.Commits[199].Subject != "初始提交" {

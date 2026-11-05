@@ -270,6 +270,10 @@ type App struct {
 
 	// 右栏历史的搜索框（不记；所有分支的开关在 St 里，文件历史在各仓库的 Hist 里）
 	HistQuery string
+	HistAgent bool      // 右栏历史只看 agent 写的提交（头部的四角星开关），见 ToggleHistAgent
+	HistFind  bool      // 右栏历史头部的搜索框展开着（点放大镜开，Esc 收起）
+	HistField ui.Handle // 右栏历史的搜索框（展开时把焦点给它）
+	HistFocus bool      // 下一帧把焦点给右栏历史的搜索框（刚点了放大镜）
 	histTimer *time.Timer
 	histTick  int
 

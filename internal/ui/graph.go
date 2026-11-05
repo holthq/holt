@@ -15,14 +15,15 @@ import (
 
 // 图的几何，单位 DIP。
 const (
-	graphLane   = 12  // 泳道间距
-	graphLeft   = 6   // 左边距
+	graphLane   = 14  // 泳道间距
+	graphLeft   = 4   // 左边距
 	graphRight  = 2   // 右边距
 	graphMax    = 6   // 图格最多这么多条泳道宽；再多的照样画，被图格裁掉
-	graphNodeY  = 14  // 节点圆心离行顶（行上 padding 6 + 第一行字高的一半）
-	graphNodeR  = 3.5 // 节点半径
-	graphRingR  = 6   // HEAD 外面那圈的半径
-	graphStroke = 1.5 // 线宽
+	graphNodeY  = 15  // 节点圆心离行顶（一行 30 高的正中）
+	graphNodeR  = 3.6 // 节点半径
+	graphHalo   = 2   // 节点外面一圈底色描边的宽
+	graphRingR  = 7   // HEAD 外面那圈的半径
+	graphStroke = 1.8 // 线宽
 	graphDash   = 2   // 虚线（"未提交的改动"）一段的长和空
 )
 
@@ -36,26 +37,32 @@ func graphX(lane int) float32 {
 	return graphLeft + float32(lane)*graphLane + graphLane/2
 }
 
-// 泳道的颜色按泳道号循环：强调色打头，再绿、橙、紫、青、粉、黄、红，都压到和 TextMuted 差不多的分量，不抢字。
+// 泳道的颜色按泳道号循环，都是淡的：钢蓝（强调色那一档）打头，再灰绿、灰沙、灰紫、灰青、灰褐；不用红色。
 var (
-	lightLanes = [...]wui.Color{{}, wui.Hex("#3f9d63"), wui.Hex("#d27a2c"), wui.Hex("#8a63d2"),
-		wui.Hex("#2096ad"), wui.Hex("#cf5690"), wui.Hex("#b48d1c"), wui.Hex("#d04848")}
-	darkLanes = [...]wui.Color{{}, wui.Hex("#4dbd7a"), wui.Hex("#e8964b"), wui.Hex("#a68bec"),
-		wui.Hex("#3dbad0"), wui.Hex("#e676a9"), wui.Hex("#d6b54c"), wui.Hex("#ea6a6a")}
+	lightLanes = [...]wui.Color{wui.Hex("#4e6e8e"), wui.Hex("#7fa393"), wui.Hex("#b79a73"), wui.Hex("#9286a8"),
+		wui.Hex("#6f9aa0"), wui.Hex("#a08c78")}
+	darkLanes = [...]wui.Color{wui.Hex("#8fa9c6"), wui.Hex("#86b09d"), wui.Hex("#c9ab82"), wui.Hex("#a79cc0"),
+		wui.Hex("#84b3b9"), wui.Hex("#b8a38e")}
 )
 
-// laneColor 是泳道 lane 的颜色；选中的行（强调色底）上一律 AccentText。
+// laneColor 是泳道 lane 的颜色；选中的行（实心的强调色底）上一律 AccentText。
 func laneColor(t *wui.Theme, lane int, sel bool) wui.Color {
 	switch i := lane % len(lightLanes); {
 	case sel:
 		return t.AccentText
-	case i == 0:
-		return t.Accent
 	case t.Dark:
 		return darkLanes[i]
 	default:
 		return lightLanes[i]
 	}
+}
+
+// dirtyColor 是"未提交的改动"的虚线圈和连到 HEAD 的虚线：橙色（实心选中的行上 AccentText）。
+func dirtyColor(t *wui.Theme, sel bool) wui.Color {
+	if sel {
+		return t.AccentText
+	}
+	return t.Warning
 }
 
 // edgeColor 是一条线的颜色：拐弯的线算靠右那条泳道的（汇入主线的分支、合并进来的分支），直线就是它自己泳道的。
@@ -132,11 +139,16 @@ func strokeFade(p *wui.Painter, path *wui.Path, col wui.Color, fade int) {
 	}
 }
 
-// graphNode 画节点：实心；合并提交空心；HEAD 外面再一圈。
+// graphNode 画节点：实心点，外面一圈 2 px 的底色描边（和穿过的线分开）；合并提交空心；HEAD 外面再一圈。
 func graphNode(p *wui.Painter, x, y float32, col wui.Color, merge, head bool) {
+	bg := p.Theme().Background
+	var halo wui.Path
+	halo.Circle(x, y, graphNodeR+graphHalo/2)
+	p.StrokePath(&halo, graphHalo, bg)
 	var dot wui.Path
 	if merge {
 		dot.Circle(x, y, graphNodeR-graphStroke/2)
+		p.FillPath(&dot, bg)
 		p.StrokePath(&dot, graphStroke, col)
 	} else {
 		dot.Circle(x, y, graphNodeR)
@@ -202,9 +214,9 @@ func cutGraph(c *wui.Context, h *app.History, ci int, head string, dirty [2]int,
 				graphLine(p, r.X+graphX(e.To), r.Y, r.X+graphX(e.To), y1, laneColor(t, e.To, sel), up)
 			}
 			if dash && ci == dirty[1] {
-				dashedLine(p, r, dirty[0], r.Y, ny-gap, laneColor(t, dirty[0], sel))
+				dashedLine(p, r, dirty[0], r.Y, ny-gap, dirtyColor(t, sel))
 			} else if dash {
-				dashedLine(p, r, dirty[0], r.Y, bottom, laneColor(t, dirty[0], sel))
+				dashedLine(p, r, dirty[0], r.Y, bottom, dirtyColor(t, sel))
 			}
 			// 下半截：直的是竖线；拐弯的从节点（或这条泳道的中线）出发、到下一行那条泳道的行底，一段 S 形三次曲线
 			for _, e := range row.Edges {
@@ -285,7 +297,7 @@ func passGraph(c *wui.Context, h *app.History, ci int, dirty [2]int, sel bool, w
 		t := p.Theme()
 		p.Clip(r, 0, func() {
 			if dash {
-				dashedLine(p, r, dirty[0], r.Y, r.Y+r.H, laneColor(t, dirty[0], sel))
+				dashedLine(p, r, dirty[0], r.Y, r.Y+r.H, dirtyColor(t, sel))
 			}
 			var done [graphMax + 2]bool
 			for _, e := range edges {
@@ -307,7 +319,7 @@ func gapGraph(c *wui.Context, h *app.History, dirty [2]int, sel bool) {
 		return
 	}
 	el.Draw(func(p *wui.Painter, r wui.Rect) {
-		p.Clip(r, 0, func() { dashedLine(p, r, dirty[0], r.Y, r.Y+r.H, laneColor(p.Theme(), dirty[0], sel)) })
+		p.Clip(r, 0, func() { dashedLine(p, r, dirty[0], r.Y, r.Y+r.H, dirtyColor(p.Theme(), sel)) })
 	})
 }
 
@@ -326,7 +338,7 @@ func uncommittedGraph(c *wui.Context, r *app.Repo, dirty [2]int, sel bool) {
 		if lane < 0 || lane > graphMax {
 			return
 		}
-		col := laneColor(p.Theme(), lane, sel)
+		col := dirtyColor(p.Theme(), sel)
 		x, y := rc.X+graphX(lane), rc.Y+rc.H/2
 		p.Clip(rc, 0, func() {
 			var path wui.Path
@@ -337,5 +349,20 @@ func uncommittedGraph(c *wui.Context, r *app.Repo, dirty [2]int, sel bool) {
 			path.Cap(wui.ButtCap).Dash(0, graphDash)
 			p.StrokePath(&path, graphStroke, col)
 		})
+	})
+}
+
+// headGraph 是提交 ci 上面日期段头的图格：上一个提交连下来的线竖着穿过去（还在 HEAD 上面的话，"未提交"的虚线也穿过去）。
+func headGraph(c *wui.Context, h *app.History, ci int, dirty [2]int, w float32) {
+	if ci > 0 {
+		passGraph(c, h, ci-1, dirty, false, w)
+		return
+	}
+	el := wui.Box(c).Width(w).Shrink(0)
+	if dirty[0] < 0 || dirty[0] > graphMax {
+		return
+	}
+	el.Draw(func(p *wui.Painter, r wui.Rect) {
+		p.Clip(r, 0, func() { dashedLine(p, r, dirty[0], r.Y, r.Y+r.H, dirtyColor(p.Theme(), false)) })
 	})
 }

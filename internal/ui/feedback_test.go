@@ -184,7 +184,7 @@ func TestTipsBelowTitleBar(t *testing.T) {
 	below("Git", app.Tip("Git", "view.git"))
 	below(i18n.Tf("标签 %s", "a.txt"), "src/deep/a.txt")
 	// 右栏的 当前仓库 | 所有仓库 在卡片头下面一行，提示照常在上面，只要不进标题栏
-	if ar, tr := hover(i18n.T("所有仓库"), i18n.T("所有仓库的提交按时间合并")); tr.Y < barHeight {
+	if ar, tr := hover(i18n.T("所有仓库"), i18n.T("所有仓库：各仓库的提交按时间合并（否则只看当前仓库）")); tr.Y < barHeight {
 		t.Errorf("%q 的提示盖到了标题栏（下沿 %d）：元素 %v 提示 %v", i18n.T("所有仓库"), barHeight, ar, tr)
 	}
 

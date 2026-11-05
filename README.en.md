@@ -33,8 +33,8 @@ about 79 MiB of memory when idle.
 - **Editor**: drag a tab to an edge to split the editor. Includes an outline, sticky scroll, snippets and Markdown
   previews with Mermaid and math. Supports encodings such as GB18030 and Big5. Run formatters like gofmt and prettier,
   or checks like go vet and eslint, on save.
-- **Git**: stage changes by hunk or line and resolve conflicts in the editor. View a commit graph for one repo or all
-  repos together. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
+- **Git**: stage changes by hunk or line and resolve conflicts in the editor. View a commit graph for one repo, or the
+  history of all repos merged by time; commits co-authored by a coding agent are marked and can be filtered. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
   are available in the UI. Each repo's header in the Git panel has its own Pull and Push buttons, with ahead / behind
   commit counts. Git actions that are greyed out say why ("Push (in sync with origin)"), and button tooltips show the
   git command they run.

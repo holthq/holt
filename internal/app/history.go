@@ -44,6 +44,8 @@ type History struct {
 
 	query, path, ref string   // Commits 是按哪个搜索词、哪个文件、从哪读的（筛选变了才重读）
 	all              bool     // Commits 是不是按所有分支读的
+	agent            bool     // Commits 是不是只留了 agent 写的（Commit.Agent 不空）
+	read             int      // git log 一共读了几条（只看 agent 时 Commits 比它少，下一页从这里接着读）
 	BadDates         []string // 读的时候查询里 git 也认不出的日期（没算进条件）
 
 	// Graph 和 Commits 一一对应，是提交图的每一行；读的时候有搜索词或是文件历史（只是一部分提交，连线没意义）就是空的。
@@ -161,8 +163,9 @@ func (a *App) LoadHistory(r *Repo, reset bool) {
 	h.Loading = true
 	skip := 0
 	if !reset {
-		skip = len(h.Commits)
+		skip = h.read
 	}
+	agent := a.HistAgent
 	ci, file := histKey(r)
 	var selHash, selPath string
 	var selLocal int64 // 选着的本地历史那条的 T
@@ -194,20 +197,26 @@ func (a *App) LoadHistory(r *Repo, reset bool) {
 			}
 			a.readyStep(r, readyHist, took)
 			h.Loading, h.Loaded, h.Err = false, true, err
-			h.query, h.path, h.all, h.ref, h.BadDates = raw, q.Path, q.All, q.Rev, bad
+			h.query, h.path, h.all, h.ref, h.BadDates, h.agent = raw, q.Path, q.All, q.Rev, bad, agent
 			if err != nil {
 				h.want = ""
 				return
 			}
+			n := len(cs)
+			if agent { // 只看 agent 写的：读一页再筛，提交不连续，和搜索一样不算提交图
+				cs = slices.DeleteFunc(cs, func(c git.Commit) bool { return c.Agent == "" })
+			}
 			if reset {
+				h.read = n
 				h.Commits = cs
 				h.Graph, h.GraphW, h.lanes = nil, 0, graph.Lanes{}
 				h.lanes.Reserve(head)
 				a.readLocal(r)
 			} else {
+				h.read += n
 				h.Commits = append(h.Commits, cs...)
 			}
-			if !q.Narrowed() && q.Path == "" && len(h.Graph) == len(h.Commits)-len(cs) {
+			if !agent && !q.Narrowed() && q.Path == "" && len(h.Graph) == len(h.Commits)-len(cs) {
 				// 上一页的 Lanes 接着算；汇入时会改上一页最后一行的 Edges（Graph 里存的就是那一份）
 				for _, c := range cs {
 					row := h.lanes.Next(c.Hash, c.Parents)
@@ -215,7 +224,7 @@ func (a *App) LoadHistory(r *Repo, reset bool) {
 					h.GraphW = max(h.GraphW, row.Width())
 				}
 			}
-			h.Done = len(cs) < git.LogPage
+			h.Done = n < git.LogPage
 			if h.Expanded != "" {
 				i := slices.IndexFunc(h.Commits, func(c git.Commit) bool { return c.Hash == h.Expanded })
 				switch {
@@ -331,7 +340,7 @@ func (a *App) OnHistSelected(r *Repo) {
 	}
 }
 
-// SetHistAll 切换右栏的"当前仓库 | 所有仓库"，记进 state.json。
+// SetHistAll 切换右栏的"所有仓库"（头部的开关），记进 state.json。
 func (a *App) SetHistAll(all bool) {
 	if a.St.HistAll == all {
 		return

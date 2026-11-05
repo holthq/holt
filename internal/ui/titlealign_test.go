@@ -216,8 +216,8 @@ func TestStatusBarEdges(t *testing.T) {
 	if head := find("仓库"); left.X != head.X {
 		t.Errorf("状态栏左边从 %.1f 起，侧栏头部的字从 %.1f 起", left.X, head.X)
 	}
-	if graph := find("提交图"); right.X+right.W != graph.X+graph.W || graph.X+graph.W != w-statusPadR {
-		t.Errorf("状态栏右边到 %.1f，右栏里的开关到 %.1f", right.X+right.W, graph.X+graph.W)
+	if graph := find(app.Tip("关闭右栏", "view.right")); right.X+right.W != graph.X+graph.W || graph.X+graph.W != w-statusPadR {
+		t.Errorf("状态栏右边到 %.1f，右栏里的关闭按钮到 %.1f", right.X+right.W, graph.X+graph.W)
 	}
 	a.St.Sidebar, a.St.RightBar = false, false
 	tt.Frame()

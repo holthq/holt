@@ -171,7 +171,7 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 ### 合并的历史
 
-右栏历史除“当前仓库”页外，还有“所有仓库”页（`histAll`）。`AllHistRows` 把每个仓库的一页提交按作者时间（`%aI`）做 k 路归并；各仓库的读取进度不同，因此只合并到所有仓库均已读取的时间（地平线），往下滚 `LoadMoreAllHistory` 给落后的仓库补一页。选中是 `HistAllSel`。所有仓库页也画提交图，每个仓库各算各的泳道，合并后按行截出来（`AllHistLinks` / `cutGraph`）。
+右栏历史除“当前仓库”页外，还有“所有仓库”页（`histAll`）。`AllHistRows` 把每个仓库的一页提交按作者时间（`%aI`）做 k 路归并；各仓库的读取进度不同，因此只合并到所有仓库均已读取的时间（地平线），往下滚 `LoadMoreAllHistory` 给落后的仓库补一页。选中是 `HistAllSel`。所有仓库页不画提交图，每行左边一个仓库圆点（`repoDot`，颜色按仓库顺序轮换）。
 
 ## Git
 
@@ -248,7 +248,11 @@ blame（`app/blame.go`、`git/blame.go`）：`ReadBlame` 读 `blame --porcelain`
 
 `internal/graph` 只负责计算：按显示顺序将提交传给 `Lanes.Next(hash, parents)`，返回该行的泳道及上下连接关系（`Row{Lane, Edges}`）。状态保存在 `Lanes` 中，下一页继续使用。`Reserve` 将 HEAD 固定在第 0 道。log 使用 `--date-order`，避免分支连线过长。
 
-`ui/graph.go` 画：泳道间距 12，最多画 6 道，多出来的并到最右边；“未提交的改动”那行用虚线（`dirtyLine`）接到 HEAD 那道。有搜索词时不连线，只画点（`HistDots` / `dotGraph`）。`histNoGraph` 关掉整个图。
+`ui/graph.go` 画：泳道间距 14，最多画 6 道，多出来的并到最右边；颜色是淡的钢蓝、灰绿、灰沙……（不用红色），线宽 1.8，节点外面一圈底色描边。“未提交的改动”那行是橙色虚线圈，用橙色虚线（`dirtyLine`）接到 HEAD 那道。有搜索词、只看 agent 时不连线，只画点（`HistDots` / `dotGraph`）。`histNoGraph`（头部右键菜单里的“提交图”）关掉整个图。
+
+右栏历史的列表行（`ui/history.go`）：一个提交一行，一天的第一个提交那一行上面带日期段头，展开的提交下面带卡片；段头和卡片在选中的底外面（`histParts`），展开的文件是单独的列表行，接着画卡片的两边和底（`histFileRow`）。
+
+agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（名字里的词或邮箱域名对上 `agentPats` 表），读 log 时填进 `Commit.Agent`。“只看 agent 写的”（`App.HistAgent`，不进 state.json）读一页再筛，`Hist.read` 记 git log 读了几条，下一页从那里接着读。
 
 ### 工作树
 

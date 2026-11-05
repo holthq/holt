@@ -142,7 +142,7 @@ func TestGitBarAllRepos(t *testing.T) {
 	})
 }
 
-// 右栏的"所有仓库"：各仓库的提交按时间交错、每行带仓库胶囊，置顶有改动的仓库；在 beta 的提交上
+// 右栏的"所有仓库"：各仓库的提交按时间交错、每行左边一个仓库圆点，置顶有改动的仓库；在 beta 的提交上
 // 右键"从这里新建分支…"只动 beta，当前仓库切过去；点有改动的仓库那行跳到 Git 栏；选择记进 state.json。
 func TestHistoryAllRepos(t *testing.T) {
 	ra, rb, _, ws := testutil.ThreeRepos(t)
@@ -178,8 +178,10 @@ func TestHistoryAllRepos(t *testing.T) {
 	if tt.HasText("gamma 未提交的改动") {
 		t.Error("干净的 gamma 不该在未提交的改动里")
 	}
-	mustText(t, tt, i18n.Tf("%s 个仓库", "3"))
-	mustText(t, tt, i18n.Tf("%s 条", "6"))
+	mustText(t, tt, i18n.T("全部仓库"))
+	if n := app.AllHistShown(a.AllHistRows()); n != 6 {
+		t.Errorf("所有仓库排出 %d 个提交，应为 6", n)
+	}
 
 	// 当前仓库是 alpha；在 beta 2 上右键新建分支：对话框说的是 beta，分支只建在 beta
 	if a.Current() != alpha {
@@ -220,8 +222,8 @@ func TestHistoryAllRepos(t *testing.T) {
 	}
 	mustText(t, tt, "beta（仓库）")
 
-	// 切回当前仓库：只剩 beta 自己的
-	mustClick(t, tt, "当前仓库")
+	// 再点"所有仓库"关掉：只剩 beta 自己的
+	mustClick(t, tt, "所有仓库")
 	wait("beta 的历史", func() bool { return tt.HasText("beta 2") && !tt.HasText("alpha 3") })
 	if st, _ := workspace.LoadState(stateDir); st.HistAll {
 		t.Error("state.json 没记下切回当前仓库")

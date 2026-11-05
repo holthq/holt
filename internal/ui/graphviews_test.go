@@ -15,7 +15,7 @@ import (
 	"github.com/lemoeade/grove/internal/testutil"
 )
 
-// 提交图也画在"所有仓库"和搜索结果里。
+// 搜索结果画圆点；"所有仓库"不画提交图，画仓库圆点。
 
 // twoRepos 建两个提交时间交错的临时仓库（都是一条直线的历史）：
 //
@@ -103,8 +103,7 @@ func allCommits(a *app.App) []string {
 	return out
 }
 
-// "所有仓库"：两个仓库的提交行都带自己的提交图（节点在泳道 0），段头不带；同一个仓库里挨着的两个提交排在一起才连，
-// 中间插了别的仓库的行就断开（那半截渐隐）；提交图开关一样管它。
+// "所有仓库"：不画提交图，每行左边一个仓库圆点（颜色按仓库顺序轮换）；AllHistLinks 照旧算同一个仓库里挨着的两个提交。
 func TestAllHistGraphRows(t *testing.T) {
 	alpha, _, ws := twoRepos(t)
 	alpha.Write("f.txt", "改\n") // 有一段"未提交的改动"，下面才有"提交"段头
@@ -150,56 +149,32 @@ func TestAllHistGraphRows(t *testing.T) {
 		}
 	}
 
+	// 没有提交图：每行左边一个仓库圆点，颜色按仓库顺序轮换（alpha 第一个、beta 第二个）
 	g := graphPixels{t, tt}
+	if a.HistGraph(a.Repos[0]) && histGraphW(a, a.Repos[0]) == 0 {
+		t.Fatal("当前仓库视图应有提交图")
+	}
+	th := lightTheme()
 	repoOf := func(subject string) *app.Repo {
-		if strings.HasPrefix(subject, "甲") {
-			return a.Repos[slices.IndexFunc(a.Repos, func(r *app.Repo) bool { return r.Name == "alpha" })]
+		name := "alpha"
+		if strings.HasPrefix(subject, "乙") {
+			name = "beta"
 		}
-		return a.Repos[slices.IndexFunc(a.Repos, func(r *app.Repo) bool { return r.Name == "beta" })]
+		return a.Repos[slices.IndexFunc(a.Repos, func(r *app.Repo) bool { return r.Name == name })]
 	}
-	rowOf := func(subject string) wui.Rect { return g.find(repoOf(subject).Name + " " + subject) }
-	w := graphWidth(1)
-	hashX := func(subject string) float32 { return g.find(commitHash(t, repoOf(subject), subject)).X }
-	x0 := hashX("甲 修文档") - 4 - w // 图格左边：内容左边减左 padding 减图格宽，每行一样
-	accent := rgba(lightTheme().Accent)
-	for _, s := range order {
-		if x := hashX(s) - 4 - w; x != x0 {
-			t.Errorf("%s 的图格左边在 %.1f，别的行在 %.1f", s, x, x0)
+	for i, s := range order {
+		rc := g.find(repoOf(s).Name + " " + s)
+		y := rc.Y + histRowH/2
+		if i == 0 {
+			y += histDayH // 第一个提交上面是日期段头
 		}
-		rc := rowOf(s)
-		if c := g.at(x0+graphX(0), rc.Y+graphNodeY); !nearRGBA(c, accent) {
-			t.Errorf("%s 的节点是 %v，应接近强调色 %v", s, c, accent)
+		want := rgba(repoColor(a, th, repoOf(s)))
+		if c := g.at(rc.X+8+histDotD/2, y); !nearRGBA(c, want) {
+			t.Errorf("%s 的仓库圆点是 %v，应接近 %v", s, c, want)
 		}
 	}
-	// 段头"提交"（在 alpha 未提交的改动那行和第一个提交之间）不画
-	dirty := g.find("alpha 未提交的改动")
-	if n := g.count(x0, dirty.Y+dirty.H, x0+w, rowOf("甲 登录按钮").Y, accent); n > 0 {
-		t.Errorf("段头左边有 %d 个强调色像素", n)
-	}
-	// 连着的下半截到行底都是实线；断开的渐隐到行底几乎没了
-	bottom := func(s string) color.RGBA { rc := rowOf(s); return g.at(x0+graphX(0), rc.Y+rc.H-3) }
-	if c := bottom("甲 登录校验"); !nearRGBA(c, accent) {
-		t.Errorf("登录校验连到登录页的线在行底是 %v，应是强调色", c)
-	}
-	if c := bottom("甲 修文档"); nearRGBA(c, accent) {
-		t.Errorf("修文档下面是别的仓库的行，线在行底还是实色 %v", c)
-	}
-	if c := g.at(x0+graphX(0), rowOf("甲 登录校验").Y+3); nearRGBA(c, accent) {
-		t.Errorf("登录校验上面是别的仓库的行，上半截的线在行顶还是实色 %v", c)
-	}
-
-	// 开关关了：图格没了，内容往左挪（图格宽 - 4 + 8 的 padding 差）
-	before := hashX("甲 修文档")
-	mustClick(t, tt, "提交图")
-	if !a.St.HistNoGraph {
-		t.Fatal("所有仓库视图里点提交图开关没关掉")
-	}
-	if d := before - hashX("甲 修文档"); d != w-4 {
-		t.Errorf("关了图内容往左挪了 %.1f，应为 %.1f", d, w-4)
-	}
-	mustClick(t, tt, "提交图")
-	if hashX("甲 修文档") != before {
-		t.Error("再点一下提交图没回来")
+	if dir := os.Getenv("GRAPH_PNG"); dir != "" {
+		savePNG(t, filepath.Join(dir, "all-dots.png"), tt.Image())
 	}
 }
 
@@ -228,9 +203,6 @@ func TestSearchGraphLinks(t *testing.T) {
 	tt.Frame()
 	wait("alpha 的历史", func() bool { tt.Frame(); return r.Hist.Loaded && !r.Hist.Loading && len(r.Hist.Commits) == 5 })
 	g := graphPixels{t, tt}
-	hashX := func(s string) float32 { return g.find(commitHash(t, r, s)).X }
-	full := hashX("甲 修文档")
-
 	mustClick(t, tt, "搜索历史")
 	tt.Type("登录")
 	tt.Frame()
@@ -249,13 +221,18 @@ func TestSearchGraphLinks(t *testing.T) {
 		}
 	}
 	// 一条直线的历史，提交图本来就一条泳道宽：搜出来的点和原来的节点在同一列
-	w := graphWidth(1)
-	x0 := hashX("甲 登录校验") - 4 - w
-	if x := full - 4 - w; x != x0 {
-		t.Errorf("搜索时图格左边在 %.1f，原来在 %.1f", x0, x)
+	if w := histGraphW(a, r); w != graphWidth(1) {
+		t.Errorf("搜索时图格宽 %.1f，应为一条泳道宽 %.1f", w, graphWidth(1))
 	}
-	accent := rgba(lightTheme().Accent)
-	row := func(s string) wui.Rect { return g.find(s) }
+	x0 := g.find("甲 登录校验").X
+	accent := rgba(laneColor(lightTheme(), 0, false))
+	row := func(s string) wui.Rect {
+		rc := g.find(s)
+		if s == subjects()[0] {
+			rc.Y += histDayH // 第一个提交上面是日期段头
+		}
+		return rc
+	}
 	for _, s := range subjects() {
 		if c := g.at(x0+graphX(0), row(s).Y+graphNodeY); !nearRGBA(c, accent) {
 			t.Errorf("%s 的点是 %v，应接近强调色", s, c)
@@ -295,22 +272,5 @@ func TestSearchGraphLinks(t *testing.T) {
 		if got, w := (link{up, down}), want[rw.Commit().Subject]; got != w {
 			t.Errorf("所有仓库：%s 连线 %+v，想要 %+v", rw.Commit().Subject, got, w)
 		}
-	}
-	allRow := func(s string) wui.Rect {
-		name := "alpha"
-		if strings.HasPrefix(s, "乙") {
-			name = "beta"
-		}
-		return g.find(name + " " + s)
-	}
-	row = allRow
-	x0 = hashX("甲 登录校验") - 4 - w
-	for _, s := range order {
-		if c := g.at(x0+graphX(0), allRow(s).Y+graphNodeY); !nearRGBA(c, accent) {
-			t.Errorf("所有仓库：%s 的点是 %v，应接近强调色", s, c)
-		}
-	}
-	if !gapHas("甲 登录校验", "甲 登录页") || gapHas("乙 登录", "甲 登录校验") {
-		t.Error("所有仓库视图里点之间的连线不对")
 	}
 }

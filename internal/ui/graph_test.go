@@ -118,18 +118,20 @@ func TestHistoryGraph(t *testing.T) {
 		d := func(x, y uint8) bool { return x-y <= 10 || y-x <= 10 }
 		return d(a.R, b.R) && d(a.G, b.G) && d(a.B, b.B)
 	}
-	// 按标题找到的是整行（行的 Label）；短哈希只出现一次，左边就是内容的左边
-	hashX := func(subject string) float32 {
+	// 按标题找到的是整行（行的 Label），图格从行的左边起；一天的第一个提交上面多一个日期段头
+	cellX := func() float32 { return find("修文档").X }
+	nodeY := func(subject string) float32 {
 		t.Helper()
 		i := slices.Index(subjects(), subject)
 		if i < 0 {
 			t.Fatalf("历史里没有 %q", subject)
 		}
-		return find(r.Hist.Commits[i].Short).X
+		y := find(subject).Y + graphNodeY
+		if dayStart(r.Hist.Commits, i) {
+			y += histDayH
+		}
+		return y
 	}
-	// 图格的左边：内容的左边减左 padding（4）再减图格宽；每行都一样
-	cellX := func() float32 { return hashX("修文档") - 4 - graphWidth(3) }
-	nodeY := func(subject string) float32 { return find(subject).Y + graphNodeY }
 	at := func(x, y float32) color.RGBA { return tt.Image().RGBAAt(int(x*s), int(y*s)) }
 	// count 数 (x0, y0)–(x1, y1) 这块里颜色接近 col 的像素
 	count := func(x0, y0, x1, y1 float32, col color.RGBA) int {
@@ -152,24 +154,30 @@ func TestHistoryGraph(t *testing.T) {
 	x0 := cellX()
 	gx := func(l int) float32 { return x0 + graphX(l) }
 	expect("登录校验的节点（泳道 1，实心）", at(gx(1), nodeY("登录校验")), lane(1))
-	expect("修文档的节点（泳道 0，强调色）", at(gx(0), nodeY("修文档")), rgba(th.Accent))
+	expect("修文档的节点（泳道 0，钢蓝）", at(gx(0), nodeY("修文档")), lane(0))
 	// 修文档那一行，泳道 1、2 是穿过去的线：节点上面一点读
 	expect("修文档行泳道 1 的竖线", at(gx(1), nodeY("修文档")-6), lane(1))
 	expect("修文档行泳道 2 的竖线", at(gx(2), nodeY("修文档")-6), lane(2))
 	// 合并提交空心：圈上是线的颜色，圆心不是
 	ring := float32(graphNodeR - graphStroke/2)
-	expect("合并 feature/login 的圈", at(gx(0)+ring, nodeY("合并 feature/login")), rgba(th.Accent))
-	if c := at(gx(0), nodeY("合并 feature/login")); near(c, rgba(th.Accent)) {
+	expect("合并 feature/login 的圈", at(gx(0)+ring, nodeY("合并 feature/login")), lane(0))
+	if c := at(gx(0), nodeY("合并 feature/login")); near(c, lane(0)) {
 		t.Errorf("合并提交的圆心是 %v，应该空心", c)
 	}
-	// HEAD 外面一圈（泳道 0，强调色）
-	expect("HEAD 的外圈", at(gx(0)+graphRingR-graphStroke/2, nodeY("合并 feature/search")), rgba(th.Accent))
+	// HEAD 外面一圈（泳道 0）
+	expect("HEAD 的外圈", at(gx(0)+graphRingR-graphStroke/2, nodeY("合并 feature/search")), lane(0))
+	// 日期段头（第一个提交上面）没有节点
+	if n := count(gx(0)-4, find("试验：新布局").Y, gx(0)+4, find("试验：新布局").Y+histDayH-2, lane(1)); n > 0 {
+		t.Errorf("日期段头左边有 %d 个泳道 1 颜色的像素", n)
+	}
 
 	// 搜索时不画泳道：图格窄成一条泳道宽（只画点）；清空了图回来
-	withX := hashX("登录校验")
 	search := func(q string) {
 		t.Helper()
-		mustClick(t, tt, "搜索历史")
+		if !tt.HasText("搜索提交") {
+			mustClick(t, tt, "搜索历史")
+		}
+		mustClick(t, tt, "搜索提交")
 		tt.Key(wui.Cmd, wui.KeyA)
 		tt.Key(0, wui.KeyBackspace)
 		if q != "" {
@@ -182,8 +190,8 @@ func TestHistoryGraph(t *testing.T) {
 	if a.HistGraph(r) {
 		t.Error("搜索结果也画了提交图")
 	}
-	if d := withX - hashX("登录校验"); d != graphWidth(3)-graphWidth(1) {
-		t.Errorf("搜索时内容往左挪了 %.1f，应为 %.1f", d, graphWidth(3)-graphWidth(1))
+	if w := histGraphW(a, r); w != graphWidth(1) {
+		t.Errorf("搜索时图格宽 %.1f，应为 %.1f", w, graphWidth(1))
 	}
 	if n := count(x0, find("登录校验").Y, x0+graphWidth(3), find("登录页").Y+find("登录页").H, lane(2)); n > 0 {
 		t.Errorf("搜索结果左边有 %d 个泳道 2 颜色的像素", n)
@@ -212,13 +220,14 @@ func TestHistoryGraph(t *testing.T) {
 	tt.Frame()
 	expect("选中的登录校验的节点", at(gx(1), nodeY("登录校验")), rgba(th.AccentText))
 	fy := find("login.txt").Y + find("login.txt").H/2
-	expect("文件行泳道 0", at(gx(0), fy), rgba(th.Accent))
+	expect("文件行泳道 0", at(gx(0), fy), lane(0))
 	expect("文件行泳道 1", at(gx(1), fy), lane(1))
 	expect("文件行泳道 2", at(gx(2), fy), lane(2))
 
-	// 有改动：未提交的改动那行 HEAD 的泳道（0）上一个虚线圈，虚线穿过 topic 那行（泳道 0 留给 HEAD，空着）连到 HEAD
+	// 有改动：未提交的改动那行 HEAD 的泳道（0）上一个橙色虚线圈，橙色虚线穿过 topic 那行（泳道 0 留给 HEAD，空着）连到 HEAD
+	orange := rgba(th.Warning)
 	und := find("未提交的改动")
-	if n := count(gx(0)-5, und.Y-4, gx(0)+5, und.Y+und.H+4, lane(0)); n > 0 {
+	if n := count(gx(0)-5, und.Y, gx(0)+5, und.Y+und.H, orange); n > 0 {
 		t.Errorf("没改动时未提交的改动那行有 %d 个泳道 0 颜色的像素", n)
 	}
 	repo.Write("a.txt", "改\n")
@@ -226,36 +235,24 @@ func TestHistoryGraph(t *testing.T) {
 	wait("改动", func() bool { return idle(r)() && r.Status.Count > 0 })
 	tt.Frame()
 	und = find("未提交的改动")
-	if n := count(gx(0)-5, und.Y-4, gx(0)+5, und.Y+und.H+4, lane(0)); n == 0 {
+	if n := count(gx(0)-5, und.Y, gx(0)+5, und.Y+und.H, orange); n == 0 {
 		t.Error("有改动时未提交的改动那行没有虚线圈")
 	}
 	if dir := os.Getenv("GRAPH_PNG"); dir != "" {
 		savePNG(t, filepath.Join(dir, "graph-dirty.png"), tt.Image())
 	}
 	top := find("试验：新布局")
-	if n := count(gx(0)-2, top.Y, gx(0)+2, top.Y+top.H, lane(0)); n == 0 {
+	if n := count(gx(0)-2, top.Y, gx(0)+2, top.Y+top.H, orange); n == 0 {
 		t.Error("虚线没穿过 topic 那行连到 HEAD")
 	}
 	if l, hi := dirtyLine(r); l != 0 || hi != 1 {
 		t.Errorf("虚线在泳道 %d、连到第 %d 个提交，应为泳道 0、第 1 个（HEAD）", l, hi)
 	}
 
-	// "所有仓库"视图：开关也在（那里也画图）
-	a.SetHistAll(true)
-	tt.Frame()
-	if _, ok := tt.Find("提交图"); !ok {
-		t.Error("所有仓库视图里没有提交图开关")
-	}
-	a.SetHistAll(false)
-	tt.Frame()
-
-	// 开关：关了内容回到左边，记进 state.json，新开的 App 也是关的
-	mustClick(t, tt, "提交图")
-	if !a.St.HistNoGraph || a.HistGraph(r) {
+	// 开关在头部的右键菜单里：关了图格没了，记进 state.json，新开的 App 也是关的
+	mustRightClick(t, tt, "历史", "提交图")
+	if !a.St.HistNoGraph || a.HistGraph(r) || histGraphW(a, r) != 0 {
 		t.Fatal("点了提交图开关没关掉")
-	}
-	if d := withX - hashX("登录校验"); d != graphWidth(3)-4 {
-		t.Errorf("关了图内容只往左挪了 %.1f", d)
 	}
 	b, err := app.New(ws, stateDir)
 	if err != nil {
@@ -265,8 +262,8 @@ func TestHistoryGraph(t *testing.T) {
 		t.Error("state.json 里没记下关了提交图")
 	}
 	b.Close()
-	mustClick(t, tt, "提交图")
-	if a.St.HistNoGraph || hashX("登录校验") != withX {
+	mustRightClick(t, tt, "历史", "提交图")
+	if a.St.HistNoGraph || histGraphW(a, r) != graphWidth(3) {
 		t.Error("再点一下提交图没回来")
 	}
 }

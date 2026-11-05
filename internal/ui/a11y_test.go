@@ -313,9 +313,11 @@ func TestAccessLabels(t *testing.T) {
 	mustClick(t, tt, "A 返回 1")
 	wait("展开的提交", func() bool { return r.Hist.Expanded != "" && !r.Hist.FilesLoading })
 	accessCheck(t, tt, "展开的提交")
-	// wui.Toggle 是切换按钮（按下 = 开），和"所有分支"一样
-	if !slices.ContainsFunc(accessTree(t, tt), func(n accNode) bool { return n.Role == roleToggleButton && n.Label == "提交图" }) {
-		t.Error("历史头部没有叫\"提交图\"的开关")
+	// 头部的图标开关是切换按钮（按下 = 开）
+	for _, name := range []string{"搜索历史", "所有分支", "只看 agent 写的", "所有仓库"} {
+		if !slices.ContainsFunc(accessTree(t, tt), func(n accNode) bool { return n.Role == roleToggleButton && n.Label == name }) {
+			t.Errorf("历史头部没有叫 %q 的开关", name)
+		}
 	}
 	a.SetHistAll(true)
 	wait("所有仓库的历史", func() bool { return a.AllHistDone() && !a.AllHistLoading() })

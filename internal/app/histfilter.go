@@ -24,9 +24,9 @@ func (a *App) logQuery(r *Repo) (git.LogQuery, HistQuery) {
 	return q, hq
 }
 
-// HistFiltered 是这个仓库的历史现在有筛选（搜索或文件历史；所有分支不算，它是另一种看法）。
+// HistFiltered 是这个仓库的历史现在有筛选（搜索、只看 agent 或文件历史；所有分支不算，它是另一种看法）。
 func (a *App) HistFiltered(r *Repo) bool {
-	return strings.TrimSpace(a.HistQuery) != "" || r.Hist.Path != ""
+	return strings.TrimSpace(a.HistQuery) != "" || a.HistAgent || r.Hist.Path != ""
 }
 
 // HistQueryErr 是搜索框下面那行小字：查询里看不懂的日期（写错的 yyyy-mm-dd 马上有；git 也认不出的读完才有），没有为空。
@@ -77,7 +77,7 @@ func (a *App) ReloadHistories() {
 	}
 	q := strings.TrimSpace(a.HistQuery)
 	for _, r := range a.Repos {
-		if h := &r.Hist; (h.Loaded || h.Loading) && (h.query != q || h.all != a.St.HistBranches || h.path != h.Path || h.ref != h.Ref) {
+		if h := &r.Hist; (h.Loaded || h.Loading) && (h.query != q || h.all != a.St.HistBranches || h.agent != a.HistAgent || h.path != h.Path || h.ref != h.Ref) {
 			a.LoadHistory(r, true)
 		}
 	}
@@ -87,6 +87,13 @@ func (a *App) ReloadHistories() {
 func (a *App) ToggleHistBranches() {
 	a.St.HistBranches = !a.St.HistBranches
 	a.SaveState()
+	a.ReloadHistories()
+}
+
+// ToggleHistAgent 切换右栏历史的"只看 agent 写的"（Commit.Agent 不空的提交），和搜索、所有分支叠加。
+// 只在这个窗口里记着，不进 state.json（和搜索词一样）。
+func (a *App) ToggleHistAgent() {
+	a.HistAgent = !a.HistAgent
 	a.ReloadHistories()
 }
 
