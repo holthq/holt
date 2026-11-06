@@ -12,7 +12,9 @@ import (
 )
 
 // 从外面交进来的路径：命令行参数（`Grove 目录|文件`）、第二个实例转过来的参数（单实例）、
-// `open -a Grove 路径` 和拖到 Dock 图标上的（mygo 的 OnOpenFile）。main 把它们交给 OpenArgs。
+// `open -a Grove 路径` 和拖到 Dock 图标上的（mygo 的 OnOpenFile）。main 把它们交给 Windows.Route：工作区文件和目录
+// 在那里分到窗口（目录开新窗口或叫到前面，见 routeDir），文件交给前台窗口的 OpenArgs。
+// 拖进窗口里的（OnFileDrop）和拖到可编辑标签、终端上的直接交给那个窗口的 OpenArgs：目录问要不要加进当前工作区。
 
 // Args 挑出命令行参数里的路径：去掉开关（-psn_… 之类）和工作区文件（main 自己用它定工作区）。
 func Args(args []string) []string {

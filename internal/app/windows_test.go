@@ -929,3 +929,67 @@ func TestWindowStateStore(t *testing.T) {
 		t.Errorf("新目录里：%v", got)
 	}
 }
+
+// 拖到 Dock 图标上的（open -a、第二个实例一样）目录：开着的工作区叫到前面；开着的仓库（或仓库里的目录）叫到前面、跳到那个仓库；
+// 前台是空工作区就在它里面开；别的一个目录开一个新窗口。拖进窗口里的（OpenArgs）照旧问要不要加进当前工作区。
+func TestWindowsRouteDirs(t *testing.T) {
+	ws, roots := winWorkspaces(t, "甲", "乙")
+	h := newWinHarness(t, t.TempDir())
+	h.w.Restore(ws[0])
+	a := h.w.Apps[0]
+	b := h.w.Open(ws[1], a)
+	h.idle()
+
+	// 4. 别的：拖进来几个就开几个新窗口
+	x, y := testutil.NewRepo(t, "丙"), testutil.NewRepo(t, "丁")
+	h.w.Route([]string{x.Root, y.Root})
+	h.q.Drain()
+	if len(h.w.Apps) != 4 || h.w.Find(absPath(x.Root)) == nil || h.w.Find(absPath(y.Root)) == nil {
+		t.Fatalf("两个目录应开两个新窗口：%v", openPaths(h.w))
+	}
+	if a.ConfirmOpen || b.ConfirmOpen {
+		t.Errorf("Dock 拖进来的目录不该问加进当前工作区")
+	}
+	h.idle()
+
+	// 1. 已经是某个窗口的工作区：叫到前面，不再开
+	h.w.Focus(a)
+	h.w.Route([]string{x.Root})
+	if len(h.w.Apps) != 4 || h.w.Focused() != h.w.Find(absPath(x.Root)) {
+		t.Errorf("开着的工作区应叫到前面：%v", openPaths(h.w))
+	}
+
+	// 2. 是某个窗口里的仓库（或仓库里的目录）：叫到前面、跳到那个仓库
+	h.w.Focus(a)
+	sub := filepath.Join(roots[1], "子目录")
+	if err := os.MkdirAll(sub, 0o755); err != nil {
+		t.Fatal(err)
+	}
+	h.w.Route([]string{sub})
+	h.q.Drain()
+	if len(h.w.Apps) != 4 || h.w.Focused() != b || b.Current() == nil || b.Current().Root != b.Repos[0].Root {
+		t.Errorf("开着的仓库应叫到前面并跳到它：%v focused=%q", openPaths(h.w), h.w.Focused().WsPath)
+	}
+	h.w.Route([]string{roots[0]})
+	h.q.Drain()
+	if len(h.w.Apps) != 4 || h.w.Focused() != a {
+		t.Errorf("甲的仓库应叫甲到前面：%v", openPaths(h.w))
+	}
+
+	// 3. 前台是空工作区：就在它里面开
+	e := h.w.Open("", nil)
+	z := testutil.NewRepo(t, "戊")
+	h.w.Route([]string{z.Root})
+	h.q.Drain()
+	if e.WsPath != absPath(z.Root) || len(h.w.Apps) != 5 {
+		t.Errorf("空窗口里交进来目录：%q %v", e.WsPath, openPaths(h.w))
+	}
+	h.idle()
+
+	// 拖进窗口里的：不开新窗口，问要不要加进当前工作区
+	w := testutil.NewRepo(t, "己")
+	a.OpenArgs([]string{w.Root}, "")
+	if len(h.w.Apps) != 5 || !a.ConfirmOpen || a.Confirm.Title != "添加仓库" {
+		t.Errorf("窗口内拖放应问加进当前工作区：%v confirm=%+v", openPaths(h.w), a.Confirm)
+	}
+}

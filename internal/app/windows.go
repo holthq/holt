@@ -12,6 +12,7 @@ import (
 
 	"github.com/egoist/mygo"
 
+	"github.com/lemoeade/grove/internal/git"
 	"github.com/lemoeade/grove/internal/i18n"
 	"github.com/lemoeade/grove/internal/workspace"
 )
@@ -279,23 +280,64 @@ func (w *Windows) For(win *mygo.Window) *App {
 	return w.Focused()
 }
 
-// Route 打开外面交进来的路径（命令行、第二个实例、open -a、拖到 Dock；绝对路径）：工作区文件开新窗口（开着就叫到前面），
-// 别的（文件、目录）交给前台窗口（OpenArgs：空工作区的窗口把目录当工作区打开），前台窗口叫到前面。
+// Route 打开外面交进来的路径（命令行、第二个实例、open -a、拖到 Dock；绝对路径。OnOpenFile 分不出是哪一种，一起走这里）：
+//   - 工作区文件开新窗口（开着就叫到前面）；
+//   - 目录见 routeDir：开着的工作区或仓库叫到前面，前台是空工作区就在它里面开，不然一个目录开一个新窗口；
+//   - 别的（文件、找不到的）交给前台窗口（OpenArgs），前台窗口叫到前面。
+//
+// 拖进窗口里的（OnFileDrop）不走这里，照旧是 OpenArgs：目录问要不要加进当前工作区。
 func (w *Windows) Route(paths []string) {
 	var rest []string
 	for _, p := range paths {
-		if info, err := os.Stat(p); err == nil && !info.IsDir() && filepath.Ext(p) == ".code-workspace" {
+		info, err := os.Stat(p)
+		switch {
+		case err == nil && !info.IsDir() && filepath.Ext(p) == ".code-workspace":
 			w.Open(p, nil)
-		} else {
+		case err == nil && info.IsDir():
+			w.routeDir(filepath.Clean(p))
+		default:
 			rest = append(rest, p)
 		}
 	}
+	if len(rest) == 0 {
+		return
+	}
 	if t := w.Focused(); t != nil {
 		w.Show(t)
-		if len(rest) > 0 {
-			t.Update(func() { t.OpenArgs(rest, "") })
+		t.Update(func() { t.OpenArgs(rest, "") })
+	}
+}
+
+// routeDir 打开外面交进来的目录 p：
+//  1. 它就是哪个窗口的工作区：叫到前面（Open）；
+//  2. 它（或它的 git 根）是哪个开着的窗口里的仓库：叫到前面、跳到那个仓库（同一个仓库不开第二个窗口）；
+//  3. 前台窗口是空工作区：就在它里面开；
+//  4. 别的开新窗口。
+func (w *Windows) routeDir(p string) {
+	p = absPath(p)
+	if w.Find(p) != nil {
+		w.Open(p, nil)
+		return
+	}
+	roots := []string{p}
+	if root, err := git.Toplevel(p); err == nil && root != p {
+		roots = append(roots, root)
+	}
+	for _, a := range w.Apps {
+		for _, root := range roots {
+			if r, rel := a.linkRepo(root); r != nil && rel == "" {
+				w.Show(a)
+				a.Update(func() { a.JumpRepo(slices.Index(a.Repos, r)) })
+				return
+			}
 		}
 	}
+	if t := w.Focused(); t != nil && t.WsPath == "" {
+		w.Show(t)
+		t.Update(func() { t.OpenWorkspace(p) })
+		return
+	}
+	w.Open(p, nil)
 }
 
 // Focus 在窗口 a 到前台时调（OnFocus）：菜单栏换成它的。

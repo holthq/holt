@@ -8,8 +8,9 @@
 // 或第一个命令行参数（.code-workspace）再开一个（已经开着就叫到前面）。开着时用 ⌘O 或菜单换，⌥⌘N 新窗口。
 //
 // 只开一个实例：`Grove 目录|文件` 再启动时把路径交给开着的那个（mygo 的单实例锁），
-// `open -a Grove 路径` 和拖到 Dock 图标上的经 OnOpenFile 来：.code-workspace 开新窗口（或叫到前面），
-// 别的交给前台窗口的 App.OpenArgs。
+// `open -a Grove 路径` 和拖到 Dock 图标上的经 OnOpenFile 来（分不出是哪种，一起走 app.Windows.Route）：
+// .code-workspace 开新窗口（或叫到前面）；目录开着的叫到前面、前台是空工作区就在它里面开、不然开新窗口；
+// 文件交给前台窗口的 App.OpenArgs。拖进窗口里的（OnFileDrop）照旧走 OpenArgs，目录问要不要加进当前工作区。
 // 崩溃（任何 goroutine 里没接住的 panic）和后台出的错写进 ~/Library/Logs/Grove/（internal/crash）。
 //
 // `Grove termd <套接字> [日志]` 是终端后台进程（internal/termd）：设置里开了"关掉窗口后终端继续在后台运行"时
