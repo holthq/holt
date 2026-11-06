@@ -398,14 +398,8 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 		m.Separator()
 		m.Submenu(i18n.T("分支"), func(m menu) { branchMenu(a, m, r) })
 	}
-	if r.Extra.Head != "" && m.Item(i18n.T("修改上一次提交…")).Checked(r.Amend).Chosen() {
-		a.SetAmend(r, !r.Amend)
-		a.ShowCommit(r)
-	}
 	if r.Extra.Head != "" {
-		if whyItem(m, i18n.T("撤销上次提交"), app.UndoWhy(r)).Chosen() {
-			a.UndoCommit(r)
-		}
+		lastCommitItems(a, m, r)
 	}
 	if op := r.Extra.Ongoing; op != git.NoOp {
 		if m.Item(op.ContinueLabel()).Disabled(r.Status.Conflicts > 0).Chosen() {

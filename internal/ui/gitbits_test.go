@@ -446,7 +446,7 @@ func TestRemotesMenu(t *testing.T) {
 	closeMenu(t, tt)
 }
 
-// 未暂存和未跟踪合成一组：只有未跟踪的文件时组名仍是"未暂存"，没有丢弃按钮（git restore . 不动未跟踪的），+ 照样有；
+// 未暂存和未跟踪合成一组：只有未跟踪的文件时组名仍是"改动"，没有丢弃按钮（git restore . 不动未跟踪的），+ 照样有；
 // 有已跟踪的改动后才出丢弃。贮藏的组头不写"贮藏"两个字（只有图标和条数，读屏照旧）。
 func TestUnstagedGroupWithUntracked(t *testing.T) {
 	repo := testutil.NewRepo(t, "mix")
@@ -464,15 +464,15 @@ func TestUnstagedGroupWithUntracked(t *testing.T) {
 	wait("git status", idle(r))
 	a.Exec("view.git")
 	tt.Frame()
-	mustText(t, tt, "收起 未暂存")
+	hoverOn(t, tt, "收起 改动")
 	mustText(t, tt, "暂存所有未暂存的改动")
 	if tt.HasText("未跟踪") || tt.HasText("丢弃所有未暂存的改动…") {
-		t.Fatalf("只有未跟踪的：组名应是未暂存、没有丢弃: %q", tt.Texts())
+		t.Fatalf("只有未跟踪的：组名应是改动、没有丢弃: %q", tt.Texts())
 	}
 	// 贮藏组头：读屏有"贮藏"，画出来的字里只有条数
 	mustText(t, tt, "展开 贮藏")
 	// 和只有图标的"未暂存"组头一样：一行的提示和图标的 Label 各一个；以前还多一个画出来的"贮藏"
-	if n := countText(tt, "贮藏"); n != 2 || countText(tt, "未暂存") != 2 {
+	if n := countText(tt, "贮藏"); n != 2 {
 		t.Errorf("贮藏组头应只有图标：%d 个\"贮藏\" %q", n, tt.Texts())
 	}
 	repo.Write("a.txt", "二\n")
@@ -494,7 +494,7 @@ func TestUnstagedGroupWithUntracked(t *testing.T) {
 			got = append(got, "#stash")
 		}
 	}
-	if s := strings.Join(got, " "); s != "✎ =未暂存2 a.txt new.txt #stash" {
+	if s := strings.Join(got, " "); s != "✎ =改动2 a.txt new.txt #stash" {
 		t.Errorf("行：%s", s)
 	}
 }
@@ -563,7 +563,7 @@ func TestGitRowsGroveMenu(t *testing.T) {
 	grove("前面那行 s.txt")
 	group := "收起 已暂存"
 	if slices.Contains(firstMenu, "暂存") {
-		group = "收起 未暂存"
+		group = "收起 改动"
 	}
 	mustClickRow(t, tt, group)
 	tt.RightClickAt(at("s.txt"))

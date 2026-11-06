@@ -58,7 +58,7 @@ func TestGitRowsAllRepos(t *testing.T) {
 	}
 	rows := a.GitRows()
 	// 提交框在分组上面；未跟踪的 notes.md 接在未暂存的 alpha.txt 后面、同一组
-	want := "#alpha ✎ =未暂存 alpha.txt notes.md #beta ✎ =未暂存 beta.go #gamma"
+	want := "#alpha ✎ =改动 alpha.txt notes.md #beta ✎ =改动 beta.go #gamma"
 	if got := rowsSummary(rows); got != want {
 		t.Fatalf("Git 栏的行:\n got %s\nwant %s", got, want)
 	}
@@ -72,7 +72,7 @@ func TestGitRowsAllRepos(t *testing.T) {
 	// 折叠 / 展开按仓库，干净的展开后是一行说明
 	a.ToggleGitRepo(alpha)
 	a.ToggleGitRepo(gamma)
-	want = "#alpha #beta ✎ =未暂存 beta.go #gamma" // 干净由段头的勾表示，没有说明行
+	want = "#alpha #beta ✎ =改动 beta.go #gamma" // 干净由段头的勾表示，没有说明行
 	if got := rowsSummary(a.GitRows()); got != want {
 		t.Fatalf("折叠后:\n got %s\nwant %s", got, want)
 	}
@@ -108,7 +108,7 @@ func TestGitRowsAllRepos(t *testing.T) {
 	}
 	// 鼠标点在分组标题上：选中退回原来那行，什么都不开
 	docs := len(a.Docs)
-	g := rowIndex(t, rows, "alpha.txt") - 1 // alpha 的"未暂存"标题
+	g := rowIndex(t, rows, "alpha.txt") - 1 // alpha 的"改动"标题
 	if rows[g].Kind != RowGroup {
 		t.Fatalf("alpha.txt 上面应是分组标题: %s", rowsSummary(rows))
 	}
@@ -206,7 +206,7 @@ func TestConflictGroup(t *testing.T) {
 	if repo.Status.Conflicts != 1 || repo.Status.Changes[0].Kind != git.Conflict || repo.Status.Changes[0].Path != "x.txt" {
 		t.Fatalf("冲突没认出来: %+v", repo.Status)
 	}
-	want := "#merge ✎ =冲突 x.txt =未暂存 y.txt z.txt"
+	want := "#merge ✎ =冲突 x.txt =改动 y.txt z.txt"
 	if got := rowsSummary(a.GitRows()); got != want {
 		t.Errorf("Git 栏:\n got %s\nwant %s", got, want)
 	}
@@ -223,7 +223,7 @@ func TestConflictGroup(t *testing.T) {
 	if d.DiffSt == nil || d.Info != "" {
 		t.Errorf("冲突的 Diff 标签没画出来: info=%q", d.Info)
 	}
-	// "未暂存"组头的 +：暂存改动和未跟踪的文件，不碰冲突的（暂存了就算已解决）
+	// "改动"组头的 +：暂存改动和未跟踪的文件，不碰冲突的（暂存了就算已解决）
 	a.StageUnstaged(repo)
 	wait("暂存这一组", func() bool { return idle(repo)() && repo.Status.Unstaged+repo.Status.Untracked == 0 })
 	if repo.Status.Conflicts != 1 || repo.Status.Staged != 2 {
@@ -240,7 +240,7 @@ func TestConflictGroup(t *testing.T) {
 	}
 }
 
-// 没有冲突时，"未暂存"组头的 + 是一条不带路径的 git add -A（上万个文件按路径传会超出命令行长度限制）：
+// 没有冲突时，"改动"组头的 + 是一条不带路径的 git add -A（上万个文件按路径传会超出命令行长度限制）：
 // 已跟踪的改动、删掉的、未跟踪的都暂存，已暂存的照旧。
 func TestStageUnstagedNoConflict(t *testing.T) {
 	r := testutil.NewRepo(t, "stage")

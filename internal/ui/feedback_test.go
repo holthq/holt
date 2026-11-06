@@ -193,7 +193,22 @@ func TestTipsBelowTitleBar(t *testing.T) {
 	a.ShowSidebar(workspace.ModeGit)
 	tt.Frame()
 	label := i18n.T("暂存所有未暂存的改动")
-	ar, tr := hover(label, i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -A；有冲突时只暂存这些文件，冲突的不动）"))
+	tt.Move(0, 0)
+	tt.Advance(time.Second)
+	tt.Frame()
+	hoverOn(t, tt, "收起 改动") // 按钮指针在这一行上才有，hover 先把指针挪开就没了
+	ar, ok := tt.Find(label)
+	if !ok {
+		t.Fatalf("没有 %q: %q", label, tt.Texts())
+	}
+	tt.Move(ar.X+ar.W/2, ar.Y+ar.H/2)
+	tt.Frame()
+	tt.Advance(700 * time.Millisecond)
+	tt.Frame()
+	tr, ok := tt.Find(i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -A；有冲突时只暂存这些文件，冲突的不动）"))
+	if !ok {
+		t.Fatalf("停在 %q 上没有提示: %q", label, tt.Texts())
+	}
 	if tr.Y+tr.H > ar.Y {
 		t.Errorf("Git 栏里 %q 的提示应照旧在上面：元素 %v 提示 %v", label, ar, tr)
 	}

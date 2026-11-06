@@ -45,7 +45,7 @@ func TestGitOps(t *testing.T) {
 	if r.Status.Branch != "main" || r.Status.Unstaged != 1 || r.Status.Untracked != 1 || r.Status.Staged != 0 {
 		t.Fatalf("初始状态不对: %+v", r.Status)
 	}
-	mustText(t, tt, "提交…") // 没暂存时提交框收成一行
+	mustText(t, tt, commitPlaceholder()) // 没暂存时提交框收成一行
 	mustText(t, tt, "历史")
 
 	// Git 栏右键 a.txt → 暂存

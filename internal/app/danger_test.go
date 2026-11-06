@@ -20,10 +20,10 @@ import (
 // 按源码数：哪个函数里调了 AskDanger（重置是 ask = a.AskDanger 那一下），多了少了都报。
 func TestConfirmDanger(t *testing.T) {
 	want := []string{
-		"AbortOngoing", "ApplyStashFiles", "ClearAllLocalHistory", "ClearLocal", "Commit", "DeleteBranch", "DeleteRemote", "DeleteRemoteBranch",
+		"AbortOngoing", "ApplyStashFiles", "ClearAllLocalHistory", "ClearLocal", "DeleteBranch", "DeleteRemote", "DeleteRemoteBranch",
 		"Discard", "DiscardAll", "DiscardChanges", "DiscardHunk", "DiscardLines",
 		"PushForce", "RegenSettingsDoc", "ReopenWithEncoding", "ResetSettings", "ResetTo", "RestoreDeleted", "Save", "StashDrop", "UndoCommit",
-		"deleteBranch", "removeWorktree",
+		"commit", "deleteBranch", "removeWorktree",
 	}
 	files, _ := filepath.Glob("*.go")
 	fs := token.NewFileSet()

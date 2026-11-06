@@ -132,8 +132,8 @@ func TestGitDailyMenus(t *testing.T) {
 		t.Fatalf("撤销后问了 %v，框里 %q", a.ConfirmOpen, r.CommitMsg)
 	}
 	tt.Frame()
-	if _, ok := tt.Find("撤销上次提交"); !ok {
-		t.Errorf("提交框里没有撤销按钮：%q", tt.Texts())
+	if _, ok := tt.Find("更多提交操作"); !ok {
+		t.Errorf("提交框里没有 ▾：%q", tt.Texts())
 	}
 
 	// 重置三档在子菜单里；硬重置问话里带推送过的提交数和要丢的改动数

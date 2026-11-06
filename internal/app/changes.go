@@ -276,6 +276,14 @@ func appendStashes(rows []ChangeRow, r *Repo) []ChangeRow {
 	return rows
 }
 
+// groupTitle 是分组标题上的字。未暂存这一组含未跟踪的文件，叫"改动"，和"已暂存"并排一眼能分开。
+func groupTitle(k git.Kind) string {
+	if k == git.Unstaged {
+		return i18n.T("改动")
+	}
+	return k.String()
+}
+
 // appendChanges 加上一个仓库按种类分好组的变更（Status.Changes 已经按组排好）；收起的组只有标题。
 // 未跟踪的接在未暂存的后面、同在一组（标题是未暂存，只有未跟踪的时也是），顺序照 Status.Changes 不动；
 // 行上的 Change.Kind 还是各自的（字母、颜色、丢弃、暂存、目录展开都照旧）。
@@ -286,7 +294,7 @@ func appendChanges(rows []ChangeRow, r *Repo) []ChangeRow {
 			last = k
 			key := GroupKey(k)
 			open = r.GroupOpen(key)
-			rows = append(rows, ChangeRow{Kind: RowGroup, Repo: r, Title: k.String(), Count: groupCount(r.Status, k),
+			rows = append(rows, ChangeRow{Kind: RowGroup, Repo: r, Title: groupTitle(k), Count: groupCount(r.Status, k),
 				Change: git.Change{Kind: k}, Group: key})
 		}
 		if open {

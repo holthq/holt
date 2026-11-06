@@ -26,18 +26,17 @@ func icon(name string) *wui.SVG {
 }
 
 var (
-	iconBranch      = icon("git-branch")
-	iconRefresh     = icon("arrow-clockwise")
-	iconTerminal    = icon("terminal")
-	iconFolder      = icon("folder")
-	iconCheckSquare = icon("check-square")
-	iconHome        = icon("house")
-	iconMerge       = icon("git-merge")
-	iconCheck       = icon("check-circle")
-	iconLayers      = icon("stack")
-	iconSparkle     = icon("sparkle")
-	iconCloud       = icon("cloud")
-	iconAlert       = icon("warning-circle")
+	iconBranch   = icon("git-branch")
+	iconRefresh  = icon("arrow-clockwise")
+	iconTerminal = icon("terminal")
+	iconFolder   = icon("folder")
+	iconHome     = icon("house")
+	iconMerge    = icon("git-merge")
+	iconCheck    = icon("check-circle")
+	iconLayers   = icon("stack")
+	iconSparkle  = icon("sparkle")
+	iconCloud    = icon("cloud")
+	iconAlert    = icon("warning-circle")
 )
 
 var (
@@ -134,11 +133,10 @@ var (
 
 // 面板里的动作按钮改成只有图标（#56）：冲突条、进行中横幅、提交框的 amend 开关。
 var (
-	iconAmend       = icon("pencil-simple-line") // 修改上一次提交
-	iconTakeOurs    = icon("arrow-line-up")      // 用我的
-	iconTakeTheirs  = icon("arrow-line-down")    // 用他们的
-	iconTakeBoth    = icon("arrows-merge")       // 两个都要
-	iconChevronsUp  = icon("caret-double-up")    // 全部用我的
-	iconChevronsDn  = icon("caret-double-down")  // 全部用他们的
-	iconSkipForward = icon("skip-forward")       // 跳过
+	iconTakeOurs    = icon("arrow-line-up")     // 用我的
+	iconTakeTheirs  = icon("arrow-line-down")   // 用他们的
+	iconTakeBoth    = icon("arrows-merge")      // 两个都要
+	iconChevronsUp  = icon("caret-double-up")   // 全部用我的
+	iconChevronsDn  = icon("caret-double-down") // 全部用他们的
+	iconSkipForward = icon("skip-forward")      // 跳过
 )

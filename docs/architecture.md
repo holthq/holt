@@ -171,8 +171,8 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 （不算 `WtInfo`、不盯目录；会话里的 `WtOpen` 留着）。开关变了由 `SettingsChanged` → 每个窗口的 `syncShownGroups` 收尾：关掉时收起 `WtExp`、
 `clearRefHistories`、扔掉 `WtInfo`、`syncWtWatch` 停掉监听，打开时按 `WtOpen` 重算、接上监听；两种都 `syncChangeSel`，选中落在没了的行上的清掉。
 贮藏关着时只是 `appendStashes` 不出行、段头不画贮藏数，`r.Extra.Stashes` 照常读，`git.stash` / `git.stashPop` 照常能用。
-未跟踪的文件和未暂存的改动同在“未暂存”一组（`groupKind`）：顺序照 `Status.Changes`（已跟踪的在前、未跟踪的接在后面），条数是两者之和，
-只有未跟踪的时组名也是未暂存；每一行的 `Change.Kind` 还是各自的（字母、颜色、丢弃、暂存、目录展开照旧）。组头的 + 是 `StageUnstaged`：
+未跟踪的文件和未暂存的改动同在“改动”一组（`groupKind`、`groupTitle`）：顺序照 `Status.Changes`（已跟踪的在前、未跟踪的接在后面），条数是两者之和，
+只有未跟踪的时组名也是改动；每一行的 `Change.Kind` 还是各自的（字母、颜色、丢弃、暂存、目录展开照旧）。组头的 + 是 `StageUnstaged`：
 没有冲突时是不带路径的 `git add -A`（按路径传的话，上万个改动的文件会超出 macOS 的命令行长度限制）；有冲突时按路径 `git add -A -- …`，
 不用 `add -A` / `-u`（会把冲突的文件也暂存、等于标成已解决）；丢弃仍是 `git restore .`，不动未跟踪的，这组全是未跟踪的时不显示。段头右边是这个仓库的拉取 / 推送按钮（`syncButton`），和标题栏的同步按钮共用 `syncOf`（提示文字、没上游时灰着、
 `Repo.Pulling` / `Pushing` 在跑或排队时转圈），点了走 `App.Pull` / `Push`，没有另一套 git 调用。段的收放是 `GitFold`：`FoldAuto`（有改动展开、干净的收成一行；有工作树（显示工作树开着时）、合并 / 变基停在一半的也展开，让工作树块和横幅看得见）、`FoldOpen`、`FoldClosed`，点过箭头就按用户的，存进会话的 `git`。
@@ -180,11 +180,12 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 行的身份是 `ChangeRow.Key()`（仓库 + 组 + 路径），选中 `GitSel`、悬停 `GitHover`、多选 `GitChosen` 都按键记，因此刷新后即使行的位置变化，仍会保持选中原来的项目。多选的操作（`StageChanges` / `UnstageChanges` / `DiscardChanges` / `OpenDiffs`）先按仓库分组（`byRepo`），再加入各自的队列；一次打开超过 20 个 Diff 时先要求确认。
 变更行悬停（或列表有键盘时选中）出的行内按钮（`ui/gitbar.go` 的 `changeActions` / `stageActions`）用 `ActChanges`：指针所在的行在两行以上的多选里时作用于选中的全部，否则只有这一行；按钮的动作经 `gitFrame.do` 留到列表建完再做。列表有焦点时的空格 / ⌘⌫ 是 `changes.toggleStage` / `changes.discard`（上下文 `GitList`，由列表自己接键，命令面板也能用），作用于 `KeyChanges`。暂存 / 取消暂存 / 丢弃会让选中的那行挪走时，`markGitAfter` 先记下它后面（没有就是前面）第一个不在选中里的行，状态重读后 `syncChangeSel` 跟不上当前标签时停在那一行。
 
-提交框每个仓库一个（`CommitOpen` / `CommitMsg`），在段头（和工作树块头）下面、改动分组上面；`ShowCommit` 把段头滚到顶上（`ui.Start`），贴顶的段头不挡它；有已暂存的改动、写了信息、在修改上一次提交、合并的冲突都解决了，或者用户点开了“提交…”时展开（`CommitShown`）。⌘↩ 提交键盘所在的那个。提交按钮是和"撤销上次提交"一样的普通图标按钮（`iconAction`：`rowToolSize` 见方、`toolStyle`，没有底色，悬停才有淡底；`ButtonBase` 所以 Tab 按得到），"提交 N 个文件" / "修改提交"只进读屏和提示；
-左边"修改上一次提交"是图标开关（`filterToggleOf`，`rowToolSize` 见方，开着是强调色），提交中（`Committing`）画灰、点了不切；
-不能提交（`CanCommit`）时画灰、点了不提交，但不调 `Disabled`（mygo 的 `Disabled` 不出悬停提示），提示里写原因（`CommitWhy`）。
+提交框每个仓库一个（`CommitOpen` / `CommitMsg`），在段头（和工作树块头）下面、改动分组上面；`ShowCommit` 把段头滚到顶上（`ui.Start`），贴顶的段头不挡它；有已暂存的改动、写了信息、在修改上一次提交、合并的冲突都解决了，或者用户点开了提交框时展开（`CommitShown`）。⌘↩ 提交键盘所在的那个。
+提交框是一个框管到底（`commitRow`）：收着和没写信息时看着就是一行输入框，写了信息（或在修改上一次提交）框底才长出说明和分裂按钮（`commitFoot`）。按钮写后果：“提交 N 个文件”、什么都没暂存时“提交全部 N 个文件”（`CommitsAll`，先 `git add -A` 再提交，含未跟踪的文件；add 失败就不提交；有冲突、进行中操作时不走这条）、“修改提交”。
+按钮的 ▾ 和框的右键是同一个菜单（`commitBoxMenu`）：提交并推送（`CommitPush`，不看自动推送的设置，不能推时 `CommitPushWhy` 写原因）、修改上一次提交、撤销上次提交；没写信息时 ▾ 只在指针移到框上时出现。
+不能提交（`CanCommit`）时按钮画灰、点了不提交，但不调 `Disabled`（mygo 的 `Disabled` 不出悬停提示），提示里写原因（`CommitWhy`）。
 面板里的动作（冲突条、进行中横幅、替换预览条、Diff 选行条和块按钮、搜索的全部替换、变基向导、终端退出浮条）都用同一个 `iconAction`
-（`ui/widgets.go`）：只有图标，读屏名是原来按钮上的字，`why` 不空时画灰、提示里写原因、点了没反应。段头的"全部暂存"有可暂存的改动就一直画，不看悬停。最近 30 条提交信息（所有仓库共用）存在 `St.CommitMsgs`，提交框里 ↑↓ 翻。
+（`ui/widgets.go`）：只有图标，读屏名是原来按钮上的字，`why` 不空时画灰、提示里写原因、点了没反应。段头只有名字、分支、拉取和推送，改动数只在收起时显示；分组标题上的按钮（`showActions`）要指针移上去才有，右键（`groupMenu`）是同样的动作。最近 30 条提交信息（所有仓库共用）存在 `St.CommitMsgs`，提交框里 ↑↓ 翻。
 
 ### 合并的历史
 

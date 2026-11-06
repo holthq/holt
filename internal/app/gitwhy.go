@@ -288,15 +288,49 @@ func UndoWhy(r *Repo) string {
 	return ""
 }
 
-// CommitWhy 是提交框里的提交按钮不能点的原因（CanCommit 是假时），能点是 ""。按钮只有图标，灰着时靠悬停提示里的这句说明。
+// CommitWhy 是提交框里的提交按钮不能点的原因（CanCommit 是假时），能点是 ""。灰着时写在按钮左边和悬停提示里。
+// 什么都没暂存时按钮是"提交全部"（CommitsAll），能不能点看工作区。
 func CommitWhy(r *Repo) string {
+	st := r.Status
 	switch {
 	case r.Committing():
 		return i18n.T("正在提交")
 	case strings.TrimSpace(r.CommitMsg) == "":
 		return i18n.T("还没写提交信息")
-	case r.Status.Staged == 0 && !(r.Amend && r.Extra.Head != "") && !r.MergeReady():
+	case st.Staged > 0 || r.Amend && r.Extra.Head != "" || r.MergeReady():
+		return ""
+	case st.Count == 0:
+		return i18n.T("没有可提交的改动")
+	case st.Conflicts > 0:
+		return i18n.T("有冲突的文件，先解决")
+	case !r.CommitsAll():
 		return i18n.T("没有已暂存的改动")
+	case r.Running() != nil || len(r.Queue) > 0:
+		return i18n.T("有 git 命令在跑")
+	}
+	return ""
+}
+
+// CommitPushWhy 是"提交并推送"不能做的原因：先是不能提交的（CommitWhy），再是提交完推不上去的：
+// 修改提交要强推、HEAD 不在分支上、没有地方推、已经落后（领先数要等提交完才算，不看）。
+func CommitPushWhy(r *Repo) string {
+	if why := CommitWhy(r); why != "" {
+		return why
+	}
+	if why := busyWhy(r); why != "" {
+		return why
+	}
+	if r.Amend {
+		return i18n.T("修改后的提交要强推")
+	}
+	if _, ok := CurrentBranch(r); !ok {
+		return i18n.T("HEAD 不在分支上")
+	}
+	if Upstream(r) == "" && !HasRemote(r, "origin") {
+		return i18n.T("没有上游，也没有 origin")
+	}
+	if n := r.Status.Behind; n > 0 {
+		return i18n.Tf("落后 %s，先拉取", strconv.Itoa(n))
 	}
 	return ""
 }

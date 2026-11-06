@@ -93,7 +93,7 @@ func toolButton(c *wui.Context, ic *wui.SVG, tip string, disabled bool, fn func(
 	return squareButton(c, ic, tip, tip, toolSize, iconTool, disabled, fn)
 }
 
-// rowButton 是列表行里更小的图标按钮（rowToolSize 见方）：Git 栏分组标题上的"全部暂存"、贮藏上的"应用"之类。
+// rowButton 是列表行里更小的图标按钮（rowToolSize 见方）：Git 栏分组标题上的暂存、贮藏上的"应用"之类。
 // label 是名字（读屏念它、测试按它点），tip 是悬停时的说明（一般带上 git 命令）。
 func rowButton(c *wui.Context, ic *wui.SVG, label, tip string, fn func()) wui.Element {
 	return squareButton(c, ic, label, tip, rowToolSize, iconRow, false, fn)
@@ -160,28 +160,12 @@ func iconActionSize(c *wui.Context, size float32, ic *wui.SVG, label, tip, why s
 // 开着是强调色的浅底和强调色（面板开关 toggleButton 是浅底 + 字色，不动），关着是次级色、悬停一层淡底。
 // 还是切换按钮（读屏念"开 / 关"）；fn 用给它的颜色画里面（图标，或几个等宽字）。返回开关，Changed() 报点了。
 func filterToggle(c *wui.Context, key string, on *bool, label, tip string, fn func(fg wui.Color)) wui.Element {
-	return filterToggleOf(c, key, on, label, tip, 22, false, fn)
-}
-
-// filterToggleOf 是 filterToggle 的本体：size 见方（提交框那一排用 rowToolSize，和旁边的按钮一样高）；
-// off 时画灰、点了 *on 不变（Changed 照报，调用的人自己看 off），悬停提示还在（不调 Disabled，mygo 的 Disabled 不显示提示）。
-func filterToggleOf(c *wui.Context, key string, on *bool, label, tip string, size float32, off bool, fn func(fg wui.Color)) wui.Element {
 	t := c.Theme()
-	if off { // 点了也不改 *on：给 ToggleBase 一份拷贝
-		v := *on
-		on = &v
-	}
-	b := wui.ToggleBase(c.Key(key), on).Size(size, size).Label(label).AlignItems(wui.Center).Justify(wui.Center).Radius(5).Shrink(0).
+	b := wui.ToggleBase(c.Key(key), on).Size(22, 22).Label(label).AlignItems(wui.Center).Justify(wui.Center).Radius(5).Shrink(0).
 		Cursor(wui.CursorPointer)
 	tooltip(c, b, tip)
 	fg := t.TextMuted
 	switch {
-	case off:
-		fg = t.TextMuted.Alpha(0.4)
-		if *on {
-			b.Background(toolFill(t, 0.06))
-		}
-		b.Cursor(wui.CursorDefault)
 	case *on:
 		b.Background(t.Accent.Alpha(0.14))
 		fg = t.Accent

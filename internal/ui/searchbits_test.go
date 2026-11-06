@@ -42,6 +42,7 @@ func hoverOn(t *testing.T, tt *wui.Tester, label string) {
 	}
 	tt.Move(b.X+b.W/2, b.Y+b.H/2)
 	tt.Frame()
+	tt.Frame()
 }
 
 // ⇧⌘H 打开替换框：结果里有换成什么，行上的按钮逐处 / 逐个文件替换、排除，⌘↩ / ⌫，全部替换先问。

@@ -3,57 +3,71 @@ package ui
 import (
 	"testing"
 
+	wui "github.com/egoist/mygo/ui"
 	"github.com/lemoeade/grove/internal/app"
 	"github.com/lemoeade/grove/internal/i18n"
 	"github.com/lemoeade/grove/internal/testutil"
 )
 
-// 段头的"全部暂存"不用悬停也在：有可暂存的改动就画，暂存完就没了（#56）。三个仓库各一段，各管各的。
-func TestStageAllShown(t *testing.T) {
-	alpha, _, gamma, ws := testutil.ThreeRepos(t)
+// 段头只有名字、分支、拉取和推送：改动数只在收起时出现（展开时分组标题上有），没有"全部暂存"。
+func TestRepoHeaderSlim(t *testing.T) {
+	alpha, _, _, ws := testutil.ThreeRepos(t)
 	a, tt, wait := newUI(t, ws, "")
 	a.Exec("view.git")
 	for _, r := range a.Repos {
 		a.RefreshRepo(r, app.WhyManual)
 	}
 	wait("读状态", func() bool { return loaded(a)() && idle(a.Repos[0])() && idle(a.Repos[1])() && idle(a.Repos[2])() })
-	tip := app.Tip(i18n.T("全部暂存（git add -A）"), "git.stageAll")
-	count := func() int {
-		tt.Frame()
-		n := 0
-		for _, nd := range accessTree(t, tt) {
-			if nd.Label == tip {
-				n++
-			}
+	var r *app.Repo
+	for _, x := range a.Repos {
+		if x.Root == alpha.Root {
+			r = x
 		}
-		return n
 	}
-	repoOf := func(root string) *app.Repo {
-		for _, r := range a.Repos {
-			if r.Root == root {
-				return r
-			}
-		}
-		t.Fatalf("没有仓库 %s", root)
-		return nil
+	if !r.GitOpen() {
+		a.ToggleGitRepo(r)
 	}
-	// alpha、beta 有改动，gamma 干净：指针不在段头上也有两个
-	if n := count(); n != 2 {
-		t.Fatalf("全部暂存有 %d 个，应为 2（alpha、beta）", n)
+	tt.Frame()
+	sum := changeSummary(r.Status) // 状态栏上也写着这句，所以比收起前后多没多
+	before := countText(tt, sum)
+	a.ToggleGitRepo(r)
+	tt.Frame()
+	if after := countText(tt, sum); after <= before {
+		t.Errorf("收起时段头该多出改动数 %q：%d → %d", sum, before, after)
 	}
-	gamma.Write("new.txt", "x\n")
-	g := repoOf(gamma.Root)
-	a.RefreshRepo(g, app.WhyManual)
-	wait("gamma 读到未跟踪的文件", func() bool { return idle(g)() && g.Status.Untracked == 1 })
-	if n := count(); n != 3 {
-		t.Fatalf("gamma 有了未跟踪的文件：全部暂存有 %d 个，应为 3", n)
+}
+
+// 分组标题上的按钮指针移上去才有，移开就没了；右键是同样的动作。
+func TestGroupActionsOnHover(t *testing.T) {
+	repo := testutil.NewRepo(t, "group")
+	repo.Write("a.txt", "a\n")
+	repo.Commit("初始提交")
+	repo.Write("a.txt", "b\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Unstaged == 1 })
+	tt.Move(1200, 800)
+	tt.Frame()
+	tt.Frame()
+	stage, discard := i18n.T("暂存所有未暂存的改动"), i18n.T("丢弃所有未暂存的改动…")
+	if tt.HasText(stage) || tt.HasText(discard) {
+		t.Fatalf("指针不在分组标题上时不该有按钮: %q", tt.Texts())
 	}
-	r := repoOf(alpha.Root)
-	a.StageAll(r)
-	wait("alpha 全部暂存", func() bool { return idle(r)() && r.Status.Unstaged+r.Status.Untracked == 0 })
-	if n := count(); n != 2 {
-		t.Errorf("alpha 暂存完了：全部暂存有 %d 个，应为 2", n)
+	hoverOn(t, tt, "收起 改动")
+	mustText(t, tt, stage)
+	mustText(t, tt, discard)
+	tt.Move(1200, 800)
+	tt.Frame()
+	tt.Frame()
+	if tt.HasText(stage) {
+		t.Fatal("指针移开了按钮还在")
 	}
+	mustRightClickRow(t, tt, "收起 改动", stage)
+	wait("暂存", func() bool { return idle(r)() && r.Status.Staged == 1 })
+	mustRightClickRow(t, tt, "收起 已暂存", i18n.T("全部取消暂存"))
+	wait("取消暂存", func() bool { return idle(r)() && r.Status.Staged == 0 })
 }
 
 // 提交框底下的"修改上一次提交"是图标开关：点了开、再点关；有一条提交排着时画灰、点了不切，提示还在。
@@ -71,31 +85,29 @@ func TestAmendToggle(t *testing.T) {
 	a.OpenCommit(r)
 	tt.Frame()
 
-	name := i18n.T("修改上一次提交")
-	mustClick(t, tt, name)
+	name := i18n.T("修改上一次提交…")
+	chooseCommitMenu(t, tt, name)
 	if !r.Amend {
-		t.Fatal("点了开关该开着")
+		t.Fatal("选了该开着")
 	}
 	tt.Frame()
-	mustClick(t, tt, name)
+	chooseCommitMenu(t, tt, name)
 	if r.Amend {
-		t.Fatal("再点一下该关了")
+		t.Fatal("再选一下该关了")
 	}
 
-	// 没写信息：提交按钮灰着，点了不提交
-	head := repo.Git("rev-parse", "HEAD")
+	// 没写信息：框里没有提交按钮
 	repo.Write("a.txt", "b\n")
 	repo.Git("add", "a.txt")
 	a.RefreshRepo(r, app.WhyManual)
 	wait("暂存", func() bool { return idle(r)() && r.Status.Staged == 1 })
 	r.CommitMsg = ""
 	tt.Frame()
-	mustClick(t, tt, i18n.Tf("提交 %s 个文件", "1"))
-	if len(r.Queue) != 0 || r.Busy != "" || repo.Git("rev-parse", "HEAD") != head {
-		t.Fatal("没写信息时灰着的提交按钮被点了")
+	if tt.HasText(i18n.Tf("提交 %s 个文件", "1")) {
+		t.Fatal("没写信息时不该有提交按钮")
 	}
 
-	// 前面排着一条慢命令，提交排在它后面：提交中，开关灰着、点了不切
+	// 前面排着一条慢命令，提交排在它后面：提交中，▾ 里那一项灰着
 	slowOp(a, r)
 	r.CommitMsg = "改一下"
 	a.Commit(r)
@@ -103,13 +115,12 @@ func TestAmendToggle(t *testing.T) {
 	if !r.Committing() {
 		t.Fatal("提交该在排队")
 	}
-	if _, ok := tt.Find(name); !ok {
-		t.Fatalf("提交中开关也该在：%q", tt.Texts())
+	openCommitMenu(t, tt)
+	if !menuDisabled(t, tt, name) {
+		t.Errorf("提交中修改上一次提交该灰着：%q", shownMenu(t, tt))
 	}
-	mustClick(t, tt, name)
-	if r.Amend {
-		t.Error("提交中点开关不该切到修改上一次提交")
-	}
+	tt.Key(0, wui.KeyEscape)
+	tt.Frame()
 	a.CancelOp(r) // 慢命令取消了，排着的提交接着跑完
 	wait("队列跑完", idle(r))
 }

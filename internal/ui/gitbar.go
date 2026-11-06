@@ -14,8 +14,8 @@ import (
 )
 
 // gitView 是侧栏的 Git 模式：工作区里所有仓库同时列出，一个仓库一段。段头是仓库名、分支、
-// 各组的计数和"全部暂存"（有可暂存的改动才有），滚动时贴在顶上；段头下面是横幅、工作树组头（设置里开了"在 Git 栏显示工作树"才有，
-// 默认收着），接着是这个仓库的提交框，再按冲突 / 已暂存 / 未暂存（含未跟踪）分组，最后是贮藏组头（设置里开了
+// 收起时的改动数，滚动时贴在顶上；段头下面是横幅、工作树组头（设置里开了"在 Git 栏显示工作树"才有，
+// 默认收着），接着是这个仓库的提交框，再按冲突 / 已暂存 / 改动（含未跟踪）分组，最后是贮藏组头（设置里开了
 // "在 Git 栏显示贮藏"才有，默认收着）；每组点标题收起。点一项在主区的预览 Diff 标签里看（当前仓库切到它），双击 / 回车固定。
 func gitView(a *app.App, c *wui.Context) {
 	t := c.Theme()
@@ -171,9 +171,9 @@ func kindColor(t *wui.Theme, k git.Kind) wui.Color {
 	return t.TextMuted
 }
 
-// repoHeader 是一个仓库段的段头：箭头、仓库名、分支和领先 / 落后、（收起时）贮藏条数，右边是各组的计数
-// （干净的写"工作区干净"），有可暂存的改动时一直有"全部暂存"，在读状态或跑 git 操作时转圈。点它展开 / 收起并切成
-// 当前仓库，右键是仓库菜单。它会贴在列表顶上，要有底色。
+// repoHeader 是一个仓库段的段头：箭头、仓库名、分支和领先 / 落后、（收起时）贮藏条数，右边是收起时的改动数
+// （展开时下面的分组标题上就有，不写两遍；干净的是一个勾）、拉取和推送，在读状态或跑 git 操作时转圈。
+// 暂存的按钮在分组标题上。点它展开 / 收起并切成当前仓库，右键是仓库菜单。它会贴在列表顶上，要有底色。
 func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 	t := c.Theme()
 	current := r == a.Current()
@@ -206,7 +206,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		}
 		if r.Loaded && r.Err == nil && !r.Plain {
 			// 分支名点开这个仓库的分支菜单（别的仓库就地切，不用先切当前仓库）；点它不折叠段落。
-			// 段头挤的时候分支先缩到只剩图标（只剩图标也能点），再轮到仓库名（"全部暂存"一直在，右边少了一格）
+			// 段头挤的时候分支先缩到只剩图标（只剩图标也能点），再轮到仓库名
 			tip := i18n.Tf("切换 %s 的分支", r.Name)
 			br := wui.ButtonBase(c).Gap(3).AlignItems(wui.Center).MinWidth(iconInline).Shrink(1000).Padding(1, 3).Margin(0, -3).
 				Radius(4).Cursor(wui.CursorPointer).Label(tip).Tooltip(tip)
@@ -257,7 +257,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		case st.Count == 0: // 干净：一个绿色圈中勾，不写字
 			wui.Icon(c, iconCheck).FontSize(iconTool).TextColor(wtGreen(t)).Shrink(0).
 				Label(i18n.T("工作区干净")).Tooltip(i18n.T("工作区干净"))
-		default:
+		case !open:
 			counts(c, st)
 		}
 		if r.Loaded && r.Err == nil && !r.Plain {
@@ -273,10 +273,6 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 				wui.Text(c, ud).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Shrink(0).FontFeatures("tnum").
 					Tooltip(i18n.T("和上游比：↓ 落后、↑ 领先"))
 			}
-		}
-		if r.Loaded && st.Conflicts+st.Unstaged+st.Untracked > 0 {
-			tip := app.Tip(i18n.T("全部暂存（git add -A）"), "git.stageAll")
-			rowButton(c, iconPlus, tip, tip, func() { a.StageAll(r) })
 		}
 		if r.Loaded && r.Err == nil && !r.Plain {
 			s := syncOf(a, r)
@@ -295,7 +291,7 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 
 // syncButton 是段头右边的拉取 / 推送按钮（rowToolSize 高）：图标，n 不为 0 时后面跟着"↓n" / "↑n"；
 // busy（这个仓库的这条在跑或在排队）时图标换成转圈、点不了。label 带仓库名（每个仓库一组，读屏和测试按它找），
-// tip 和标题栏的同一个按钮一样（syncOf）。带 key：暂存完、刷新时前面的"全部暂存"会出来 / 没了，不带 key 的话
+// tip 和标题栏的同一个按钮一样（syncOf）。带 key：刷新时前面的改动数、勾会出来 / 没了，不带 key 的话
 // 按下和松开之间换了位置就不是同一个元素，点不着。
 func syncButton(c *wui.Context, key string, ic *wui.SVG, label, tip, arrow string, n int, off, busy bool, fn func()) wui.Element {
 	b := wui.Row(c.Key(key)).Height(syncSize).MinWidth(syncSize).Gap(2).Label(label)
@@ -331,28 +327,29 @@ func counts(c *wui.Context, st git.Status) {
 	pill(c, strconv.Itoa(st.Count), color, false).Tooltip(sum).Label(sum)
 }
 
-// groupRow 是段里的分组标题：箭头、颜色点、组名、条数，右边是这一组的暂存 / 取消暂存 / 中止合并之类的图标按钮。
-// 点标题收起 / 展开这一组。
+// groupRow 是段里的分组标题：箭头、组名、条数（冲突组前面有个红点），点标题收起 / 展开这一组。
+// 暂存、取消暂存、丢弃是这一组的动作：指针在这一行上才出来，右键也有；中止合并一直在。
 func groupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	c := row.Context
 	t := c.Theme()
 	r := cr.Repo
+	kind := cr.Change.Kind
 	groupHeader(a, row, cr, func() {
-		switch cr.Change.Kind {
-		case git.Unstaged: // 橙色铅笔
-			wui.Icon(c, iconPencil).FontSize(iconRow).TextColor(kindColor(t, git.Unstaged)).Shrink(0).Label(cr.Title)
-		case git.Staged: // 绿色勾选框
-			wui.Icon(c, iconCheckSquare).FontSize(iconRow).TextColor(wtGreen(t)).Shrink(0).Label(cr.Title)
-		default:
-			wui.Box(c).Size(6, 6).Radius(3).Background(kindColor(t, cr.Change.Kind)).Shrink(0)
+		if kind != git.Staged && kind != git.Unstaged {
+			wui.Box(c).Size(6, 6).Radius(3).Background(kindColor(t, kind)).Shrink(0)
 		}
-	}, func() {
-		switch cr.Change.Kind {
-		case git.Conflict:
+	}, func(hover bool) {
+		if kind == git.Conflict {
 			if op := r.Extra.Ongoing; op != git.NoOp {
 				rowButton(c, iconCircleX, op.AbortLabel(), i18n.Tf("%s（git %s，会先问）", op.AbortLabel(), strings.Join(op.AbortArgs(), " ")),
 					func() { a.AbortOngoing(r) })
 			}
+			return
+		}
+		if !showActions(a, row, hover) {
+			return
+		}
+		switch kind {
 		case git.Staged:
 			rowButton(c, iconMinus, i18n.T("全部取消暂存"), i18n.T("全部取消暂存（git reset）"), func() { a.UnstageAll(r) })
 		case git.Unstaged: // 这一组含未跟踪的文件
@@ -362,6 +359,24 @@ func groupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			rowButton(c, iconPlus, i18n.T("暂存所有未暂存的改动"), i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -A；有冲突时只暂存这些文件，冲突的不动）"), func() { a.StageUnstaged(r) })
 		}
 	})
+}
+
+// groupMenu 是分组标题的右键菜单：和悬停出来的按钮一样的动作。
+func groupMenu(a *app.App, m menu, cr app.ChangeRow) {
+	r := cr.Repo
+	switch cr.Change.Kind {
+	case git.Staged:
+		if whyItem(m, i18n.T("全部取消暂存"), app.UnstageAllWhy(r)).Chosen() {
+			a.UnstageAll(r)
+		}
+	case git.Unstaged:
+		if m.Item(i18n.T("暂存所有未暂存的改动")).Chosen() {
+			a.StageUnstaged(r)
+		}
+		if whyItem(m, i18n.T("丢弃所有未暂存的改动…"), app.DiscardAllWhy(r)).Danger().Chosen() {
+			a.DiscardAll(r)
+		}
+	}
 }
 
 // stashGroupRow 是仓库段里贮藏的分组标题（默认收着），也能收起：箭头、归档图标、条数，不写"贮藏"两个字
@@ -374,21 +389,29 @@ func stashGroupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	}, nil)
 }
 
-// groupHeader 是分组标题的一行：箭头、mark（颜色点或图标）、组名、条数，actions 画在右边。点整行收起 / 展开。
-// 未暂存、已暂存两组和贮藏不写组名（图标代替，读屏和悬停提示照旧是组名）。
-func groupHeader(a *app.App, row wui.ListRow, cr app.ChangeRow, mark, actions func()) {
+// groupHeader 是分组标题的一行：箭头、mark（颜色点或图标）、组名、条数，actions 画在右边。点整行收起 / 展开，
+// 改动、已暂存两组右键是 groupMenu。贮藏不写组名（图标代替，读屏和悬停提示照旧是组名）。
+func groupHeader(a *app.App, row wui.ListRow, cr app.ChangeRow, mark func(), actions func(hover bool)) {
 	r := cr.Repo
-	iconOnly := cr.Kind == app.RowStashes || cr.Kind == app.RowGroup && (cr.Change.Kind == git.Staged || cr.Change.Kind == git.Unstaged)
-	foldHeader(a, row, 26, cr.Title, iconOnly, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions)
+	var build func(menu)
+	if cr.Kind == app.RowGroup && (cr.Change.Kind == git.Staged || cr.Change.Kind == git.Unstaged) {
+		build = func(m menu) { groupMenu(a, m, cr) }
+	}
+	foldHeader(a, row, 26, cr.Title, cr.Kind == app.RowStashes, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions, cr.Key(), build)
 }
 
 // foldHeader 是能收起的标题行（分组标题、工作树块头）：h 高，箭头、mark、标题、count（条数，可以带说明），
-// actions 画在右边。点整行收起 / 展开。iconOnly 时不写标题（mark 是图标），标题只给读屏和悬停提示。
-func foldHeader(a *app.App, row wui.ListRow, h float32, title string, iconOnly bool, count string, open bool, toggle, mark, actions func()) {
+// actions 画在右边（hover 是指针在这一行上）。点整行收起 / 展开，build 不空时右键开这个菜单（owner 是它的身份）。
+// iconOnly 时不写标题（mark 是图标），标题只给读屏和悬停提示。
+func foldHeader(a *app.App, row wui.ListRow, h float32, title string, iconOnly bool, count string, open bool, toggle, mark func(), actions func(hover bool), owner any, build func(menu)) {
 	c := row.Context
 	t := c.Theme()
 	el := wui.Row(c).Height(h).Padding(0, 4, 0, 14).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer)
-	if el.Hovered() {
+	if build != nil {
+		ctxMenuRow(a, c, row, el, owner, build)
+	}
+	hover := el.Hovered()
+	if hover {
 		a.GitHover = row.Index
 	}
 	if el.Clicked() {
@@ -406,7 +429,7 @@ func foldHeader(a *app.App, row wui.ListRow, h float32, title string, iconOnly b
 		wui.Text(c, count).FontSize(sideSub).TextColor(t.TextMuted.Alpha(0.7)).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
 		wui.Spacer(c).Grow(1)
 		if actions != nil {
-			actions()
+			actions(hover)
 		}
 	})
 }
@@ -796,138 +819,235 @@ func lineTotals(files []git.Change) (add, del int) {
 	return add, del
 }
 
-// commitRow 是仓库段里的提交框（工作树组头下面、改动分组上面）。平时收成一行"提交…"，点开、有已暂存的改动或写了信息时展开：
-// 一行到四行的信息，⌘↩ 或按钮提交这个仓库已暂存的改动；信息空着按 Esc 收起来，空着按 ↑ 翻以前写过的。
-// 下面一排是"修改上一次提交"（amend）的图标开关、"撤销上次提交"和提交按钮，都只有图标。
+// 提交框的尺寸：框的圆角、框里的字到边的留白，框里分裂按钮的高和圆角。
+const (
+	commitRadius = 6
+	commitPadY   = 4
+	commitPadX   = 8
+	commitBtnH   = 22
+	commitBtnR   = 5
+)
+
+// commitRow 是仓库段里的提交框（工作树组头下面、改动分组上面）：一个框管到底。平时只有一行，看着就是输入框；
+// 写了信息框长高（到四行），右下角长出分裂按钮，按钮上写着点了会怎样（commitLabel），▾ 里是提交并推送、修改上一次提交、
+// 撤销上次提交（commitBoxMenu）。没写信息时指针移上来，框右边出一个小 ▾，同一个菜单。
+// ⌘↩ 和按钮一样；信息空着按 Esc 收起来，空着按 ↑ 翻以前写过的。
 func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 	c := row.Context
 	t := c.Theme()
-	if !r.CommitShown() { // 刚提交完多半是收着的：能撤销时右边也放"撤销上次提交"
-		wui.Row(c).AlignItems(wui.Center).Padding(0, 8, 0, 0).Children(func() {
-			// 和下面的分组标题一样高（26），铅笔对着分组标题的图标（左 14 + 箭头 16 + 间距 5）
-			b := wui.Row(c).Grow(1).Height(26).Padding(0, 8, 0, 35).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer).
-				Label(i18n.Tf("提交 %s 的改动…", r.Name)).Tooltip(i18n.T("写提交信息；先暂存要提交的文件"))
-			if b.Hovered() {
-				a.GitHover = row.Index
-			}
-			if b.Clicked() {
-				a.OpenCommit(r)
-			}
-			b.Children(func() {
-				wui.Icon(c, iconPencil).FontSize(iconInline).TextColor(t.TextMuted)
-				wui.Text(c, i18n.T("提交…")).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
-			})
-			if r.Extra.Head != "" && app.UndoWhy(r) == "" {
-				undoButton(a, c, r, "")
-			}
-		})
-		return
-	}
-	col := wui.Column(c).Padding(4, 8, 8, 22).Gap(6) // 左边对着下面分组标题的箭头；下面紧接着分组标题，上下留得一样匀
-	if col.Hovered() {
+	shown := r.CommitShown()
+	foot := r.CommitMsg != "" || r.Amend       // 改上一次提交时没有信息也留着按钮：▾ 里才能退出来
+	wrap := wui.Column(c).Padding(2, 8, 6, 22) // 左边对着下面分组标题的箭头
+	if wrap.Hovered() {
 		a.GitHover = row.Index
 	}
-	col.Children(func() {
-		// TextArea 默认至少 80 高，MinHeight(0) 之后才真的从一行起、随内容长到四行。
-		ph := i18n.T("提交信息")
-		if k := app.Find("commit").Keys(); k != "" {
-			ph = i18n.Tf("提交信息（%s 提交）", k)
+	wrap.Children(func() {
+		box := wui.Column(c.Key("box")).Radius(commitRadius).Background(t.Surface).Border(1, t.Border)
+		if box.FocusWithin() {
+			box.BorderColor(t.Accent)
 		}
-		ta := wui.TextArea(c.Key("msg"), &r.CommitMsg).Lines(1, 4).MinHeight(0).Placeholder(ph).
-			Label(i18n.T("提交信息")).FontSize(sideFont).TextColor(t.Text).OnTextKey(func(k wui.TextKey) bool {
-			switch {
-			case (k.Key == wui.KeyUp || k.Key == wui.KeyDown) && k.Mods == 0:
-				dir := 1
-				if k.Key == wui.KeyDown {
-					dir = -1
+		hover := box.Hovered()
+		box.Children(func() {
+			wui.Row(c).AlignItems(wui.Center).Children(func() {
+				if shown {
+					commitInput(a, c, r)
+				} else {
+					commitIdle(a, c, r)
 				}
-				if msg, ok := a.StepCommitMsg(r, k.Text(), dir); ok {
-					k.SetText(msg)
-					return true
+				if !foot && hover {
+					more := i18n.T("更多提交操作")
+					b := wui.ButtonBase(c.Key("more")).Size(rowToolSize, rowToolSize).Margin(0, 3, 0, 0).Shrink(0).Label(more)
+					tooltip(c, b, more)
+					fg := toolStyle(c, b, false, false)
+					b.Children(func() {
+						wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(fg)
+					})
+					menuButton(a, c, b, menuOwner{"commit", r.Root}, func(m menu) { commitBoxMenu(a, m, r) })
 				}
-				return false
-			case keyIs(wui.InputEvent{Mods: k.Mods, Key: k.Key}, app.Find("commit")):
-				msg := k.Text()
-				a.Update(func() {
-					r.CommitMsg = msg
-					a.Commit(r)
-				})
-				return true
-			case k.Key == wui.KeyEscape && k.Mods == 0 && k.Text() == "":
-				a.Update(func() { r.CommitOpen = false })
-				return true
-			}
-			return false
-		})
-		if r.FocusCommit {
-			r.FocusCommit = false
-			ta.Focus()
-		}
-		if ta.Focused() {
-			a.UseRepo(r)
-		}
-		hint := ""
-		switch {
-		case r.Busy != "":
-			hint = r.Busy + "…"
-		case r.Amend && r.Status.Staged == 0:
-			hint = i18n.T("只改上一次提交的信息")
-		case r.Amend:
-			hint = i18n.Tf("已暂存的 %s 个文件并进上一次提交", strconv.Itoa(r.Status.Staged))
-		case r.MergeReady() && r.Status.Staged == 0:
-			hint = i18n.T("冲突都解决了：提交这次合并")
-		case r.Status.Staged == 0 && r.Status.Count > 0:
-			hint = i18n.T("没有已暂存的改动：点分组上的 + 或右键文件暂存")
-		case r.Status.Staged == 0:
-			hint = i18n.T("没有可提交的改动")
-		}
-		if hint != "" {
-			wui.Text(c, hint).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
-		}
-		wui.Row(c).Gap(8).AlignItems(wui.Center).Children(func() {
-			if r.Extra.Head != "" {
-				// 修改上一次提交：图标开关（同筛选开关，开着是强调色），和旁边的按钮一样 rowToolSize 见方；提交中画灰、点了不切
-				amend := r.Amend
-				busy := r.Committing()
-				tip := app.Tip(i18n.T("git commit --amend：信息换成上一次的，可以改；已暂存的改动并进去"), "git.amend")
-				if busy {
-					tip = withWhy(tip, i18n.T("提交在队列里"))
-				}
-				tg := filterToggleOf(c, "amend", &amend, i18n.T("修改上一次提交"), tip, rowToolSize, busy, func(fg wui.Color) {
-					wui.Icon(c, iconAmend).FontSize(iconRow).TextColor(fg)
-				})
-				if tg.Changed() && !busy {
-					a.SetAmend(r, amend)
-				}
-				undoButton(a, c, r, app.UndoWhy(r))
-			}
-			wui.Spacer(c).Grow(1)
-			label := i18n.T("提交")
-			switch {
-			case r.Amend:
-				label = i18n.T("修改提交")
-			case r.Status.Staged > 0:
-				label = i18n.Tf("提交 %s 个文件", strconv.Itoa(r.Status.Staged))
-			}
-			tip := app.Tip("git commit", "commit")
-			if r.Amend {
-				tip = app.Tip("git commit --amend", "commit")
-			}
-			// 普通图标按钮（iconAction：和左边"撤销上次提交"一样没有底色，悬停才有淡底），字进读屏和提示；
-			// 不能提交时画灰、提示里写原因（CommitWhy），点了不提交。
-			if iconAction(c.Key("commit"), iconCommit, label, tip, app.CommitWhy(r), wui.Transparent) {
-				a.UseRepo(r)
-				a.Commit(r)
+			})
+			if foot {
+				commitFoot(a, c, r)
 			}
 		})
 	})
 }
 
-// undoButton 是提交框里的"撤销上次提交"（git reset --soft HEAD~1）；why 不空时灰着、提示里带原因。
-func undoButton(a *app.App, c *wui.Context, r *app.Repo, why string) {
-	tip := i18n.T("撤销上次提交：git reset --soft HEAD~1，改动回到暂存区，信息回到提交框")
-	if why != "" {
-		tip = withWhy(tip, why)
+// commitIdle 是收着的提交框：只是看着像输入框（和 commitInput 一样的字号、留白），点了才换成真的。
+func commitIdle(a *app.App, c *wui.Context, r *app.Repo) {
+	t := c.Theme()
+	b := wui.Row(c).Grow(1).MinWidth(0).Padding(commitPadY, commitPadX).Cursor(wui.CursorText).
+		Label(i18n.Tf("提交 %s 的改动…", r.Name)).Tooltip(i18n.T("写提交信息；没有已暂存的文件时提交全部改动"))
+	ctxMenu(a, c, b, menuOwner{"commitBox", r.Root}, func(m menu) { commitBoxMenu(a, m, r) })
+	if b.Clicked() {
+		a.OpenCommit(r)
 	}
-	squareButton(c, iconUndo, i18n.T("撤销上次提交"), tip, rowToolSize, iconRow, why != "", func() { a.UndoCommit(r) })
+	b.Children(func() {
+		wui.Text(c, commitPlaceholder()).FontSize(sideFont).TextColor(t.TextMuted.Alpha(0.7)).SingleLine().Ellipsis("…").MinWidth(0)
+	})
+}
+
+// commitPlaceholder 是提交框没写字时的灰字。
+func commitPlaceholder() string {
+	if k := app.Find("commit").Keys(); k != "" {
+		return i18n.Tf("提交信息（%s）", k)
+	}
+	return i18n.T("提交信息")
+}
+
+// commitInput 是展开的提交框里的输入：没有自己的边，边是外面的框。
+func commitInput(a *app.App, c *wui.Context, r *app.Repo) {
+	t := c.Theme()
+	// TextArea 默认至少 80 高，Base 没有这一条，从一行起、随内容长到四行。
+	ta := wui.TextAreaBase(c.Key("msg"), &r.CommitMsg).Lines(1, 4).Grow(1).MinWidth(0).Padding(commitPadY, commitPadX).Placeholder(commitPlaceholder()).
+		Label(i18n.T("提交信息")).FontSize(sideFont).TextColor(t.Text).OnTextKey(func(k wui.TextKey) bool {
+		switch {
+		case (k.Key == wui.KeyUp || k.Key == wui.KeyDown) && k.Mods == 0:
+			dir := 1
+			if k.Key == wui.KeyDown {
+				dir = -1
+			}
+			if msg, ok := a.StepCommitMsg(r, k.Text(), dir); ok {
+				k.SetText(msg)
+				return true
+			}
+			return false
+		case keyIs(wui.InputEvent{Mods: k.Mods, Key: k.Key}, app.Find("commit")):
+			msg := k.Text()
+			a.Update(func() {
+				r.CommitMsg = msg
+				a.Commit(r)
+			})
+			return true
+		case k.Key == wui.KeyEscape && k.Mods == 0 && k.Text() == "":
+			a.Update(func() { r.CommitOpen = false })
+			return true
+		}
+		return false
+	})
+	if r.FocusCommit {
+		r.FocusCommit = false
+		ta.Focus()
+	}
+	if ta.Focused() {
+		a.UseRepo(r)
+	}
+}
+
+// commitLabel 是提交按钮上的字：写清楚点了会提交什么。
+func commitLabel(r *app.Repo) string {
+	st := r.Status
+	switch {
+	case r.Amend:
+		return i18n.T("修改提交")
+	case st.Staged > 0:
+		return i18n.Tf("提交 %s 个文件", strconv.Itoa(st.Staged))
+	case r.MergeReady() || !r.CommitsAll():
+		return i18n.T("提交")
+	case st.Count == 1:
+		return i18n.Tf("提交 %s 个文件", "1")
+	}
+	return i18n.Tf("提交全部 %s 个文件", strconv.Itoa(st.Count))
+}
+
+// commitHint 是按钮左边的一句话：这次提交和平常不一样的地方，或者为什么现在点不了。
+func commitHint(r *app.Repo) string {
+	switch {
+	case r.Busy != "":
+		return r.Busy + "…"
+	case r.Amend && r.Status.Staged == 0:
+		return i18n.T("只改上一次提交的信息")
+	case r.Amend:
+		return i18n.Tf("已暂存的 %s 个文件并进上一次提交", strconv.Itoa(r.Status.Staged))
+	case r.MergeReady() && r.Status.Staged == 0:
+		return i18n.T("冲突都解决了：提交这次合并")
+	}
+	return app.CommitWhy(r)
+}
+
+// commitFoot 是框底下那一条：左边 commitHint，右边的分裂按钮左半提交、右半开 ▾。不能提交时左半画灰，
+// 点了不提交（不调 Disabled，mygo 的 Disabled 不出悬停提示），▾ 一直能开。
+func commitFoot(a *app.App, c *wui.Context, r *app.Repo) {
+	t := c.Theme()
+	wui.Row(c.Key("foot")).Padding(0, 4, 4, commitPadX).Gap(6).AlignItems(wui.Center).Children(func() {
+		wui.Text(c, commitHint(r)).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+		wui.Spacer(c).Grow(1)
+		why := app.CommitWhy(r)
+		label := commitLabel(r)
+		tip := "git commit"
+		switch {
+		case r.Amend:
+			tip = "git commit --amend"
+		case r.CommitsAll():
+			tip = "git add -A && git commit"
+		}
+		full := app.Tip(tip, "commit")
+		if why != "" {
+			full = withWhy(label, why) + "\n" + full
+		}
+		wui.Row(c.Key("split")).Height(commitBtnH).Gap(1).Shrink(0).Children(func() {
+			b := wui.ButtonBase(c.Key("commit")).Height(commitBtnH).Padding(0, 8).Radius(commitBtnR, 0, 0, commitBtnR).Label(label).Cursor(wui.CursorPointer)
+			tooltip(c, b, full)
+			fg := splitStyle(c, b, why != "")
+			b.Children(func() {
+				wui.Text(c, label).FontSize(sideSub).TextColor(fg).SingleLine()
+			})
+			if b.Clicked() && why == "" {
+				a.UseRepo(r)
+				a.Commit(r)
+			}
+			more := i18n.T("更多提交操作")
+			m := wui.ButtonBase(c.Key("more")).Size(commitBtnH-2, commitBtnH).Radius(0, commitBtnR, commitBtnR, 0).Label(more).Cursor(wui.CursorPointer)
+			tooltip(c, m, more)
+			mfg := splitStyle(c, m, why != "")
+			m.Children(func() {
+				wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(mfg)
+			})
+			menuButton(a, c, m, menuOwner{"commit", r.Root}, func(m menu) { commitBoxMenu(a, m, r) })
+		})
+	})
+}
+
+// splitStyle 给分裂按钮的一半上底色（同 dlgButton 的主按钮），返回字色。off 时是灰的。
+func splitStyle(c *wui.Context, b wui.Element, off bool) wui.Color {
+	t := c.Theme()
+	if off {
+		b.Background(toolFill(t, 0.08))
+		return t.TextMuted
+	}
+	switch {
+	case b.Pressed():
+		b.Background(t.AccentPressed)
+	case b.Hovered():
+		b.Background(t.AccentHover)
+	default:
+		b.Background(t.Accent)
+	}
+	return t.AccentText
+}
+
+// commitBoxMenu 是提交框 ▾ 的菜单，框的右键也是它。
+func commitBoxMenu(a *app.App, m menu, r *app.Repo) {
+	if whyItem(m, i18n.T("提交并推送"), app.CommitPushWhy(r)).Chosen() {
+		a.UseRepo(r)
+		a.CommitPush(r)
+	}
+	if r.Extra.Head != "" {
+		m.Separator()
+		lastCommitItems(a, m, r)
+	}
+}
+
+// lastCommitItems 是对上一次提交的两项（有提交才有）：修改、撤销。提交框 ▾ 和仓库右键都有。
+func lastCommitItems(a *app.App, m menu, r *app.Repo) {
+	why := ""
+	if r.Committing() {
+		why = i18n.T("提交在队列里")
+	}
+	if whyItem(m, i18n.T("修改上一次提交…"), why).Checked(r.Amend).Chosen() {
+		a.SetAmend(r, !r.Amend)
+		a.ShowCommit(r)
+	}
+	if whyItem(m, i18n.T("撤销上次提交"), app.UndoWhy(r)).Chosen() {
+		a.UndoCommit(r)
+	}
 }

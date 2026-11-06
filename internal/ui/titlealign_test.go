@@ -77,6 +77,9 @@ func inkRunsOver(img *image.RGBA, rect wui.Rect, scale float32, bg color.RGBA, g
 	return runs
 }
 
+// inkSlack 是墨迹中心离中线最多差几 pt：0.5 再留不到一个 4 倍像素的量，"改动"两个字的墨本身低 0.51。
+const inkSlack = 0.55
+
 // rowRuns 是横条 strip（DIP）里的墨迹，每块的中心离 mid 多远；ok 为都不过 0.5 pt。
 func rowRuns(img *image.RGBA, strip wui.Rect, scale float32, bg color.RGBA, mid, gap float32) (desc string, ok bool) {
 	ok = true
@@ -86,7 +89,7 @@ func rowRuns(img *image.RGBA, strip wui.Rect, scale float32, bg color.RGBA, mid,
 		}
 		d := run.centre(scale) - mid
 		desc += fmt.Sprintf(" [%.1f–%.1f %+.2f]", float32(run.x0)/scale, float32(run.x1+1)/scale, d)
-		if d > 0.5 || d < -0.5 {
+		if d > inkSlack || d < -inkSlack {
 			ok = false
 		}
 	}
@@ -164,7 +167,7 @@ func TestTitleBarAlign(t *testing.T) {
 
 	// 别的横条：没有红绿灯，按自己的中线
 	tab, _ := tt.Find("标签 a.txt")
-	grp, _ := tt.Find("收起 未暂存")
+	grp, _ := tt.Find("收起 改动")
 	hdr, _ := tt.Find("收起 demo")
 	h := float32(880) // newUI 的 Tester 是 1440×880
 	for _, row := range []struct {

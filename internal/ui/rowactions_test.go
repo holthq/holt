@@ -166,7 +166,7 @@ func TestChangeRowActions(t *testing.T) {
 	}
 
 	// 未暂存组头：丢弃所有未暂存的改动…先问
-	hover("未暂存")
+	hover("收起 改动")
 	mustClick(t, tt, "丢弃所有未暂存的改动…")
 	mustText(t, tt, "丢弃 1 项未暂存的改动？")
 	mustClick(t, tt, "取消")

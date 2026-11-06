@@ -69,11 +69,6 @@ func TestOpsOnTempRepo(t *testing.T) {
 	}
 	a.AlertOpen = false
 	r.CommitMsg = "测试提交"
-	a.Commit(r)
-	if !strings.Contains(a.AlertMsg, "没有已暂存的改动") {
-		t.Fatalf("没暂存的提交：%q", a.AlertMsg)
-	}
-	a.AlertOpen = false
 
 	a.Exec("git.stageAll")
 	if r.Busy != "暂存全部" {

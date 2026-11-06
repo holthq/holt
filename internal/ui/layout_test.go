@@ -35,7 +35,7 @@ func TestLayoutShortcuts(t *testing.T) {
 		mode string
 		text string
 	}{
-		{wui.Cmd | wui.Shift, wui.KeyG, workspace.ModeGit, "提交…"},
+		{wui.Cmd | wui.Shift, wui.KeyG, workspace.ModeGit, commitPlaceholder()},
 		{wui.Cmd | wui.Shift, wui.KeyF, workspace.ModeSearch, "在所有仓库里搜文字"},
 		{wui.Cmd | wui.Shift, wui.KeyE, workspace.ModeFiles, "筛选文件"},
 	} {
@@ -66,7 +66,7 @@ func TestLayoutShortcuts(t *testing.T) {
 		on   func() bool
 		gone string // 关掉后界面上不该有的
 	}{
-		{"侧栏", wui.Cmd, wui.KeyB, func() bool { return a.St.Sidebar }, "提交…"},
+		{"侧栏", wui.Cmd, wui.KeyB, func() bool { return a.St.Sidebar }, commitPlaceholder()},
 		{"底栏", wui.Cmd, wui.KeyJ, func() bool { return a.St.BottomBar }, "终端 · demo"},
 		{"右栏", wui.Cmd | wui.Alt, wui.KeyB, func() bool { return a.St.RightBar }, app.Tip("关闭右栏", "view.right")},
 	} {
@@ -136,7 +136,7 @@ func TestStateMigrationUI(t *testing.T) {
 			if !a.St.Sidebar || a.St.SidebarMode != c.mode || a.St.RightBar != c.right || a.St.BottomBar != c.bottom {
 				t.Fatalf("迁移后 %+v", a.St)
 			}
-			if tt.HasText("提交…") != c.commitShown || tt.HasText(app.Tip("关闭右栏", "view.right")) != c.right ||
+			if tt.HasText(commitPlaceholder()) != c.commitShown || tt.HasText(app.Tip("关闭右栏", "view.right")) != c.right ||
 				tt.HasText("终端 · demo") != c.bottom {
 				t.Errorf("界面和迁移后的开关对不上: %q", tt.Texts())
 			}

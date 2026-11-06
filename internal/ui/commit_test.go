@@ -107,7 +107,7 @@ func TestCommitAmend(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("推送后的状态", func() bool { return idle(r)() && r.Extra.HeadPushed() })
 	wait("标记消失", func() bool { return countText(tt, "未推送") == 0 })
-	mustClick(t, tt, "修改上一次提交")
+	chooseCommitMenu(t, tt, "修改上一次提交…")
 	wait("上一次的信息", func() bool { return r.CommitMsg == "第二次（改过）" })
 	mustClick(t, tt, "修改提交")
 	mustText(t, tt, "修改已经推送过的提交？")
@@ -116,7 +116,7 @@ func TestCommitAmend(t *testing.T) {
 		t.Errorf("取消后 HEAD 不该变: %s", got)
 	}
 	// 取消勾选：框里放回勾上前写的（空）
-	mustClick(t, tt, "修改上一次提交")
+	chooseCommitMenu(t, tt, "修改上一次提交…")
 	if r.Amend || r.CommitMsg != "" {
 		t.Errorf("取消勾选后 amend=%v 框里 %q", r.Amend, r.CommitMsg)
 	}
@@ -194,8 +194,14 @@ func TestCommitButton(t *testing.T) {
 		if !r.CommitShown() {
 			a.OpenCommit(r)
 		}
+		r.CommitMsg = ""
 		tt.Frame()
 		label := i18n.Tf("提交 %s 个文件", strconv.Itoa(want))
+		if tt.HasText(label) {
+			t.Fatal("没写信息时框里不该有提交按钮")
+		}
+		r.CommitMsg = "一百二十个"
+		tt.Frame()
 		btn, ok := tt.Find(label)
 		if !ok {
 			t.Fatalf("没有读屏名字是 %q 的提交按钮: %q", label, tt.Texts())
@@ -212,14 +218,11 @@ func TestCommitButton(t *testing.T) {
 		}
 	}
 
-	// 信息是空的：灰着，点了不提交
-	head := repo.Git("rev-parse", "HEAD")
-	r.CommitMsg = ""
-	tt.Frame()
-	if r.CanCommit() {
-		t.Fatal("没写信息不该能提交")
-	}
+	// 前面排着慢命令，提交排在后面：按钮灰着，点了不再排一条。
 	// 不调 Disabled（mygo 的 Disabled 不显示悬停提示），提示里写原因
+	slowOp(a, r)
+	a.Commit(r)
+	tt.Frame()
 	label := i18n.Tf("提交 %s 个文件", "120")
 	var found *accNode
 	nodes := accessTree(t, tt)
@@ -233,23 +236,152 @@ func TestCommitButton(t *testing.T) {
 		t.Fatalf("无障碍树里没有 %q", label)
 	case found.States&accessDisabled != 0:
 		t.Error("不能提交时按钮不该是 Disabled：那样没有悬停提示")
-	case !strings.Contains(found.Desc, i18n.T("还没写提交信息")):
+	case !strings.Contains(found.Desc, i18n.T("正在提交")):
 		t.Errorf("提示里该写原因：%q", found.Desc)
 	}
 	_ = tt.Click(label)
 	tt.Frame()
-	if r.Busy != "" || repo.Git("rev-parse", "HEAD") != head {
-		t.Errorf("不能提交时点了按钮也提交了: busy=%q", r.Busy)
+	if len(r.Queue) != 1 {
+		t.Errorf("灰着的按钮点了又排了一条：%d", len(r.Queue))
 	}
-
-	// 写了信息：点按钮提交
-	r.CommitMsg = "一百二十个"
-	tt.Frame()
-	mustClick(t, tt, i18n.Tf("提交 %s 个文件", "120"))
+	a.CancelOp(r) // 慢命令取消了，排着的提交接着跑完
 	wait("提交完", func() bool { return idle(r)() && r.Status.Staged == 0 })
 	if got := repo.Git("log", "-1", "--format=%s"); got != "一百二十个" {
 		t.Errorf("最新提交 %q", got)
 	}
+}
+
+// 什么都没暂存：按钮写"提交全部 N 个文件"，一下子暂存（含未跟踪的）并提交；只有一个文件时不写"全部"。
+func TestCommitAllButton(t *testing.T) {
+	repo := testutil.NewRepo(t, "all")
+	repo.Write("a.txt", "a\n")
+	repo.Commit("初始提交")
+	repo.Write("a.txt", "b\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Unstaged == 1 })
+	a.OpenCommit(r)
+	r.CommitMsg = "一个文件"
+	tt.Frame()
+	mustText(t, tt, i18n.Tf("提交 %s 个文件", "1"))
+
+	repo.Write("new.txt", "新\n")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读到未跟踪的", func() bool { return idle(r)() && r.Status.Untracked == 1 })
+	r.CommitMsg = "全部"
+	tt.Frame()
+	mustClick(t, tt, i18n.Tf("提交全部 %s 个文件", "2"))
+	wait("提交完", func() bool { return idle(r)() && r.Status.Count == 0 })
+	if got := repo.Git("show", "--format=%s", "--name-only", "HEAD"); !strings.Contains(got, "全部") || !strings.Contains(got, "a.txt") || !strings.Contains(got, "new.txt") {
+		t.Errorf("最新提交 %q", got)
+	}
+	if r.CommitMsg != "" {
+		t.Errorf("提交后框里还有 %q", r.CommitMsg)
+	}
+}
+
+// 已暂存了几个文件时，按钮和 ⌘↩ 只提交它们，别的改动不带上。
+func TestCommitStagedOnly(t *testing.T) {
+	repo := testutil.NewRepo(t, "part")
+	repo.Write("a.txt", "a\n")
+	repo.Write("b.txt", "b\n")
+	repo.Commit("初始提交")
+	repo.Write("a.txt", "a2\n")
+	repo.Write("b.txt", "b2\n")
+	repo.Git("add", "a.txt")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Staged == 1 })
+	r.CommitMsg = "只提交 a"
+	tt.Frame()
+	mustClick(t, tt, i18n.Tf("提交 %s 个文件", "1"))
+	wait("提交完", func() bool { return idle(r)() && r.Status.Staged == 0 && r.Status.Unstaged == 1 })
+	if got := repo.Git("show", "--format=", "--name-only", "HEAD"); got != "a.txt" {
+		t.Errorf("提交里的文件 %q", got)
+	}
+}
+
+// ▾ 里的"提交并推送"：自动推送关着也推，没写信息时灰着带原因。
+func TestCommitAndPush(t *testing.T) {
+	repo := testutil.NewRepo(t, "push")
+	repo.Write("a.txt", "a\n")
+	repo.Commit("初始提交")
+	bare := filepath.Join(t.TempDir(), "origin.git")
+	repo.Git("init", "-q", "--bare", "-b", "main", bare)
+	repo.Git("remote", "add", "origin", bare)
+	repo.Git("push", "-q", "-u", "origin", "main")
+	repo.Write("a.txt", "b\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Unstaged == 1 })
+	tt.Frame()
+
+	openCommitMenu(t, tt)
+	if !menuDisabled(t, tt, "提交并推送") {
+		t.Errorf("没写信息时提交并推送该灰着：%q", shownMenu(t, tt))
+	}
+	tt.Key(0, wui.KeyEscape)
+	tt.Frame()
+
+	a.OpenCommit(r)
+	r.CommitMsg = "推上去"
+	tt.Frame()
+	chooseCommitMenu(t, tt, "提交并推送")
+	wait("推送完", func() bool {
+		return idle(r)() && r.Status.Count == 0 && repo.Git("rev-parse", "HEAD") == repo.Git("rev-parse", "origin/main")
+	})
+	if got := repo.Git("log", "-1", "--format=%s", "origin/main"); got != "推上去" {
+		t.Errorf("远程最新提交 %q", got)
+	}
+}
+
+// openCommitMenu 开提交框的 ▾；没写信息时 ▾ 要指针在框上才有。
+func openCommitMenu(t *testing.T, tt *wui.Tester) {
+	t.Helper()
+	tt.Frame()
+	if _, ok := tt.Find("更多提交操作"); !ok {
+		for _, s := range []string{i18n.T("提交信息"), commitPlaceholder()} {
+			if _, ok := tt.Find(s); ok {
+				hoverOn(t, tt, s)
+				break
+			}
+		}
+	}
+	mustClick(t, tt, "更多提交操作")
+	tt.Frame()
+}
+
+// menuDisabled 是开着的菜单里 label 这一项灰着。
+func menuDisabled(t *testing.T, tt *wui.Tester, label string) bool {
+	t.Helper()
+	ms := popMenus(t, tt)
+	if len(ms) == 0 {
+		t.Fatal("菜单没开")
+	}
+	for _, it := range ms[len(ms)-1].Items {
+		if it.Label == i18n.T(label) {
+			return it.States&accessDisabled != 0
+		}
+	}
+	t.Fatalf("菜单里没有 %q：%q", label, shownMenu(t, tt))
+	return false
+}
+
+// chooseCommitMenu 选提交框 ▾ 里的一项。
+func chooseCommitMenu(t *testing.T, tt *wui.Tester, item ...string) {
+	t.Helper()
+	openCommitMenu(t, tt)
+	if err := chooseMenu(t, tt, item...); err != nil {
+		t.Fatalf("▾ 选 %q: %v；菜单=%q", item, err, shownMenu(t, tt))
+	}
+	tt.Frame()
+	tt.Frame()
 }
 
 // focusCommitBox 点进提交信息框（光标放在最后）。

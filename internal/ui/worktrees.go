@@ -25,7 +25,7 @@ func worktreesHeader(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	open := r.WtShown()
 	foldHeader(a, row, 26, cr.Title, true, strconv.Itoa(cr.Count), open, func() { a.ToggleWorktrees(r) }, func() {
 		wui.Icon(c, iconWorktree).FontSize(iconRow).TextColor(t.TextMuted).Shrink(0).Label(i18n.T("工作树")).Tooltip(i18n.T("工作树"))
-	}, func() {
+	}, func(bool) {
 		if top, ok := a.WtGroupTop(r); ok && !open {
 			wui.Box(c.Key("top")).Size(16, 16).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Children(func() {
 				wtMark(c, top)
@@ -42,7 +42,7 @@ func worktreesHeader(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			wui.Icon(c, iconMore).FontSize(iconRow).TextColor(fg)
 		})
 		menuButton(a, c, more, menuOwner{"worktrees", r.Root}, func(m menu) { worktreesMenu(a, m, r) })
-	})
+	}, nil, nil)
 }
 
 // worktreesMenu 是工作树块头"更多"的菜单。

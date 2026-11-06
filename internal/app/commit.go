@@ -72,9 +72,25 @@ func (r *Repo) MergeReady() bool {
 	return !r.Amend && r.Extra.Ongoing == git.Merging && r.Status.Conflicts == 0
 }
 
-// Commit 提交这个仓库已暂存的改动（git commit -m），勾着"修改上一次提交"时加 --amend；
-// 上一次提交已经推送过的先问一声。成功后信息记进提交信息历史。
-func (a *App) Commit(r *Repo) {
+// CommitsAll 是这次提交要先把所有改动暂存（git add -A，含未跟踪的文件）：什么都没暂存、工作区有改动、
+// 没有冲突，也不是合并、变基停在一半（那时候暂存什么要用户自己定）。按钮上写着"提交全部 N 个文件"。
+func (r *Repo) CommitsAll() bool {
+	return !r.Amend && r.Status.Staged == 0 && r.Status.Count > 0 && r.Status.Conflicts == 0 && r.Extra.Ongoing == git.NoOp
+}
+
+// Commit 提交这个仓库已暂存的改动（git commit -m），勾着"修改上一次提交"时加 --amend；什么都没暂存时
+// 先暂存全部（CommitsAll）。上一次提交已经推送过的先问一声。成功后信息记进提交信息历史；开着自动推送时接着推送。
+func (a *App) Commit(r *Repo) { a.commit(r, a.St.Settings.AutoPush) }
+
+// CommitPush 是提交框 ▾ 菜单里的"提交并推送"：不看自动推送的设置，提交成功后推送。
+func (a *App) CommitPush(r *Repo) {
+	if a.Blocked(CommitPushWhy(r)) {
+		return
+	}
+	a.commit(r, true)
+}
+
+func (a *App) commit(r *Repo, push bool) {
 	msg := strings.TrimSpace(r.CommitMsg)
 	label := i18n.T("提交")
 	if r.Amend {
@@ -90,8 +106,17 @@ func (a *App) Commit(r *Repo) {
 	case r.Amend && r.Extra.Head == "":
 		a.Fail(label, errors.New(i18n.T("还没有提交，没有可以修改的")))
 		return
-	case !r.Amend && r.Status.Staged == 0 && !r.MergeReady():
+	case !r.Amend && r.Status.Staged == 0 && !r.MergeReady() && !r.CommitsAll():
 		a.Fail(label, errors.New(i18n.T("没有已暂存的改动；先把要提交的文件暂存")))
+		return
+	}
+	all := r.CommitsAll()
+	switch { // 前面排着的可能是暂存，刚跑完的暂存状态也还没读回来：等一下，不然把别的文件一起提交了
+	case all && (r.Running() != nil || len(r.Queue) > 0):
+		a.Toast = i18n.T("有 git 命令在跑")
+		return
+	case all && r.Loading:
+		a.Toast = i18n.T("正在读状态，稍后再提交")
 		return
 	}
 	args := a.commitArgs(msg)
@@ -99,17 +124,21 @@ func (a *App) Commit(r *Repo) {
 	if amend {
 		args = append(args, "--amend")
 	}
-	run := func() {
+	commit := func() {
 		a.RunOpThen(r, label, func(string) {
 			a.noteCommitMsg(msg)
 			r.CommitMsg, r.CommitOpen, r.msgPos = "", false, 0
 			if amend {
 				r.Amend, r.amendKeep, r.amendMsg = false, "", ""
 			}
-			if a.St.Settings.AutoPush && !amend {
+			if push && !amend {
 				a.pushNow(r) // 刚提交完状态还没刷新，领先数是旧的：不查 PushWhy
 			}
 		}, args...)
+	}
+	run := commit
+	if all { // 暂存失败就不提交（then 只在成功后跑）
+		run = func() { a.RunOpThen(r, i18n.T("暂存全部"), func(string) { commit() }, "add", "-A") }
 	}
 	if amend && r.Extra.HeadPushed() {
 		a.AskDanger(i18n.T("修改已经推送过的提交？"),

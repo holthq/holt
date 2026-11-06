@@ -41,7 +41,7 @@ func TestGitBarAllRepos(t *testing.T) {
 	wait("三个仓库的状态", loaded(a))
 
 	// 三段都在，按工作区里的顺序；干净的 gamma 收成一行"工作区干净"
-	for _, s := range []string{"alpha（仓库）", "alpha.txt", "notes.md", "beta（仓库）", "beta.go", "gamma（仓库）", "工作区干净", "提交…"} {
+	for _, s := range []string{"alpha（仓库）", "alpha.txt", "notes.md", "beta（仓库）", "beta.go", "gamma（仓库）", "工作区干净", commitPlaceholder()} {
 		mustText(t, tt, s)
 	}
 	above(t, tt, "notes.md", "beta（仓库）")
@@ -85,17 +85,18 @@ func TestGitBarAllRepos(t *testing.T) {
 	for _, s := range []string{"alpha.txt", "beta.go"} {
 		mustText(t, tt, s)
 	}
-	// 分组标题：箭头收起这一组（标题和"+"还在），点标题再展开
-	// 未暂存的 alpha.txt 和未跟踪的 notes.md 同在"未暂存"一组
+	// 分组标题：箭头收起这一组（标题还在，"+"指针移上去才有），点标题再展开
+	// 未暂存的 alpha.txt 和未跟踪的 notes.md 同在"改动"一组
+	hoverOn(t, tt, "收起 改动")
 	mustText(t, tt, "暂存所有未暂存的改动")
 	if tt.HasText("未跟踪") {
 		t.Errorf("未跟踪不该再单独一组: %q", tt.Texts())
 	}
-	mustClickRow(t, tt, "收起 未暂存")
-	if tt.HasText("notes.md") || tt.HasText("alpha.txt") || !tt.HasText("展开 未暂存") || alpha.GroupOpen(app.GroupUnstaged) {
+	mustClickRow(t, tt, "收起 改动")
+	if tt.HasText("notes.md") || tt.HasText("alpha.txt") || !tt.HasText("展开 改动") || alpha.GroupOpen(app.GroupUnstaged) {
 		t.Fatalf("收起未暂存后: %q", tt.Texts())
 	}
-	mustClickRow(t, tt, "展开 未暂存")
+	mustClickRow(t, tt, "展开 改动")
 	mustText(t, tt, "notes.md")
 	if !alpha.GroupOpen(app.GroupUnstaged) {
 		t.Fatal("点标题没展开")
@@ -109,22 +110,23 @@ func TestGitBarAllRepos(t *testing.T) {
 		t.Errorf("点 beta.go 后当前 %s，标签 %s", a.Current().Name, d.Rel)
 	}
 
-	// alpha 段底的"提交…"：点开就聚焦信息框、当前仓库切到 alpha；空着按 Esc 收回去
+	// alpha 的提交框：点开就聚焦信息框、当前仓库切到 alpha；空着按 Esc 收回去
 	mustClickRow(t, tt, i18n.Tf("提交 %s 的改动…", "alpha"))
 	tt.Frame()
 	if !alpha.CommitOpen || !tt.Focused("提交信息") || a.Current() != alpha {
 		t.Fatalf("点开 alpha 的提交框: open=%v 当前 %s", alpha.CommitOpen, a.Current().Name)
 	}
 	tt.Key(0, wui.KeyEscape)
-	wait("Esc 收起空的提交框", func() bool { return !alpha.CommitOpen && !tt.HasText("提交信息") })
+	wait("Esc 收起空的提交框", func() bool { return !alpha.CommitOpen && !hasCommitInput(tt) })
 
 	// 第二段：右键 beta.go 暂存，它的提交框自己展开；⌘↩ 提交只动 beta
 	alphaHead := ra.Git("rev-parse", "HEAD")
 	mustRightClickRow(t, tt, "beta.go", "暂存")
 	wait("暂存 beta.go", func() bool { return idle(beta)() && beta.Status.Staged == 1 })
-	mustText(t, tt, i18n.Tf("提交 %s 个文件", "1"))
 	mustClickRow(t, tt, "提交信息")
 	tt.Type("beta 3")
+	tt.Frame()
+	mustText(t, tt, i18n.Tf("提交 %s 个文件", "1"))
 	tt.Key(wui.Cmd, wui.KeyEnter)
 	wait("beta 提交完", func() bool { return idle(beta)() && beta.Status.Count == 0 })
 	if got := rb.Git("log", "-1", "--format=%s"); got != "beta 3" {
@@ -145,6 +147,12 @@ func TestGitBarAllRepos(t *testing.T) {
 	wait("beta 干净了", func() bool {
 		return beta.Status.Count == 0 && beta.GitOpen() && !tt.HasText(i18n.Tf("提交 %s 个文件", "1"))
 	})
+}
+
+// hasCommitInput 是画面里有真的提交信息框（没写字的框收回去后只是看着像输入框）。
+func hasCommitInput(tt *wui.Tester) bool {
+	_, ok := tt.Find("提交信息")
+	return ok
 }
 
 // 右栏的"所有仓库"：各仓库的提交按时间交错、每行左边一个仓库圆点，置顶有改动的仓库；在 beta 的提交上
