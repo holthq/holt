@@ -45,6 +45,11 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 - **本地历史**：每次保存都会保留快照，方便找回误改或误删的内容。
 - **其他**：支持中英文界面、浅色和深色主题、自定义快捷键；应用菜单和关于窗口里能检查更新（读 GitHub 上的 release）。
 
+## 平台
+
+正式支持 macOS 13+。Linux 和 Windows 在 CI 里能 `go build` / `go vet` 通过，但运行时还没验证：Windows 上终端后台进程
+（termd）是桩，终端只在窗口里跑。想帮忙把这两端跑起来，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+
 ## 构建
 
 需要搭载 Apple Silicon 芯片、运行 macOS 13 或更新版本的 Mac。目前还没有安装包，需要自行构建：

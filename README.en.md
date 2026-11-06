@@ -61,6 +61,12 @@ license and the original author's copyright notice.
 - **Other features**: Chinese and English UI (Chinese by default; change it in Settings), light and dark themes,
   customizable shortcuts, and Check for Updates in the app menu and the About window (reads releases from GitHub).
 
+## Platform support
+
+macOS 13+ is supported. Linux and Windows build and pass `go vet` in CI, but their runtime is not verified yet:
+on Windows the terminal daemon (`termd`) is a stub, so terminals only run inside the window. If you want to help
+bring those platforms up, see [CONTRIBUTING.md](CONTRIBUTING.md).
+
 ## Building
 
 Requires a Mac with Apple Silicon running macOS 13 or later. There are no prebuilt downloads yet, so you'll need to
