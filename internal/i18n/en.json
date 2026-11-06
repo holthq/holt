@@ -1413,7 +1413,7 @@
   "暂存全部，包括 %d 个有冲突的文件？": "Stage all, including %d conflicted files?",
   "暂存全部，包括 %d 个有冲突的文件？|1": "Stage all, including %d conflicted file?",
   "暂存所有未暂存的改动": "Stage all unstaged changes",
-  "暂存所有未暂存的改动，含未跟踪的文件（git add -- 这些文件，冲突的不动）": "Stage all unstaged changes, untracked files included (git add -- these files; conflicts are left alone)",
+  "暂存所有未暂存的改动，含未跟踪的文件（git add -A；有冲突时只暂存这些文件，冲突的不动）": "Stage all unstaged changes, untracked files included (git add -A; with conflicts, only these files are staged and conflicted ones are left alone)",
   "暂存这一块": "Stage Hunk",
   "暂存选中的行": "Stage Selected Lines",
   "暂存（git add）": "Stage (git add)",

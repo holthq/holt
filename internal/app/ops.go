@@ -69,7 +69,8 @@ func (a *App) UnstageAll(r *Repo) {
 }
 
 // StageUnstaged 暂存"未暂存"一组：已跟踪文件的改动和未跟踪的文件（Git 栏这一组的 +）。
-// 按路径暂存，不用 git add -A / -u：那两个会把冲突的文件也暂存了（等于标成已解决）。
+// 没有冲突时就是 git add -A（不传路径：上万个改动的文件按路径传会超出命令行长度限制）；
+// 有冲突时才按路径暂存，不用 git add -A / -u：那两个会把冲突的文件也暂存了（等于标成已解决）。
 func (a *App) StageUnstaged(r *Repo) {
 	var paths []string
 	for _, ch := range r.Status.Changes {
@@ -77,9 +78,15 @@ func (a *App) StageUnstaged(r *Repo) {
 			paths = append(paths, ch.Path)
 		}
 	}
-	if len(paths) > 0 {
-		a.Stage(r, paths...)
+	if len(paths) == 0 {
+		return
 	}
+	if r.Status.Conflicts == 0 {
+		a.markGitAfter(r, paths)
+		a.RunOp(r, i18n.T("暂存"), "add", "-A")
+		return
+	}
+	a.Stage(r, paths...)
 }
 
 // Discard 丢掉一项未暂存的改动（恢复成索引里的版本）或删掉一个未跟踪的文件 / 目录；先问。

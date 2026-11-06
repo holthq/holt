@@ -346,7 +346,7 @@ func groupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			if r.Status.Unstaged > 0 { // 全是未跟踪的时没有可丢弃的（git restore . 不动未跟踪的）
 				rowButton(c, iconUndo, i18n.T("丢弃所有未暂存的改动…"), i18n.T("丢弃所有未暂存的改动…（git restore .，未跟踪的文件不动，会先问）"), func() { a.DiscardAll(r) })
 			}
-			rowButton(c, iconPlus, i18n.T("暂存所有未暂存的改动"), i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -- 这些文件，冲突的不动）"), func() { a.StageUnstaged(r) })
+			rowButton(c, iconPlus, i18n.T("暂存所有未暂存的改动"), i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -A；有冲突时只暂存这些文件，冲突的不动）"), func() { a.StageUnstaged(r) })
 		}
 	})
 }
@@ -887,7 +887,9 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 			if r.Amend {
 				tip = app.Tip("git commit --amend", "commit")
 			}
-			if wui.PrimaryButton(c, label).Disabled(!r.CanCommit()).Tooltip(tip).Clicked() {
+			// 强调色的图标按钮（和"合并到 main"一样），字进读屏和提示；ButtonBase 能用键盘按到，不能提交时 Disabled 同原来的按钮
+			can := r.CanCommit()
+			if accentIconButton(c, wui.ButtonBase(c.Key("commit")).Disabled(!can), iconCommit, label, label+"\n"+tip, !can) {
 				a.UseRepo(r)
 				a.Commit(r)
 			}

@@ -2,6 +2,8 @@ package app
 
 import (
 	"context"
+	"os"
+	"path/filepath"
 	"slices"
 	"strings"
 	"testing"
@@ -235,6 +237,39 @@ func TestConflictGroup(t *testing.T) {
 	wait("全部暂存", func() bool { return idle(repo)() && repo.Status.Conflicts == 0 })
 	if repo.Status.Staged != 3 {
 		t.Errorf("全部暂存后 %+v", repo.Status)
+	}
+}
+
+// 没有冲突时，"未暂存"组头的 + 是一条不带路径的 git add -A（上万个文件按路径传会超出命令行长度限制）：
+// 已跟踪的改动、删掉的、未跟踪的都暂存，已暂存的照旧。
+func TestStageUnstagedNoConflict(t *testing.T) {
+	r := testutil.NewRepo(t, "stage")
+	r.Write("a.txt", "a\n")
+	r.Write("gone.txt", "g\n")
+	r.Write("s.txt", "s\n")
+	r.Commit("初始提交")
+	r.Write("a.txt", "a 改了\n")
+	r.Write("s.txt", "s 改了\n")
+	r.Git("add", "s.txt")
+	if err := os.Remove(filepath.Join(r.Root, "gone.txt")); err != nil {
+		t.Fatal(err)
+	}
+	r.Write("new/n.txt", "未跟踪\n")
+	r.Write("u.txt", "未跟踪\n")
+	a, wait := newTestApp(t, testutil.Workspace(t, r.Root))
+	repo := a.Current()
+	a.RefreshRepo(repo, WhyManual)
+	wait("状态", idle(repo))
+	if repo.Status.Staged != 1 || repo.Status.Unstaged != 2 || repo.Status.Untracked != 2 || repo.Status.Conflicts != 0 {
+		t.Fatalf("起始状态不对: %+v", repo.Status)
+	}
+	a.StageUnstaged(repo)
+	wait("暂存这一组", func() bool { return idle(repo)() && repo.Status.Unstaged+repo.Status.Untracked == 0 })
+	if repo.Status.Staged != 5 {
+		t.Errorf("应全部暂存（含未跟踪的）: %+v", repo.Status)
+	}
+	if n := len(a.Output); n == 0 || a.Output[n-1].Title != "$ git add -A" {
+		t.Errorf("没有冲突时应是不带路径的 git add -A: %+v", a.Output)
 	}
 }
 

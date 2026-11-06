@@ -5,12 +5,14 @@ import (
 	"os/exec"
 	"path/filepath"
 	"slices"
+	"strconv"
 	"testing"
 
 	wui "github.com/egoist/mygo/ui"
 
 	"github.com/lemoeade/grove/internal/app"
 	"github.com/lemoeade/grove/internal/git"
+	"github.com/lemoeade/grove/internal/i18n"
 	"github.com/lemoeade/grove/internal/testutil"
 )
 
@@ -167,6 +169,68 @@ func TestAbortMerge(t *testing.T) {
 	}
 	if !slices.Contains(outputTitles(a), "$ git merge --abort") {
 		t.Errorf("输出栏没记这条命令: %q", outputTitles(a))
+	}
+}
+
+// 提交按钮是强调色的图标按钮：默认侧栏宽度下右边和输入框对齐、不超出（已暂存两位数、三位数时也一样），
+// 读屏的名字带文件数；不能提交（没写信息）时点了不提交。
+func TestCommitButton(t *testing.T) {
+	repo := testutil.NewRepo(t, "btn")
+	repo.Write("a.txt", "a\n")
+	repo.Commit("初始提交")
+	ws := testutil.Workspace(t, repo.Root)
+	a, tt, wait := newUI(t, ws, "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	n := 0
+	for _, want := range []int{12, 120} {
+		for ; n < want; n++ {
+			repo.Write("f"+strconv.Itoa(n)+".txt", "x\n")
+		}
+		repo.Git("add", "-A")
+		a.RefreshRepo(r, app.WhyManual)
+		wait("git status", func() bool { return idle(r)() && r.Status.Staged == want })
+		if !r.CommitShown() {
+			a.OpenCommit(r)
+		}
+		tt.Frame()
+		label := i18n.Tf("提交 %s 个文件", strconv.Itoa(want))
+		btn, ok := tt.Find(label)
+		if !ok {
+			t.Fatalf("没有读屏名字是 %q 的提交按钮: %q", label, tt.Texts())
+		}
+		box, ok := tt.Find(i18n.T("提交信息"))
+		if !ok {
+			t.Fatal("没有提交信息框")
+		}
+		if btn.X+btn.W > box.X+box.W+0.5 {
+			t.Errorf("%d 个文件：提交按钮 %v 超出了输入框 %v 的右边", want, btn, box)
+		}
+		if btn.H > wtBtnSize+2 {
+			t.Errorf("提交按钮高了: %v", btn)
+		}
+	}
+
+	// 信息是空的：灰着，点了不提交
+	head := repo.Git("rev-parse", "HEAD")
+	r.CommitMsg = ""
+	tt.Frame()
+	if r.CanCommit() {
+		t.Fatal("没写信息不该能提交")
+	}
+	_ = tt.Click(i18n.Tf("提交 %s 个文件", "120"))
+	tt.Frame()
+	if r.Busy != "" || repo.Git("rev-parse", "HEAD") != head {
+		t.Errorf("不能提交时点了按钮也提交了: busy=%q", r.Busy)
+	}
+
+	// 写了信息：点按钮提交
+	r.CommitMsg = "一百二十个"
+	tt.Frame()
+	mustClick(t, tt, i18n.Tf("提交 %s 个文件", "120"))
+	wait("提交完", func() bool { return idle(r)() && r.Status.Staged == 0 })
+	if got := repo.Git("log", "-1", "--format=%s"); got != "一百二十个" {
+		t.Errorf("最新提交 %q", got)
 	}
 }
 

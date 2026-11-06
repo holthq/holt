@@ -37,6 +37,28 @@ func accentSolid(t *wui.Theme) wui.Color {
 	return wui.Hex("#4E6E8E")
 }
 
+// accentIconButton 把 b 画成强调色实心的方按钮（合并到 main、提交）：边长 wtBtnSize+2、圆角 6、白色图标，
+// 悬停 / 按下变色；dim 时灰着（Opacity 0.4）、点了没反应。b 由调用方给（Box，或要能用键盘按到的 ButtonBase）。
+// 返回这一帧点没点。
+func accentIconButton(c *wui.Context, b wui.Element, ic *wui.SVG, label, tip string, dim bool) bool {
+	b.Size(wtBtnSize+2, wtBtnSize+2).Radius(6).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).
+		Label(label).Cursor(wui.CursorPointer)
+	tooltip(c, b, tip)
+	bg := accentSolid(c.Theme())
+	switch {
+	case dim:
+		b.Opacity(0.4)
+	case b.Pressed():
+		bg = bg.Mix(wui.Hex("#000000"), 0.12)
+	case b.Hovered():
+		bg = bg.Mix(wui.Hex("#FFFFFF"), 0.1)
+	}
+	b.Background(bg).Children(func() {
+		wui.Icon(c, ic).FontSize(iconRow).TextColor(wui.Hex("#FFFFFF"))
+	})
+	return !dim && b.Clicked()
+}
+
 // wtStateName 是工作树状态的名字（悬停提示、读屏）。
 func wtStateName(s app.WtState) string {
 	switch s {
@@ -145,22 +167,7 @@ func wtSummaryRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 		if why != "" {
 			tip = i18n.Tf("合并到 %s：%s", into, why)
 		}
-		m := wui.Box(c.Key("merge")).Size(wtBtnSize+2, wtBtnSize+2).Radius(6).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).
-			Label(i18n.Tf("合并到 %s…", into)).Cursor(wui.CursorPointer)
-		tooltip(c, m, tip)
-		bg := accentSolid(t)
-		switch {
-		case why != "":
-			m.Opacity(0.4)
-		case m.Pressed():
-			bg = bg.Mix(wui.Hex("#000000"), 0.12)
-		case m.Hovered():
-			bg = bg.Mix(wui.Hex("#FFFFFF"), 0.1)
-		}
-		m.Background(bg).Children(func() {
-			wui.Icon(c, iconMerge).FontSize(iconRow).TextColor(wui.Hex("#FFFFFF"))
-		})
-		if m.Clicked() && why == "" {
+		if accentIconButton(c, wui.Box(c.Key("merge")), iconMerge, i18n.Tf("合并到 %s…", into), tip, why != "") {
 			g.do(func() { a.MergeWorktree(r, w) })
 		}
 	})

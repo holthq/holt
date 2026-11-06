@@ -193,7 +193,7 @@ func TestTipsBelowTitleBar(t *testing.T) {
 	a.ShowSidebar(workspace.ModeGit)
 	tt.Frame()
 	label := i18n.T("暂存所有未暂存的改动")
-	ar, tr := hover(label, i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -- 这些文件，冲突的不动）"))
+	ar, tr := hover(label, i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -A；有冲突时只暂存这些文件，冲突的不动）"))
 	if tr.Y+tr.H > ar.Y {
 		t.Errorf("Git 栏里 %q 的提示应照旧在上面：元素 %v 提示 %v", label, ar, tr)
 	}
