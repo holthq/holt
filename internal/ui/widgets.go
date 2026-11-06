@@ -325,6 +325,12 @@ func panelTab(c *wui.Context, active bool) wui.Element {
 	return b
 }
 
+// focusBar 是分屏时当前那一格顶上 2 pt 的强调色条。两头让开卡片的圆角：通栏的话，条的平底在圆角那里被裁成一个斜茬。
+func focusBar(c *wui.Context) {
+	wui.Box(c.Key("bar")).Absolute().Top(0).Left(cardRadius).Right(cardRadius).Height(2).Radius(1).
+		Background(c.Theme().Accent.Alpha(0.8))
+}
+
 // panelTabText 是卡片头标签里的标题：12 / 500、单行，长了省略（最多 panelTabMaxW 宽）。
 func panelTabText(c *wui.Context, s string, fg wui.Color) wui.Element {
 	return wui.Text(c, s).FontSize(12).FontWeight(500).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0).MaxWidth(panelTabMaxW).Margin(0, 0, textNudge, 0)

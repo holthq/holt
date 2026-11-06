@@ -377,7 +377,7 @@ func termPane(a *app.App, c *wui.Context, r *app.Repo, tab *app.TermTab, p *app.
 			}
 		}
 		if multi && tab.Active == p {
-			wui.Box(c.Key("bar")).Absolute().Top(0).Left(0).Right(0).Height(2).Background(t.Accent.Alpha(0.8))
+			focusBar(c)
 		}
 		if multi && hover && !p.Find.Open {
 			paneClose(a, c, r, tab, p)

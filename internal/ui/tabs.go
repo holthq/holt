@@ -108,7 +108,7 @@ func groupCard(a *app.App, c *wui.Context, g *app.Group) {
 			}
 		})
 		if split && focused {
-			wui.Box(c.Key("bar")).Absolute().Top(0).Left(0).Right(0).Height(2).Background(t.Accent.Alpha(0.8))
+			focusBar(c)
 		}
 	})
 	if want {
@@ -304,7 +304,9 @@ func scrollStrip(c *wui.Context, s *wui.ScrollState, grow bool, fn func()) {
 	}
 	hover := box.Hovered()
 	box.Children(func() {
-		wui.ScrollHorizontal(c.Key("strip")).TrackScroll(s).Height(headerHeight+stripHidden).Shrink(0).Padding(0, 0, stripHidden, 0).
+		// 左上的圆角同卡片：Metal 只有最里层的裁剪是圆的，外层的（卡片）只按矩形裁，贴着卡片左边的标签（滚动后
+		// 哪一个都可能）的方底色会在卡片的角上露出一个尖。无头截图的软件光栅没这个差别，看不出来。
+		wui.ScrollHorizontal(c.Key("strip")).TrackScroll(s).Height(headerHeight+stripHidden).Shrink(0).Padding(0, 0, stripHidden, 0).Radius(cardRadius-1, 0, 0, 0).
 			AlignItems(wui.Center).Children(fn)
 		if w := s.Bounds(c).W; hover && s.MaxX > 0 && w > 0 {
 			thumb := max(w*w/(w+s.MaxX), 24)
