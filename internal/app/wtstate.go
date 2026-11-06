@@ -105,21 +105,29 @@ func (a *App) SortedWorktrees(r *Repo) []Worktree {
 	return SortWts(r.Worktrees, func(w Worktree) WtState { return a.WtState(r, w) })
 }
 
-// WtShown 是 Git 栏里仓库段的工作树组展开着：用户点开的，或者有工作树在等你、在跑、可合并（WtAuto）而用户这次没收起。
-func (r *Repo) WtShown() bool { return r.WtOpen || r.wtAuto && !r.WtShut }
+// WtShown 是 Git 栏里仓库段的工作树组展开着（列出各工作树的行）：只有用户点开的（WtOpen，记在会话里），
+// 或 GoToWorktree 跳过去的。在等你、在跑、可合并也不自动展开，收着的组头右边有状态符号（WtGroupTop）。
+func (r *Repo) WtShown() bool { return r.WtOpen }
 
-// SyncWtAuto 每帧画 Git 栏前对一次各仓库的"组默认展开"：有工作树在等你、在跑或可合并就展开；
-// 刚变成展开时开始懒算各工作树的状态、盯着它们的目录（和点开一样）。
+// WtTracked 是各工作树的状态在算、目录在盯（loadWtInfo、syncWtWatch）：组展开着，或者收着但有工作树在等你、
+// 在跑、可合并（wtAuto）。和 WtShown 分开：组收着时"需要你"条和组头的状态符号也要跟得上（可合并要有 WtInfo 才认得出）。
+func (r *Repo) WtTracked() bool { return r.WtOpen || r.wtAuto }
+
+// SyncWtAuto 每帧画 Git 栏前对一次各仓库的 wtAuto：有工作树在等你、在跑或可合并就接着算状态（组不展开）；
+// 刚开始算时懒算各工作树的状态、盯着它们的目录（和点开一样），不用再算了就停掉监听。
 func (a *App) SyncWtAuto() {
 	for _, r := range a.Repos {
+		was := r.WtTracked()
 		if len(r.Worktrees) == 0 {
 			r.wtAuto = false
-			continue
+		} else {
+			_, r.wtAuto = a.WtGroupTop(r)
 		}
-		was := r.WtShown()
-		_, r.wtAuto = a.WtGroupTop(r)
-		if !was && r.WtShown() {
+		switch now := r.WtTracked(); {
+		case !was && now:
 			a.loadWtInfo(r)
+			a.syncWtWatch(r)
+		case was && !now:
 			a.syncWtWatch(r)
 		}
 	}
@@ -235,7 +243,7 @@ type NeedYou struct {
 }
 
 // NeedsYou 是"需要你"条上的工作树：所有仓库里先是等你的、再是可合并的，同一档按仓库、组里的顺序。
-// 可合并要知道领先几个，只有算过状态的（组展开过）才认得出。
+// 可合并要知道领先几个，只有算过状态的（组展开过，或收着但 WtTracked）才认得出。
 func (a *App) NeedsYou() []NeedYou {
 	var wait, merge []NeedYou
 	for _, r := range a.Repos {

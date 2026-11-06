@@ -397,7 +397,7 @@ func TestScreenshotGitBar(t *testing.T) {
 	}
 	wait("四个仓库的状态", loaded(a))
 	a.Exec("view.git")
-	a.ToggleGitGroup(a.Repos[1], app.GroupUntracked)
+	a.ToggleGitGroup(a.Repos[1], app.GroupUnstaged)
 	r := a.Repos[0]
 	r.CommitMsg = "用户列表分页，加刷新令牌接口"
 	ch := r.Status.Changes[0]

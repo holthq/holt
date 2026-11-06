@@ -130,13 +130,13 @@ func zoomStatus(a *app.App, c *wui.Context) {
 	})
 }
 
-// changeSummary 是 "冲突 1 · 已暂存 2 · 未暂存 3 · 未跟踪 1"，没有改动时是 "工作区干净"。
+// changeSummary 是 "冲突 1 · 已暂存 2 · 未暂存 4"（未暂存含未跟踪的，和 Git 栏的分组一样），没有改动时是 "工作区干净"。
 func changeSummary(st git.Status) string {
 	var parts []string
 	for _, p := range []struct {
 		name string
 		n    int
-	}{{i18n.T("冲突"), st.Conflicts}, {i18n.T("已暂存"), st.Staged}, {i18n.T("未暂存"), st.Unstaged}, {i18n.T("未跟踪"), st.Untracked}} {
+	}{{i18n.T("冲突"), st.Conflicts}, {i18n.T("已暂存"), st.Staged}, {i18n.T("未暂存"), st.Unstaged + st.Untracked}} {
 		if p.n > 0 {
 			parts = append(parts, fmt.Sprintf("%s %d", p.name, p.n))
 		}

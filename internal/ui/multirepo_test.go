@@ -85,14 +85,18 @@ func TestGitBarAllRepos(t *testing.T) {
 		mustText(t, tt, s)
 	}
 	// 分组标题：箭头收起这一组（标题和"+"还在），点标题再展开
-	mustText(t, tt, "暂存所有未跟踪文件")
-	mustClick(t, tt, "收起 未跟踪")
-	if tt.HasText("notes.md") || !tt.HasText("alpha.txt") || !tt.HasText("展开 未跟踪") || alpha.GroupOpen(app.GroupUntracked) {
-		t.Fatalf("收起未跟踪后: %q", tt.Texts())
+	// 未暂存的 alpha.txt 和未跟踪的 notes.md 同在"未暂存"一组
+	mustText(t, tt, "暂存所有未暂存的改动")
+	if tt.HasText("未跟踪") {
+		t.Errorf("未跟踪不该再单独一组: %q", tt.Texts())
 	}
-	mustClick(t, tt, "未跟踪")
+	mustClick(t, tt, "收起 未暂存")
+	if tt.HasText("notes.md") || tt.HasText("alpha.txt") || !tt.HasText("展开 未暂存") || alpha.GroupOpen(app.GroupUnstaged) {
+		t.Fatalf("收起未暂存后: %q", tt.Texts())
+	}
+	mustClick(t, tt, "展开 未暂存")
 	mustText(t, tt, "notes.md")
-	if !alpha.GroupOpen(app.GroupUntracked) {
+	if !alpha.GroupOpen(app.GroupUnstaged) {
 		t.Fatal("点标题没展开")
 	}
 

@@ -65,8 +65,7 @@ type Repo struct {
 	Linked     bool               // 自己是链接的工作树（git worktree add 出来的）
 	MainRoot   string             // 链接的工作树：主工作树的目录（主仓库是 bare 时为空）
 	WtOpen     bool               // Git 栏里"工作树"块展开着（记在会话的 wtOpen）
-	WtShut     bool               // 用户这次收起了默认展开（wtAuto）的工作树组（不保存）
-	wtAuto     bool               // 有工作树在等你、在跑或可合并：组默认展开（SyncWtAuto 每帧对）
+	wtAuto     bool               // 有工作树在等你、在跑或可合并：组收着也接着算状态、盯着目录（SyncWtAuto 每帧对）
 	WtInfo     map[string]*WtInfo // 工作树路径 → 懒算的改动数、领先 / 落后；nil 为还没算（块展开时算，重读状态时重算）
 	WtLoading  bool               // 正在算 WtInfo
 	WtErr      error              // 上一次读工作树列表失败的原因

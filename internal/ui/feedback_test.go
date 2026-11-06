@@ -17,7 +17,7 @@ import (
 )
 
 // 窗口矮、Git 栏行多时侧栏的底边在状态栏上面：原来段切换下面那列是 Fill()（高 100%），比剩下的地方高出段切换那一行，
-// Git 栏滚到底最后的提交框、文件页底部的筛选框都压在状态栏下面。
+// Git 栏滚到底最后的提交框、文件页底部的筛选框都压在状态栏下面。（提交框现在挪到了改动上面：滚到底看最后一个文件。）
 func TestSidebarFits(t *testing.T) {
 	repo := testutil.NewRepo(t, "tall")
 	repo.Write("a.txt", "a\n")
@@ -51,12 +51,14 @@ func TestSidebarFits(t *testing.T) {
 
 	a.ShowSidebar(workspace.ModeGit)
 	tt.Frame()
-	commit := i18n.Tf("提交 %s 的改动…", r.Name)
+	// 提交框在改动上面：文件再多，不滚也看得见
+	fits("Git 栏顶上", i18n.Tf("提交 %s 的改动…", r.Name))
+	last := "f59.txt"
 	tt.Move(100, 200)
 	tt.Scroll(100, 200, 0, 100000)
-	wait("Git 栏滚到底", func() bool { rc, ok := tt.Find(commit); return ok && rc.H > 0 })
-	fits("Git 栏滚到底", commit)
-	if dir := os.Getenv("WORKBENCH_SHOT"); dir != "" { // 矮窗口里 Git 栏滚到底：提交框在状态栏上面
+	wait("Git 栏滚到底", func() bool { rc, ok := tt.Find(last); return ok && rc.H > 0 })
+	fits("Git 栏滚到底", last)
+	if dir := os.Getenv("WORKBENCH_SHOT"); dir != "" { // 矮窗口里 Git 栏滚到底：最后一行在状态栏上面
 		savePNG(t, filepath.Join(dir, "fix-gitbar-bottom.png"), material(tt.Image(), false))
 	}
 }
@@ -190,8 +192,8 @@ func TestTipsBelowTitleBar(t *testing.T) {
 
 	a.ShowSidebar(workspace.ModeGit)
 	tt.Frame()
-	label := i18n.T("暂存所有未跟踪文件")
-	ar, tr := hover(label, i18n.T("暂存所有未跟踪文件（git add）"))
+	label := i18n.T("暂存所有未暂存的改动")
+	ar, tr := hover(label, i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -- 这些文件，冲突的不动）"))
 	if tr.Y+tr.H > ar.Y {
 		t.Errorf("Git 栏里 %q 的提示应照旧在上面：元素 %v 提示 %v", label, ar, tr)
 	}

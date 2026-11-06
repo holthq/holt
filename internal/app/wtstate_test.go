@@ -122,6 +122,25 @@ func TestWtExpandAndNeedsYou(t *testing.T) {
 		t.Fatalf("两个都该可合并：%+v", ns)
 	}
 
+	// 收起组：有可合并的也不再自动展开，只剩组头；但状态照样算（"需要你"条、组头的符号还在），重读后 WtInfo 也还在
+	a.ToggleWorktrees(r)
+	a.SyncWtAuto()
+	if r.WtShown() || !r.WtTracked() {
+		t.Fatalf("收起后应不列行、照样算状态：shown=%v tracked=%v", r.WtShown(), r.WtTracked())
+	}
+	if slices.ContainsFunc(a.GitRows(), func(cr ChangeRow) bool { return cr.Kind == RowWorktree }) {
+		t.Fatal("收起的组不该列工作树")
+	}
+	if top, ok := a.WtGroupTop(r); !ok || top != WtMergeable || len(a.NeedsYou()) != 2 {
+		t.Fatalf("收着时组头符号 %v %v、需要你 %d 条", top, ok, len(a.NeedsYou()))
+	}
+	a.RefreshRepo(r, WhyManual)
+	wait("重读", func() bool { return idle(r)() && !r.WtLoading })
+	a.SyncWtAuto()
+	if r.WtInfo == nil || len(a.NeedsYou()) != 2 || r.WtShown() {
+		t.Fatalf("收着重读后应照样算出可合并：%+v", a.NeedsYou())
+	}
+
 	// 下一个：跳到第一个，展开、选中
 	a.StepNeedsYou(1)
 	first := ns[0].Wt

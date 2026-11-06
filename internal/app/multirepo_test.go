@@ -55,7 +55,8 @@ func TestGitRowsAllRepos(t *testing.T) {
 		t.Fatalf("当前仓库应是第一个: %s", a.Current().Name)
 	}
 	rows := a.GitRows()
-	want := "#alpha =未暂存 alpha.txt =未跟踪 notes.md ✎ #beta =未暂存 beta.go ✎ #gamma"
+	// 提交框在分组上面；未跟踪的 notes.md 接在未暂存的 alpha.txt 后面、同一组
+	want := "#alpha ✎ =未暂存 alpha.txt notes.md #beta ✎ =未暂存 beta.go #gamma"
 	if got := rowsSummary(rows); got != want {
 		t.Fatalf("Git 栏的行:\n got %s\nwant %s", got, want)
 	}
@@ -69,7 +70,7 @@ func TestGitRowsAllRepos(t *testing.T) {
 	// 折叠 / 展开按仓库，干净的展开后是一行说明
 	a.ToggleGitRepo(alpha)
 	a.ToggleGitRepo(gamma)
-	want = "#alpha #beta =未暂存 beta.go ✎ #gamma" // 干净由段头的勾表示，没有说明行
+	want = "#alpha #beta ✎ =未暂存 beta.go #gamma" // 干净由段头的勾表示，没有说明行
 	if got := rowsSummary(a.GitRows()); got != want {
 		t.Fatalf("折叠后:\n got %s\nwant %s", got, want)
 	}
@@ -84,12 +85,12 @@ func TestGitRowsAllRepos(t *testing.T) {
 	a.SetAllGitOpen(true)
 	rows = a.GitRows()
 
-	// 键盘从 notes.md 往下：跳过提交框、段头、分组标题，落到 beta.go，当前仓库切到 beta
+	// 键盘从 notes.md 往下：跳过段头、提交框、分组标题，落到 beta.go，当前仓库切到 beta
 	notes := rowIndex(t, rows, "notes.md")
 	pickGit(a, notes)
 	a.gitPrev, a.GitHover = notes, -1
 	a.OnChangeSelected(false)
-	pickGit(a, notes+1) // 提交框
+	pickGit(a, notes+1) // beta 的段头
 	a.OnChangeSelected(false)
 	if b := rowIndex(t, rows, "beta.go"); a.GitSel != b {
 		t.Fatalf("往下应跳到 beta.go（%d），停在 %d", b, a.GitSel)
@@ -105,7 +106,10 @@ func TestGitRowsAllRepos(t *testing.T) {
 	}
 	// 鼠标点在分组标题上：选中退回原来那行，什么都不开
 	docs := len(a.Docs)
-	g := notes - 1
+	g := rowIndex(t, rows, "alpha.txt") - 1 // alpha 的"未暂存"标题
+	if rows[g].Kind != RowGroup {
+		t.Fatalf("alpha.txt 上面应是分组标题: %s", rowsSummary(rows))
+	}
 	pickGit(a, g)
 	a.GitHover = g
 	a.OnChangeSelected(false)
@@ -200,9 +204,13 @@ func TestConflictGroup(t *testing.T) {
 	if repo.Status.Conflicts != 1 || repo.Status.Changes[0].Kind != git.Conflict || repo.Status.Changes[0].Path != "x.txt" {
 		t.Fatalf("冲突没认出来: %+v", repo.Status)
 	}
-	want := "#merge =冲突 x.txt =未暂存 y.txt =未跟踪 z.txt ✎"
+	want := "#merge ✎ =冲突 x.txt =未暂存 y.txt z.txt"
 	if got := rowsSummary(a.GitRows()); got != want {
 		t.Errorf("Git 栏:\n got %s\nwant %s", got, want)
+	}
+	if i := slices.IndexFunc(a.GitRows(), func(cr ChangeRow) bool { return cr.Kind == RowGroup && cr.Group == GroupUnstaged }); i < 0 ||
+		a.GitRows()[i].Count != 2 {
+		t.Errorf("未暂存一组应是 2 条（含未跟踪的）")
 	}
 	dc, err := git.LoadDiffContent(context.Background(), repo.Root, repo.Status.Changes[0])
 	if err != nil || !strings.Contains(string(dc.Old), "main 改的") || !strings.Contains(string(dc.New), "<<<<<<<") {
@@ -212,6 +220,12 @@ func TestConflictGroup(t *testing.T) {
 	wait("冲突的 diff", func() bool { return !d.Loading })
 	if d.DiffSt == nil || d.Info != "" {
 		t.Errorf("冲突的 Diff 标签没画出来: info=%q", d.Info)
+	}
+	// "未暂存"组头的 +：暂存改动和未跟踪的文件，不碰冲突的（暂存了就算已解决）
+	a.StageUnstaged(repo)
+	wait("暂存这一组", func() bool { return idle(repo)() && repo.Status.Unstaged+repo.Status.Untracked == 0 })
+	if repo.Status.Conflicts != 1 || repo.Status.Staged != 2 {
+		t.Fatalf("组头的 + 不该暂存冲突的文件: %+v", repo.Status)
 	}
 	a.StageAll(repo)
 	if !a.ConfirmOpen || a.Confirm.Button != "全部暂存" || repo.Busy != "" {
@@ -392,35 +406,36 @@ func TestGitGroupFold(t *testing.T) {
 		return m
 	}
 	a, alpha := open()
-	if got := rowsOf(a); got[GroupUnstaged] != [2]int{1, 1} || got[GroupUntracked] != [2]int{1, 1} {
+	// 未暂存的改动和未跟踪的文件同在一组
+	if got := rowsOf(a); len(got) != 1 || got[GroupUnstaged] != [2]int{2, 2} {
 		t.Fatalf("默认应都展开: %v", got)
 	}
-	a.ToggleGitGroup(alpha, GroupUntracked)
-	if got := rowsOf(a); got[GroupUnstaged] != [2]int{1, 1} || got[GroupUntracked] != [2]int{1, 0} {
-		t.Fatalf("收起未跟踪后: %v", got)
+	a.ToggleGitGroup(alpha, GroupUnstaged)
+	if got := rowsOf(a); got[GroupUnstaged] != [2]int{2, 0} {
+		t.Fatalf("收起未暂存后: %v", got)
 	}
 	a.Close()
 	st, err := workspace.LoadState(dir)
 	if err != nil {
 		t.Fatal(err)
 	}
-	if got := st.Sessions[ws].Groups[ra.Root]; !slices.Equal(got, []string{GroupUntracked}) {
+	if got := st.Sessions[ws].Groups[ra.Root]; !slices.Equal(got, []string{GroupUnstaged}) {
 		t.Fatalf("存的是 %v", st.Sessions[ws].Groups)
 	}
 	s := st.Sessions[ws]
-	s.Groups[ra.Root] = append(s.Groups[ra.Root], "bogus")
+	s.Groups[ra.Root] = append(s.Groups[ra.Root], "bogus", "untracked") // untracked 是以前单独一组时的键：忽略
 	st.Sessions[ws] = s
 	if err := workspace.SaveState(dir, st); err != nil {
 		t.Fatal(err)
 	}
 	b, alpha := open()
-	if alpha.GroupOpen(GroupUntracked) || !alpha.GroupOpen(GroupUnstaged) || len(alpha.GroupToggled) != 1 {
-		t.Fatalf("重开后应只收着未跟踪: %v", alpha.GroupToggled)
+	if alpha.GroupOpen(GroupUnstaged) || len(alpha.GroupToggled) != 1 {
+		t.Fatalf("重开后应只收着未暂存: %v", alpha.GroupToggled)
 	}
-	if got := rowsOf(b); got[GroupUntracked] != [2]int{1, 0} {
+	if got := rowsOf(b); got[GroupUnstaged] != [2]int{2, 0} {
 		t.Fatalf("重开后: %v", got)
 	}
-	b.ToggleGitGroup(alpha, GroupUntracked)
+	b.ToggleGitGroup(alpha, GroupUnstaged)
 	b.Close()
 	st, _ = workspace.LoadState(dir)
 	if got := st.Sessions[ws].Groups; got != nil {

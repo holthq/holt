@@ -9,7 +9,8 @@ import (
 )
 
 // 这个文件是侧栏 Git 模式的变更列表：工作区里所有仓库同时列出，一个仓库一段（段头贴在顶上），
-// 段里按冲突 / 已暂存 / 未暂存 / 未跟踪分组，再是贮藏，段底是这个仓库的提交框。选中一项就在主区的
+// 段头下面是横幅、"工作树"块头（默认收着），接着是这个仓库的提交框，再按冲突 / 已暂存 / 未暂存分组（未跟踪的文件
+// 和未暂存的改动同在"未暂存"一组，接在已跟踪的后面），最后是贮藏（默认收着）。选中一项就在主区的
 // 预览 Diff 标签里看它（"diff 跟着选择走"），并把当前仓库切到它所在的仓库。
 
 // RowKind 是 Git 栏一行的种类。
@@ -17,10 +18,10 @@ type RowKind int
 
 const (
 	RowRepo      RowKind = iota // 仓库的段头（列表的 Header：滚动时贴在顶上，不会被选中）
-	RowGroup                    // 段里的分组标题：冲突 / 已暂存 / 未暂存 / 未跟踪
+	RowGroup                    // 段里的分组标题：冲突 / 已暂存 / 未暂存（含未跟踪）
 	RowChange                   // 一项变更
 	RowNote                     // 说明：没有未提交的变更、git status 失败
-	RowCommit                   // 段底的提交框
+	RowCommit                   // 提交框（工作树块下面、改动分组上面）
 	RowStashes                  // 贮藏的分组标题
 	RowStash                    // 一条贮藏
 	RowWorktrees                // "工作树"块的标题（worktrees.go）
@@ -32,26 +33,31 @@ const (
 	RowWtTerm                   // 展开的工作树上的终端（有 agent 时）：前台进程、多久以前，点它跳过去
 )
 
-// 分组在 GroupToggled 和 state.json 里的键。
+// 分组在 GroupToggled 和 state.json 里的键。以前未跟踪单独一组（键 "untracked"），会话里留着的旧键读的时候扔掉。
 const (
-	GroupConflict  = "conflict"
-	GroupStaged    = "staged"
-	GroupUnstaged  = "unstaged"
-	GroupUntracked = "untracked"
-	GroupStash     = "stash"
+	GroupConflict = "conflict"
+	GroupStaged   = "staged"
+	GroupUnstaged = "unstaged"
+	GroupStash    = "stash"
 )
 
-// GroupKey 是一组变更的键。
+// GroupKey 是一组变更的键：未跟踪的和未暂存的同组。
 func GroupKey(k git.Kind) string {
 	switch k {
 	case git.Conflict:
 		return GroupConflict
 	case git.Staged:
 		return GroupStaged
-	case git.Unstaged:
-		return GroupUnstaged
 	}
-	return GroupUntracked
+	return GroupUnstaged
+}
+
+// groupKind 是变更 k 所在分组的种类（分组标题的 Change.Kind）：未跟踪的归到未暂存。
+func groupKind(k git.Kind) git.Kind {
+	if k == git.Untracked {
+		return git.Unstaged
+	}
+	return k
 }
 
 // GroupOpen 是仓库段里的这一组展开着：默认贮藏收着（很少要看，一条条列出来占地方）、别的展开，点过分组标题就反过来。
@@ -170,7 +176,7 @@ func (r *Repo) CommitShown() bool {
 	return r.CommitOpen || r.CommitMsg != "" || r.Status.Staged > 0 || r.Amend || r.MergeReady()
 }
 
-// OpenCommit 点开仓库段底的"提交…"，下一帧焦点给提交信息框。
+// OpenCommit 点开仓库段里的"提交…"，下一帧焦点给提交信息框。
 func (a *App) OpenCommit(r *Repo) {
 	r.CommitOpen, r.FocusCommit = true, true
 	if !r.GitOpen() {
@@ -206,14 +212,14 @@ func (a *App) GitRows() []ChangeRow {
 		case !r.Loaded:
 			// 段头在转圈
 		case r.Status.Count == 0: // 干净由段头的勾表示，不再写一行"没有未提交的变更"
-			rows = appendStashes(rows, r)
 			if r.CommitShown() { // 干净的仓库也能修改上一次提交（只改信息）
 				rows = append(rows, ChangeRow{Kind: RowCommit, Repo: r})
 			}
-		default:
+			rows = appendStashes(rows, r)
+		default: // 提交框在改动上面：文件多时不用滚到段底才够得着
+			rows = append(rows, ChangeRow{Kind: RowCommit, Repo: r})
 			rows = appendChanges(rows, r)
 			rows = appendStashes(rows, r)
-			rows = append(rows, ChangeRow{Kind: RowCommit, Repo: r})
 		}
 	}
 	return rows
@@ -271,15 +277,17 @@ func appendStashes(rows []ChangeRow, r *Repo) []ChangeRow {
 }
 
 // appendChanges 加上一个仓库按种类分好组的变更（Status.Changes 已经按组排好）；收起的组只有标题。
+// 未跟踪的接在未暂存的后面、同在一组（标题是未暂存，只有未跟踪的时也是），顺序照 Status.Changes 不动；
+// 行上的 Change.Kind 还是各自的（字母、颜色、丢弃、暂存、目录展开都照旧）。
 func appendChanges(rows []ChangeRow, r *Repo) []ChangeRow {
 	last, open := git.Kind(-1), true
 	for _, ch := range r.Status.Changes {
-		if ch.Kind != last {
-			last = ch.Kind
-			key := GroupKey(ch.Kind)
+		if k := groupKind(ch.Kind); k != last {
+			last = k
+			key := GroupKey(k)
 			open = r.GroupOpen(key)
-			rows = append(rows, ChangeRow{Kind: RowGroup, Repo: r, Title: ch.Kind.String(), Count: groupCount(r.Status, ch.Kind),
-				Change: git.Change{Kind: ch.Kind}, Group: key})
+			rows = append(rows, ChangeRow{Kind: RowGroup, Repo: r, Title: k.String(), Count: groupCount(r.Status, k),
+				Change: git.Change{Kind: k}, Group: key})
 		}
 		if open {
 			rows = append(rows, ChangeRow{Kind: RowChange, Repo: r, Change: ch})
@@ -291,17 +299,15 @@ func appendChanges(rows []ChangeRow, r *Repo) []ChangeRow {
 	return rows
 }
 
-// groupCount 是仓库里某一组变更的条数。
+// groupCount 是仓库里某一组变更的条数：未暂存一组算上未跟踪的。
 func groupCount(st git.Status, k git.Kind) int {
 	switch k {
 	case git.Conflict:
 		return st.Conflicts
 	case git.Staged:
 		return st.Staged
-	case git.Unstaged:
-		return st.Unstaged
 	}
-	return st.Untracked
+	return st.Unstaged + st.Untracked
 }
 
 // OnChangeSelected 处理 Git 栏里的点击 / 方向键：选中落在一项变更、一个工作树、一条贮藏或贮藏里的文件上。

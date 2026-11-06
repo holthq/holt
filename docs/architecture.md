@@ -149,7 +149,8 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 - 新字段一律使用 `omitempty`，旧文件缺少字段时使用默认值；读取时忽略未知字段（Go 的 JSON 解码默认如此）。新增字段不递增格式版本号，旧应用仍可读取新文件，只是无法使用新增内容。`settings` 里没设的键不写。
 - 默认开的开关存反面（`histNoGraph`、`noLocalHistory`、`noStickyScroll`），这样默认状态什么都不写。
 - 读取时通过 `Clamp` 清理数据：丢弃相对路径的仓库键和目录，截断超长列表，将越界下标归 0，清空带控制字符的主题名，将无法识别的材质 / 窗口底恢复为默认值。
-- 格式版本号仅在字段含义变化时递增。当前为 4，最近一次变更是会话中 `groups` 的含义：以前记录“收起的组”，现在记录“用户点击后，与默认状态相反的组”。冲突 / 已暂存 / 未暂存 / 未跟踪默认展开，贮藏默认收起（`groupOpenByDefault`），因此包含 `"stash"` 表示“贮藏已展开”。读 3 的文件时把 `groups` 里的 `"stash"` 去掉。
+- 格式版本号仅在字段含义变化时递增。当前为 4，最近一次变更是会话中 `groups` 的含义：以前记录“收起的组”，现在记录“用户点击后，与默认状态相反的组”。冲突 / 已暂存 / 未暂存默认展开，贮藏默认收起（`groupOpenByDefault`），因此包含 `"stash"` 表示“贮藏已展开”。读 3 的文件时把 `groups` 里的 `"stash"` 去掉。
+  以前未跟踪单独一组（键 `"untracked"`），现在并进未暂存（`GroupKey(git.Untracked)` 是 `"unstaged"`）；旧文件里的 `"untracked"` 读的时候扔掉（`groupKeys` 不认），不升版本。
 - 更早的格式由 `workspace.migratePanels` 兼容：1 的 `panels` 表、更早的四元 bool 数组、更早的 `repos.json`；顶层的 `added` / `hidden` 归给第一个打开的工作区。下次保存就是 4。
 
 所有窗口共用一份 state.json，通过 `workspace.Store` 保存各自的会话。内容未变时不写盘。
@@ -162,13 +163,17 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 ### Git 栏
 
-`GitRows` 将所有仓库整理为一张表：每个仓库一个段头（`Header`，贴顶），下面是进行中操作的横幅（`RowOngoing`）、各组的标题（冲突 / 已暂存 / 未暂存 / 未跟踪 / 贮藏）、每个变更、说明行、提交框。段头右边是这个仓库的拉取 / 推送按钮（`syncButton`），和标题栏的同步按钮共用 `syncOf`（提示文字、没上游时灰着、
+`GitRows` 将所有仓库整理为一张表：每个仓库一个段头（`Header`，贴顶），下面依次是进行中操作的横幅（`RowOngoing`）、工作树块头（默认收着）、提交框（`RowCommit`，在改动上面：文件多时不用滚到段底）、
+各组的标题和每个变更（冲突 / 已暂存 / 未暂存）、说明行，最后是贮藏组头（默认收着，和工作树组头一样只有图标和条数）。
+未跟踪的文件和未暂存的改动同在“未暂存”一组（`groupKind`）：顺序照 `Status.Changes`（已跟踪的在前、未跟踪的接在后面），条数是两者之和，
+只有未跟踪的时组名也是未暂存；每一行的 `Change.Kind` 还是各自的（字母、颜色、丢弃、暂存、目录展开照旧）。组头的 + 是 `StageUnstaged`：
+按路径 `git add -A -- …`，不用 `add -A` / `-u`（会把冲突的文件也暂存、等于标成已解决）；丢弃仍是 `git restore .`，不动未跟踪的，这组全是未跟踪的时不显示。段头右边是这个仓库的拉取 / 推送按钮（`syncButton`），和标题栏的同步按钮共用 `syncOf`（提示文字、没上游时灰着、
 `Repo.Pulling` / `Pushing` 在跑或排队时转圈），点了走 `App.Pull` / `Push`，没有另一套 git 调用。段的收放是 `GitFold`：`FoldAuto`（有改动展开、干净的收成一行；有工作树、合并 / 变基停在一半的也展开，让工作树块和横幅看得见）、`FoldOpen`、`FoldClosed`，点过箭头就按用户的，存进会话的 `git`。
 
 行的身份是 `ChangeRow.Key()`（仓库 + 组 + 路径），选中 `GitSel`、悬停 `GitHover`、多选 `GitChosen` 都按键记，因此刷新后即使行的位置变化，仍会保持选中原来的项目。多选的操作（`StageChanges` / `UnstageChanges` / `DiscardChanges` / `OpenDiffs`）先按仓库分组（`byRepo`），再加入各自的队列；一次打开超过 20 个 Diff 时先要求确认。
 变更行悬停（或列表有键盘时选中）出的行内按钮（`ui/gitbar.go` 的 `changeActions` / `stageActions`）用 `ActChanges`：指针所在的行在两行以上的多选里时作用于选中的全部，否则只有这一行；按钮的动作经 `gitFrame.do` 留到列表建完再做。列表有焦点时的空格 / ⌘⌫ 是 `changes.toggleStage` / `changes.discard`（上下文 `GitList`，由列表自己接键，命令面板也能用），作用于 `KeyChanges`。暂存 / 取消暂存 / 丢弃会让选中的那行挪走时，`markGitAfter` 先记下它后面（没有就是前面）第一个不在选中里的行，状态重读后 `syncChangeSel` 跟不上当前标签时停在那一行。
 
-提交框每个仓库一个（`CommitOpen` / `CommitMsg`），在段底；有已暂存的改动、写了信息、在修改上一次提交、合并的冲突都解决了，或者用户点开了“提交…”时展开（`CommitShown`）。⌘↩ 提交键盘所在的那个。最近 30 条提交信息（所有仓库共用）存在 `St.CommitMsgs`，提交框里 ↑↓ 翻。
+提交框每个仓库一个（`CommitOpen` / `CommitMsg`），在段头（和工作树块头）下面、改动分组上面；`ShowCommit` 把段头滚到顶上（`ui.Start`），贴顶的段头不挡它；有已暂存的改动、写了信息、在修改上一次提交、合并的冲突都解决了，或者用户点开了“提交…”时展开（`CommitShown`）。⌘↩ 提交键盘所在的那个。最近 30 条提交信息（所有仓库共用）存在 `St.CommitMsgs`，提交框里 ↑↓ 翻。
 
 ### 合并的历史
 
@@ -257,14 +262,15 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 ### 工作树
 
-`git worktree` 的链接工作树在 Git 栏仓库段里是一块“工作树”（默认收着，展开的记在会话 `wtOpen`）。只有 `<common>/worktrees` 目录存在时才读 `worktree list --porcelain -z`，避免为普通仓库执行不必要的命令。每个工作树的改动状态及领先 / 落后提交数仅在展开时计算（`WtInfo`，最多 4 个并发 `WtConcurrency`）。
+`git worktree` 的链接工作树在 Git 栏仓库段里是一块“工作树”（默认收着，展开的记在会话 `wtOpen`）。只有 `<common>/worktrees` 目录存在时才读 `worktree list --porcelain -z`，避免为普通仓库执行不必要的命令。每个工作树的改动状态及领先 / 落后提交数仅在算状态时计算（`WtTracked`：展开着，或收着但有工作树在等你 / 在跑 / 可合并；`WtInfo`，最多 4 个并发 `WtConcurrency`）。
 
 路径比较一律走 `git.SamePath` / `Under`（处理大小写和符号链接）。工作区里同时有主仓库和它的链接工作树时，嵌在主仓库里的那个不再单独算一个仓库（`dropNested`）。单击一个工作树在右栏看它分支的历史（`viewWorktree`），“在工作区中打开”把它加成一个仓库（`OpenWorktree`）。新建 / 锁定 / 解锁 / 移除 / 清理都是对话框 + `RunOp`；清理先 `prune --dry-run`，从 stderr 读要清掉哪些。
 
 工作树在 Git 栏里的样子按"工作树就是 agent 的工位"来（`app/wtstate.go`）：`WtStateOf` 把 agent 状态（`WtAgent`）和 `WtInfo`
 算成七种之一（等你 → 运行中 → 可合并 → 有改动 → 空闲 → 没有 agent → 已合并，值越小越需要你），`SortWts` 按它排（主工作树在最前），
-`WtTop` 是收起的组头放的那一档。"已合并"就是领先 0（`git branch --merged` 的意思），目录没了的也算。组默认展开（`Repo.WtShown`）=
-用户点开的（`WtOpen`，存会话）或有工作树在等你 / 在跑 / 可合并（`wtAuto`，每帧 `SyncWtAuto` 对一次）且这次没被收起（`WtShut`，不存）。
+`WtTop` 是收起的组头放的那一档。"已合并"就是领先 0（`git branch --merged` 的意思），目录没了的也算。组默认收着：列不列行（`Repo.WtShown`）只看
+用户点开的（`WtOpen`，存会话；`GoToWorktree` 也会点开），有工作树在等你 / 在跑 / 可合并也不自动展开。算不算状态、盯不盯目录另算（`Repo.WtTracked`）=
+`WtOpen` 或 `wtAuto`（有工作树在等你 / 在跑 / 可合并，每帧 `SyncWtAuto` 对一次），所以收着时"需要你"条和组头的符号照样跟得上。
 同时只展开一个工作树（`App.WtExp`，不存）：`git.BranchFiles` 先求 merge-base 再列 merge-base → 分支的文件（就是 `main...分支`），
 行是 `RowWtSummary` / `RowWtFile` / `RowWtTerm`。"合并到 main"走 `App.Merge`，先 `Ask`；灰着的原因是 `MergeWorktreeWhy`。
 "需要你"条是 `NeedsYou`（先等你、再可合并；可合并只有算过 `WtInfo` 的组才认得出），上一个 / 下一个是 `StepNeedsYou` → `GoToWorktree`。

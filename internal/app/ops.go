@@ -60,9 +60,6 @@ func (a *App) StageAll(r *Repo) {
 	do()
 }
 
-// StageTracked 只暂存已跟踪文件的改动（Git 栏"未暂存"分组的"全部暂存"）。
-func (a *App) StageTracked(r *Repo) { a.RunOp(r, i18n.T("暂存全部"), "add", "-u") }
-
 // UnstageAll 取消全部暂存。
 func (a *App) UnstageAll(r *Repo) {
 	if a.Blocked(UnstageAllWhy(r)) {
@@ -71,11 +68,12 @@ func (a *App) UnstageAll(r *Repo) {
 	a.RunOp(r, i18n.T("取消全部暂存"), "reset", "-q")
 }
 
-// StageUntracked 暂存所有未跟踪的文件（"未跟踪"分组的"全部暂存"）。
-func (a *App) StageUntracked(r *Repo) {
+// StageUnstaged 暂存"未暂存"一组：已跟踪文件的改动和未跟踪的文件（Git 栏这一组的 +）。
+// 按路径暂存，不用 git add -A / -u：那两个会把冲突的文件也暂存了（等于标成已解决）。
+func (a *App) StageUnstaged(r *Repo) {
 	var paths []string
 	for _, ch := range r.Status.Changes {
-		if ch.Kind == git.Untracked {
+		if ch.Kind == git.Unstaged || ch.Kind == git.Untracked {
 			paths = append(paths, ch.Path)
 		}
 	}

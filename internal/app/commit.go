@@ -42,7 +42,8 @@ func (a *App) SetAmend(r *Repo, on bool) {
 	}()
 }
 
-// ShowCommit 打开侧栏的 Git、展开这个仓库段、滚到段底的提交框，下一帧焦点给它（菜单里的"修改上一次提交"）。
+// ShowCommit 打开侧栏的 Git、展开这个仓库段、滚到它的提交框，下一帧焦点给它（菜单里的"修改上一次提交"）。
+// 提交框在段头下面（中间可能隔着横幅、工作树组头），所以把段头滚到顶上：贴顶的段头不会挡住提交框。
 func (a *App) ShowCommit(r *Repo) {
 	a.ShowSidebar(workspace.ModeGit)
 	a.UseRepo(r)
@@ -50,8 +51,8 @@ func (a *App) ShowCommit(r *Repo) {
 		r.GitFold = FoldOpen
 	}
 	r.CommitOpen, r.FocusCommit = true, true
-	if row := slices.IndexFunc(a.GitRows(), func(cr ChangeRow) bool { return cr.Kind == RowCommit && cr.Repo == r }); row >= 0 {
-		a.ChangeList.ScrollTo(row, ui.End)
+	if row := slices.IndexFunc(a.GitRows(), func(cr ChangeRow) bool { return cr.Kind == RowRepo && cr.Repo == r }); row >= 0 {
+		a.ChangeList.ScrollTo(row, ui.Start)
 	}
 }
 

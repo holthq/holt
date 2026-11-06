@@ -2,6 +2,7 @@ package ui
 
 import (
 	"slices"
+	"strconv"
 	"strings"
 	"testing"
 	"time"
@@ -425,4 +426,56 @@ func TestRemotesMenu(t *testing.T) {
 		t.Errorf("没有远程：%v", err)
 	}
 	closeMenu(t, tt)
+}
+
+// 未暂存和未跟踪合成一组：只有未跟踪的文件时组名仍是"未暂存"，没有丢弃按钮（git restore . 不动未跟踪的），+ 照样有；
+// 有已跟踪的改动后才出丢弃。贮藏的组头不写"贮藏"两个字（只有图标和条数，读屏照旧）。
+func TestUnstagedGroupWithUntracked(t *testing.T) {
+	repo := testutil.NewRepo(t, "mix")
+	repo.Write("a.txt", "一\n")
+	repo.Commit("初始")
+	repo.Write("b.txt", "藏\n")
+	repo.Git("add", "b.txt")
+	repo.Git("stash", "-q")
+	repo.Write("new.txt", "新\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	a.St.BottomBar = false
+	r := a.Repos[0]
+	a.RefreshRepo(r, app.WhyManual)
+	wait("git status", idle(r))
+	a.Exec("view.git")
+	tt.Frame()
+	mustText(t, tt, "收起 未暂存")
+	mustText(t, tt, "暂存所有未暂存的改动")
+	if tt.HasText("未跟踪") || tt.HasText("丢弃所有未暂存的改动…") {
+		t.Fatalf("只有未跟踪的：组名应是未暂存、没有丢弃: %q", tt.Texts())
+	}
+	// 贮藏组头：读屏有"贮藏"，画出来的字里只有条数
+	mustText(t, tt, "展开 贮藏")
+	// 和只有图标的"未暂存"组头一样：一行的提示和图标的 Label 各一个；以前还多一个画出来的"贮藏"
+	if n := countText(tt, "贮藏"); n != 2 || countText(tt, "未暂存") != 2 {
+		t.Errorf("贮藏组头应只有图标：%d 个\"贮藏\" %q", n, tt.Texts())
+	}
+	repo.Write("a.txt", "二\n")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("改了 a.txt", func() bool { return idle(r)() && r.Status.Unstaged == 1 })
+	tt.Frame()
+	mustText(t, tt, "丢弃所有未暂存的改动…")
+	rows := a.GitRows()
+	var got []string
+	for _, cr := range rows {
+		switch cr.Kind {
+		case app.RowCommit:
+			got = append(got, "✎")
+		case app.RowGroup:
+			got = append(got, "="+cr.Title+strconv.Itoa(cr.Count))
+		case app.RowChange:
+			got = append(got, cr.Change.Path)
+		case app.RowStashes:
+			got = append(got, "#stash")
+		}
+	}
+	if s := strings.Join(got, " "); s != "✎ =未暂存2 a.txt new.txt #stash" {
+		t.Errorf("行：%s", s)
+	}
 }

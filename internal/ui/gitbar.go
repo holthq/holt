@@ -14,8 +14,8 @@ import (
 )
 
 // gitView 是侧栏的 Git 模式：工作区里所有仓库同时列出，一个仓库一段。段头是仓库名、分支、
-// 各组的计数和（悬停时）"全部暂存"，滚动时贴在顶上；段里按冲突 / 已暂存 / 未暂存 / 未跟踪 / 贮藏分组，
-// 每组点标题收起，段底是这个仓库的提交框。点一项在主区的预览 Diff 标签里看（当前仓库切到它），双击 / 回车固定。
+// 各组的计数和（悬停时）"全部暂存"，滚动时贴在顶上；段头下面是横幅、工作树组头（默认收着），接着是这个仓库的提交框，
+// 再按冲突 / 已暂存 / 未暂存（含未跟踪）分组，最后是贮藏组头（默认收着）；每组点标题收起。点一项在主区的预览 Diff 标签里看（当前仓库切到它），双击 / 回车固定。
 func gitView(a *app.App, c *wui.Context) {
 	t := c.Theme()
 	if len(a.Repos) == 0 {
@@ -342,29 +342,30 @@ func groupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			}
 		case git.Staged:
 			rowButton(c, iconMinus, i18n.T("全部取消暂存"), i18n.T("全部取消暂存（git reset）"), func() { a.UnstageAll(r) })
-		case git.Unstaged:
-			rowButton(c, iconUndo, i18n.T("丢弃所有未暂存的改动…"), i18n.T("丢弃所有未暂存的改动…（git restore .，会先问）"), func() { a.DiscardAll(r) })
-			rowButton(c, iconPlus, i18n.T("暂存所有未暂存的改动"), i18n.T("暂存所有未暂存的改动（git add -u）"), func() { a.StageTracked(r) })
-		case git.Untracked:
-			rowButton(c, iconPlus, i18n.T("暂存所有未跟踪文件"), i18n.T("暂存所有未跟踪文件（git add）"), func() { a.StageUntracked(r) })
+		case git.Unstaged: // 这一组含未跟踪的文件
+			if r.Status.Unstaged > 0 { // 全是未跟踪的时没有可丢弃的（git restore . 不动未跟踪的）
+				rowButton(c, iconUndo, i18n.T("丢弃所有未暂存的改动…"), i18n.T("丢弃所有未暂存的改动…（git restore .，未跟踪的文件不动，会先问）"), func() { a.DiscardAll(r) })
+			}
+			rowButton(c, iconPlus, i18n.T("暂存所有未暂存的改动"), i18n.T("暂存所有未暂存的改动，含未跟踪的文件（git add -- 这些文件，冲突的不动）"), func() { a.StageUnstaged(r) })
 		}
 	})
 }
 
-// stashGroupRow 是仓库段里贮藏的分组标题，也能收起。
+// stashGroupRow 是仓库段里贮藏的分组标题（默认收着），也能收起：箭头、归档图标、条数，不写"贮藏"两个字
+// （悬停提示和读屏照旧是"贮藏"），和工作树组头一样。
 func stashGroupRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	c := row.Context
 	t := c.Theme()
 	groupHeader(a, row, cr, func() {
-		wui.Icon(c, iconArchive).FontSize(iconInline).TextColor(t.TextMuted).Shrink(0)
+		wui.Icon(c, iconArchive).FontSize(iconRow).TextColor(t.TextMuted).Shrink(0).Label(cr.Title)
 	}, nil)
 }
 
 // groupHeader 是分组标题的一行：箭头、mark（颜色点或图标）、组名、条数，actions 画在右边。点整行收起 / 展开。
-// 未暂存、已暂存两组不写组名（图标代替，读屏和悬停提示照旧是组名）。
+// 未暂存、已暂存两组和贮藏不写组名（图标代替，读屏和悬停提示照旧是组名）。
 func groupHeader(a *app.App, row wui.ListRow, cr app.ChangeRow, mark, actions func()) {
 	r := cr.Repo
-	iconOnly := cr.Kind == app.RowGroup && (cr.Change.Kind == git.Staged || cr.Change.Kind == git.Unstaged)
+	iconOnly := cr.Kind == app.RowStashes || cr.Kind == app.RowGroup && (cr.Change.Kind == git.Staged || cr.Change.Kind == git.Unstaged)
 	foldHeader(a, row, 26, cr.Title, iconOnly, strconv.Itoa(cr.Count), r.GroupOpen(cr.Group), func() { a.ToggleGitGroup(r, cr.Group) }, mark, actions)
 }
 
@@ -776,7 +777,7 @@ func lineTotals(files []git.Change) (add, del int) {
 	return add, del
 }
 
-// commitRow 是仓库段底的提交框。平时收成一行"提交…"，点开、有已暂存的改动或写了信息时展开：
+// commitRow 是仓库段里的提交框（工作树组头下面、改动分组上面）。平时收成一行"提交…"，点开、有已暂存的改动或写了信息时展开：
 // 一行到四行的信息，⌘↩ 或按钮提交这个仓库已暂存的改动；信息空着按 Esc 收起来，空着按 ↑ 翻以前写过的。
 // 下面一排是"修改上一次提交"（amend）的勾选和提交按钮。
 func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
@@ -784,7 +785,8 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 	t := c.Theme()
 	if !r.CommitShown() { // 刚提交完多半是收着的：能撤销时右边也放"撤销上次提交"
 		wui.Row(c).AlignItems(wui.Center).Padding(0, 8, 0, 0).Children(func() {
-			b := wui.Row(c).Grow(1).Padding(4, 8, 6, 24).Gap(6).AlignItems(wui.Center).Cursor(wui.CursorPointer).
+			// 和下面的分组标题一样高（26），铅笔对着分组标题的图标（左 14 + 箭头 16 + 间距 5）
+			b := wui.Row(c).Grow(1).Height(26).Padding(0, 8, 0, 35).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer).
 				Label(i18n.Tf("提交 %s 的改动…", r.Name)).Tooltip(i18n.T("写提交信息；先暂存要提交的文件"))
 			if b.Hovered() {
 				a.GitHover = row.Index
@@ -802,7 +804,7 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 		})
 		return
 	}
-	col := wui.Column(c).Padding(4, 8, 10, 22).Gap(6)
+	col := wui.Column(c).Padding(4, 8, 8, 22).Gap(6) // 左边对着下面分组标题的箭头；下面紧接着分组标题，上下留得一样匀
 	if col.Hovered() {
 		a.GitHover = row.Index
 	}

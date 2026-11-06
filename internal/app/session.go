@@ -174,7 +174,8 @@ func inGit(dir string) bool {
 }
 
 // groupKeys 是 state.json 里认得的分组键；别的（手改坏的、以后版本加的）读的时候不要。
-var groupKeys = []string{GroupConflict, GroupStaged, GroupUnstaged, GroupUntracked, GroupStash}
+// 旧的 "untracked"（未跟踪以前单独一组）也不认：读到就扔，不用升格式版本。
+var groupKeys = []string{GroupConflict, GroupStaged, GroupUnstaged, GroupStash}
 
 // foldNames 是 Git 栏仓库段的折叠在 state.json 里的写法。
 var foldNames = map[int]string{FoldOpen: "open", FoldClosed: "closed"}

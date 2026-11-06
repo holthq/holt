@@ -228,9 +228,9 @@ func TestDiffTabsFollowStatus(t *testing.T) {
 	if d == nil || d.Kind != docs.Diff || d.Change.Kind != git.Unstaged {
 		t.Fatalf("没打开 Diff 标签：%+v", d)
 	}
-	// 从文件树（"查看它的 diff"）开的 Diff 标签，Git 栏也选中它那一行：段头、未暂存标题、a.txt、未跟踪标题、u.txt、提交框
-	if a.GitSel != 2 {
-		t.Errorf("Git 栏选中 %d，应是 a.txt 那行 2", a.GitSel)
+	// 从文件树（"查看它的 diff"）开的 Diff 标签，Git 栏也选中它那一行：段头、提交框、未暂存标题、a.txt、u.txt（未跟踪，同一组）
+	if a.GitSel != 3 {
+		t.Errorf("Git 栏选中 %d，应是 a.txt 那行 3", a.GitSel)
 	}
 	wait("读 diff", func() bool { return !d.Loading })
 	if d.DiffSt == nil {
@@ -263,8 +263,8 @@ func TestDiffTabsFollowStatus(t *testing.T) {
 	if staged.DiffSt == nil || !staged.DiffSt.ExpandUnchanged {
 		t.Fatal("新开的 Diff 标签没跟全文设置")
 	}
-	if a.GitSel != 2 {
-		t.Errorf("已暂存的 a.txt 应选中第 2 行，是 %d", a.GitSel)
+	if a.GitSel != 3 { // 段头、提交框、已暂存标题、a.txt
+		t.Errorf("已暂存的 a.txt 应选中第 3 行，是 %d", a.GitSel)
 	}
 	// 切到文件标签不选；‹ 回到 Diff 标签又选上
 	a.OpenFile(r, "README.md", true)
@@ -272,7 +272,7 @@ func TestDiffTabsFollowStatus(t *testing.T) {
 		t.Errorf("文件标签时 Git 栏还选中 %d", a.GitSel)
 	}
 	a.Back()
-	if a.CurrentDoc() != staged || a.GitSel != 2 {
+	if a.CurrentDoc() != staged || a.GitSel != 3 {
 		t.Errorf("后退后标签 %v、选中 %d", a.CurrentDoc().Title, a.GitSel)
 	}
 }

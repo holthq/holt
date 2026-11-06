@@ -7,12 +7,13 @@ import (
 	"github.com/lemoeade/grove/internal/watch"
 )
 
-// 这个文件是 Git 栏"工作树"块展开时对链接工作树目录的监听：块展开着，就给 r.Worktrees 里的每个工作树
+// 这个文件是 Git 栏"工作树"块算着状态时（WtTracked：块展开着，或收着但有工作树在等你、在跑、可合并）对链接工作树目录的监听：
+// 算着状态，就给 r.Worktrees 里的每个工作树
 // （最多 WtWatchMax 个；已经在工作区里打开的那个有它自己的监听，不另开）开一个只看工作区的监听（watch.StartTree：
-// 一个 FSEvents 流，被 git 忽略的目录不看），里面的文件变了只重算那一条的 WtInfo。不展开不监听。
+// 一个 FSEvents 流，被 git 忽略的目录不看），里面的文件变了只重算那一条的 WtInfo。不算状态就不监听。
 // HEAD、index、refs 变了（在工作树里提交、暂存、切分支）不用这里管：链接工作树的 HEAD、index 在主仓库的
 // .git/worktrees/<名字> 下，refs 在主仓库的 .git 里，都在主仓库自己的监听范围里，报 Git 变化、整块重读。
-// 块收起、列表里没了、仓库移除、关窗口就停。
+// 不用再算（块收起了、也没有要你管的）、列表里没了、仓库移除、关窗口就停。
 
 // WtWatchMax 是一个仓库最多同时监听几个工作树目录（每个一个 FSEvents 流）。
 const WtWatchMax = 16
@@ -26,7 +27,7 @@ type wtWatcher struct {
 // syncWtWatch 让 r 的工作树监听和现在该看的对上（主线程）：展开状态、列表、工作区里开着哪些仓库变了之后调。
 func (a *App) syncWtWatch(r *Repo) {
 	want := map[string]bool{}
-	if a.watching && r.WtShown() && !r.gone() && slices.Contains(a.Repos, r) {
+	if a.watching && r.WtTracked() && !r.gone() && slices.Contains(a.Repos, r) {
 		for _, w := range r.Worktrees {
 			if len(want) >= WtWatchMax {
 				break
@@ -120,10 +121,10 @@ func (r *Repo) WtWatching() int {
 }
 
 // reloadWtInfo 重算一个工作树（目录 path）的状态：它的目录里变了。只算这一条、算完换进 WtInfo；
-// 块收起了、整块重算了（wtGen 变了）就扔掉。整块还在算（可能是变之前开始的）就整块重来。
+// 不再算状态了、整块重算了（wtGen 变了）就扔掉。整块还在算（可能是变之前开始的）就整块重来。
 func (a *App) reloadWtInfo(r *Repo, path string) {
 	i := slices.IndexFunc(r.Worktrees, func(w Worktree) bool { return w.Path == path })
-	if !r.WtShown() || r.gone() || i < 0 {
+	if !r.WtTracked() || r.gone() || i < 0 {
 		return
 	}
 	if r.WtLoading || r.WtInfo == nil {
@@ -141,11 +142,11 @@ func (a *App) reloadWtInfo(r *Repo, path string) {
 	}()
 }
 
-// wtTouched 是工作区里打开着的仓库 o 的监听报了文件变化：o 要是别的仓库"工作树"块（展开着）里的一条，
+// wtTouched 是工作区里打开着的仓库 o 的监听报了文件变化：o 要是别的仓库"工作树"块（算着状态）里的一条，
 // 那一条的状态跟着重算（这种工作树不另开监听）。
 func (a *App) wtTouched(o *Repo) {
 	for _, r := range a.Repos {
-		if r == o || !r.WtShown() || len(r.Worktrees) == 0 {
+		if r == o || !r.WtTracked() || len(r.Worktrees) == 0 {
 			continue
 		}
 		for _, w := range r.Worktrees {
