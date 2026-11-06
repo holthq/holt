@@ -294,6 +294,6 @@ func TestWorktreeKeys(t *testing.T) {
 
 	// 单击工作树的行：它成为列表的选中行，右栏看它
 	tt.Advance(time.Second)
-	mustClick(t, tt, i18n.Tf("工作树 %s", title(w2)))
+	mustClickRow(t, tt, i18n.Tf("工作树 %s", title(w2)))
 	onWt("单击第二个工作树", w2)
 }

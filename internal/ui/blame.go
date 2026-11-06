@@ -161,7 +161,8 @@ func blameSeg(a *app.App, c *wui.Context, d *docs.Doc, s git.BlameSeg, top, h, l
 	} else {
 		seg.Label(i18n.Tf("blame：%s %s %s", cm.Short, who, cm.Summary)).
 			Tooltip(cm.Hash + "\n" + cm.Author + " <" + cm.Email + ">\n" + cm.Time.Format("2006-01-02 15:04") + "\n" + cm.Summary).
-			Cursor(wui.CursorPointer).ContextMenu(func(m *wui.Menu) { blameMenu(a, m, d, cm) })
+			Cursor(wui.CursorPointer)
+		ctxMenu(a, c, seg, menuOwner{"blame", d.Where() + "\x00" + cm.Hash}, func(m menu) { blameMenu(a, m, d, cm) })
 	}
 	seg.Children(func() {
 		if h > lh*1.5 {
@@ -193,7 +194,7 @@ func blameSeg(a *app.App, c *wui.Context, d *docs.Doc, s git.BlameSeg, top, h, l
 }
 
 // blameMenu 是 blame 一段的右键菜单。
-func blameMenu(a *app.App, m *wui.Menu, d *docs.Doc, cm *git.BlameCommit) {
+func blameMenu(a *app.App, m menu, d *docs.Doc, cm *git.BlameCommit) {
 	if m.Item(i18n.T("在历史里显示")).Chosen() {
 		if r := a.RepoOf(d); r != nil {
 			a.ShowInHistory(r, cm.Hash)

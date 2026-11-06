@@ -86,8 +86,8 @@ func TestBlameGutter(t *testing.T) {
 	// 右键：打开这次提交里这个文件的 diff（和 Alice 的第一版比）
 	tt.RightClickAt(bob.X+bob.W/2, bob.Y+bob.H/2)
 	tt.Frame()
-	if err := tt.ChooseMenuItem("打开这次提交里这个文件的 diff"); err != nil {
-		t.Fatalf("右键菜单：%v %q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "打开这次提交里这个文件的 diff"); err != nil {
+		t.Fatalf("右键菜单：%v %q", err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	dd := a.CurrentDoc()

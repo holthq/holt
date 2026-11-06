@@ -144,7 +144,7 @@ func termTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab, active bo
 		r.TermShown = tt.Num
 		b.ScrollIntoView()
 	}
-	b.ContextMenu(func(m *wui.Menu) { termTabMenu(a, m, r, tt) })
+	ctxMenu(a, c, b, menuOwner{"termTab", r.Root + "\x00" + strconv.Itoa(tt.Num)}, func(m menu) { termTabMenu(a, m, r, tt) })
 	// 拖标签换位置（只在这个仓库的终端标签之间）
 	ts := a.TermTabs(r)
 	b.Drag(tt)
@@ -224,7 +224,7 @@ func renameTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab) {
 }
 
 // termTabMenu 是终端标签的右键菜单。
-func termTabMenu(a *app.App, m *wui.Menu, r *app.Repo, tt *app.TermTab) {
+func termTabMenu(a *app.App, m menu, r *app.Repo, tt *app.TermTab) {
 	ts := a.TermTabs(r)
 	i := slices.Index(ts, tt)
 	if m.Item(i18n.T("重命名…")).Chosen() {

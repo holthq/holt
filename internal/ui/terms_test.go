@@ -172,7 +172,8 @@ func TestTermTabs(t *testing.T) {
 	if err := tt.RightClick("终端 2"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("重命名…"); err != nil {
+	tt.Frame()
+	if err := chooseMenu(t, tt, "重命名…"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

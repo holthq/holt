@@ -79,7 +79,8 @@ func worktreeRow(a *app.App, row wui.ListRow, r *app.Repo, w app.Worktree, g *gi
 	info := r.WtInfo[w.Path]
 	st := app.WtStateOf(ag.State, w, info)
 	el := wui.Row(c).Height(28).Padding(0, 6, 0, 26).Gap(6).AlignItems(wui.Center).Radius(6).
-		Tooltip(wtTip(w, st)).ContextMenu(func(m *wui.Menu) { worktreeMenu(a, m, r, w) })
+		Tooltip(wtTip(w, st))
+	ctxMenuRow(a, c, row, el, menuOwner{"worktree", r.Root + "\x00" + w.Path}, func(m menu) { worktreeMenu(a, m, r, w) })
 	hover := el.Hovered()
 	if hover {
 		a.GitHover = row.Index
@@ -190,7 +191,7 @@ func wtActions(a *app.App, c *wui.Context, r *app.Repo, w app.Worktree, st app.W
 const wtBtnSize = 22
 
 // worktreeMenu 是一个工作树的右键菜单；主工作树只有打开、终端、访达、复制路径。
-func worktreeMenu(a *app.App, m *wui.Menu, r *app.Repo, w app.Worktree) {
+func worktreeMenu(a *app.App, m menu, r *app.Repo, w app.Worktree) {
 	open := i18n.T("在工作区中打开")
 	if a.WtRepo(w) != nil {
 		open = i18n.T("跳到区块")
@@ -222,7 +223,7 @@ func worktreeMenu(a *app.App, m *wui.Menu, r *app.Repo, w app.Worktree) {
 	} else if m.Item(i18n.T("锁定…")).Chosen() {
 		a.LockWorktree(r, w)
 	}
-	if whyItem(nativeMenu(m), i18n.T("移除工作树…"), app.RemoveWorktreeWhy(r, w)).Chosen() {
+	if whyItem(m, i18n.T("移除工作树…"), app.RemoveWorktreeWhy(r, w)).Chosen() {
 		a.RemoveWorktree(r, w)
 	}
 	if w.Prunable && m.Item(i18n.T("清理")).Chosen() {
