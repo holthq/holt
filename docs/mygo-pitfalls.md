@@ -143,6 +143,12 @@
   是 `toolStyle(c, b, false, 灰)` 画灰、`能点 && b.Clicked()` 才做，提示里用 `withWhy` 写原因（`app.CommitWhy`）。要键盘能按到用 `wui.ButtonBase`，
   `squareButton` 的 `Box` Tab 到不了。
 
+- **右键菜单的窗口大小**：在元素的事件处理（`HandleInput` 的回调）里取 `c.Root().Bounds()` 是 0×0——那个 `c` 是建树时的，事件来时根还没排。
+  `PopMenu.OpenRow` 按 0×0 的窗口排，菜单只剩 180×32 的小块，右键菜单看着就是“闪一下”。窗口大小、元素自己上一帧的位置都要在**建元素时**取好
+  （`b := el.Bounds()`；`root := c.Root().Bounds()`），闭包里用；事件里只能信这两个快照。
+- **右键会带来一个 `dy=0` 的滚动事件**：macOS 的右键、触摸板的相位事件会送来 `InputScroll` 且 `DY` 是 0（日志里 `dy=-0.00`）。
+  `PopMenu.Scroll` 原来只要指针不在菜单里就关，右键菜单会在刚打开那一帧被这个滚动关掉；小于 0.01 的滚动当成没滚。
+
 ## 键盘和快捷键
 
 - 菜单快捷键先于编辑器接到按键（mygo 在 darwin 上没有覆盖 performKeyEquivalent）：编辑器有焦点时 ⌘K 照样打开 `>git ` 面板，
