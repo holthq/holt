@@ -16,7 +16,7 @@ const MygoModule = "github.com/egoist/mygo"
 
 // MygoPinned 是 go.mod 里锁的 mygo 版本，读不到构建信息（测试的二进制没有依赖列表）时用它；
 // TestVersions 保证它和 go.mod 一致。
-const MygoPinned = "v0.7.4"
+const MygoPinned = "v0.7.5-0.20261106080026-6121009b900d"
 
 // Mygo 是编进来的 mygo 的版本。
 func Mygo() string {
