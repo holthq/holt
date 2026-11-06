@@ -157,12 +157,13 @@ func menuKeyTarget(a *app.App, el wui.Element, owner menuOwner, build func(menu)
 }
 
 // openMenuBelow 在按钮 b（上一帧的位置）左下角下面打开 build 建的 Grove 菜单（按钮的菜单用它代替 Menu）。
-// 下面放不下往上翻、窗口都放不下就滚（PopMenu.layout）。
+// 下面放不下翻到按钮上面（不盖住按钮，状态栏的按钮就是这样），窗口都放不下就滚（PopMenu.layout）。
+// 按钮当成 OpenRow 的“那一行”，上下各让出 2。
 func openMenuBelow(a *app.App, c *wui.Context, b wui.Rect, owner menuOwner, build func(menu)) {
 	root := c.Root().Bounds()
 	gmenuMeasure(a, c)
 	a.TreeTip.Dismiss()
-	a.Menu.Open(owner, build, b.X, b.Y+b.H+2, root.W, root.H, false, c.Now())
+	a.Menu.OpenRow(owner, build, b.X, b.Y+b.H, app.MenuRect{X: b.X, Y: b.Y - 2, W: b.W, H: b.H + 4}, root.W, root.H, false, c.Now())
 	c.Invalidate()
 }
 

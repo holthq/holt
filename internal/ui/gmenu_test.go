@@ -11,6 +11,7 @@ import (
 	"github.com/lemoeade/grove/internal/app"
 	"github.com/lemoeade/grove/internal/i18n"
 	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/lemoeade/grove/internal/workspace"
 )
 
 // issue #48：文件树的右键菜单是 Grove 自己画的。按住拖、延迟、三角这些在 app/popmenu_test.go 里直接喂事件测；
@@ -426,4 +427,84 @@ func TestCtxMenuByKey(t *testing.T) {
 			t.Fatal("Esc 该关")
 		}
 	}
+}
+
+// Grove 菜单的截图（设了 WORKBENCH_SHOT 才跑）：仓库菜单、它的“分支”子菜单（当前分支打勾）、状态栏语言菜单（带勾）、
+// 段头分支按钮的菜单，浅色深色各一张。
+func TestGroveMenuShots(t *testing.T) {
+	shot := os.Getenv("WORKBENCH_SHOT")
+	if shot == "" {
+		t.Skip("WORKBENCH_SHOT 没设")
+	}
+	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
+	alpha.Git("branch", "topic/menu")
+	alpha.Write("dirty.go", "package alpha\n")
+	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
+	tt, a := k.tt, k.a
+	r := k.repo("alpha")
+	d := a.OpenFile(r, "dirty.go", true)
+	k.wait("读好", func() bool { return d.Buf != nil && !d.Loading })
+	a.ShowSidebar(workspace.ModeGit)
+	tt.Frame()
+	tt.Frame()
+
+	both := func(name string) {
+		t.Helper()
+		writeShot(t, tt, shot, name+".png")
+		tt.SetDark(true)
+		writeShot(t, tt, shot, name+"-dark.png")
+		tt.SetDark(false)
+		tt.Frame()
+	}
+	item := func(label string) accNode {
+		t.Helper()
+		ms := popMenus(t, tt)
+		for i := len(ms) - 1; i >= 0; i-- {
+			for _, it := range ms[i].Items {
+				if it.Label == label {
+					return it
+				}
+			}
+		}
+		t.Fatalf("菜单里没有 %q：%q", label, shownMenu(t, tt))
+		return accNode{}
+	}
+
+	// 仓库菜单（Git 栏段头右键）和“分支”子菜单
+	if err := rightClickRow(tt, i18n.Tf("%s（仓库）", "alpha")); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if len(popMenus(t, tt)) != 1 {
+		t.Fatalf("右键段头该开一层菜单：%q", shownMenu(t, tt))
+	}
+	both("gmenu-repo")
+	br := item(i18n.T("分支"))
+	tt.Move(float32(br.X+br.W/2), float32(br.Y+br.H/2))
+	tt.Frame()
+	tt.Advance(app.MenuSubDelay + 50*time.Millisecond)
+	tt.Frame()
+	if len(popMenus(t, tt)) != 2 {
+		t.Fatalf("停在“分支”上该开子菜单：%d 层", len(popMenus(t, tt)))
+	}
+	both("gmenu-submenu")
+	closeMenu(t, tt)
+
+	// 带勾的：状态栏的语言
+	mustClick(t, tt, i18n.Tf("语言 %s", "Go"))
+	tt.Frame()
+	if len(popMenus(t, tt)) != 1 {
+		t.Fatalf("点状态栏的语言该开菜单：%q", shownMenu(t, tt))
+	}
+	both("gmenu-checked")
+	closeMenu(t, tt)
+
+	// 段头的分支按钮
+	mustClick(t, tt, i18n.Tf("切换 %s 的分支", "alpha"))
+	tt.Frame()
+	if len(popMenus(t, tt)) != 1 {
+		t.Fatalf("点分支按钮该开菜单：%q", shownMenu(t, tt))
+	}
+	both("gmenu-branch")
+	closeMenu(t, tt)
 }
