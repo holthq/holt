@@ -156,7 +156,7 @@ func wtFileRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		a.OnChangeSelected(true)
 	}
 	el.Children(func() {
-		commitFileLabel(c, cr.Change, sel, muted)
+		commitFileLabel(a, c, cr.Change, sel, muted)
 	})
 }
 

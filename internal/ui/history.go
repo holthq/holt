@@ -736,7 +736,7 @@ func histFileRow(a *app.App, l *listLook, row wui.ListRow, r *app.Repo, ch git.C
 					if el.RowDoubleClicked() {
 						a.OpenDiff(r, ch, true)
 					}
-					el.Children(func() { commitFileLabel(c, ch, sel, muted) })
+					el.Children(func() { commitFileLabel(a, c, ch, sel, muted) })
 				})
 			})
 		})
@@ -958,7 +958,7 @@ func compareRow(a *app.App, row wui.ListRow, r *app.Repo, cp *app.Compare, hr ap
 		if el.RowDoubleClicked() {
 			a.OpenDiff(r, ch, true)
 		}
-		line(el, [4]float32{3, 8, 3, 28}, func() { commitFileLabel(c, ch, sel, muted) })
+		line(el, [4]float32{3, 8, 3, 28}, func() { commitFileLabel(a, c, ch, sel, muted) })
 		return false
 	}
 	toggle := func() { a.ToggleCompare(r) }

@@ -594,19 +594,6 @@ func chip(c *wui.Context, ic *wui.SVG, text string, fg, bg wui.Color) wui.Elemen
 	})
 }
 
-// codeChip 是状态字母（M / A / D / ? …）的小方块。
-func codeChip(c *wui.Context, code byte, onAccent bool) {
-	t := c.Theme()
-	col := codeColor(t, code)
-	bg, fg := col.Alpha(0.15), col
-	if onAccent {
-		bg, fg = t.AccentText.Alpha(0.22), t.AccentText
-	}
-	wui.Box(c).Size(18, 18).Radius(4).Background(bg).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).Children(func() {
-		wui.Text(c, string(code)).Font(mono()).FontSize(11).FontWeight(700).TextColor(fg).SingleLine()
-	})
-}
-
 func codeColor(t *wui.Theme, code byte) wui.Color {
 	switch code {
 	case 'A', '?':

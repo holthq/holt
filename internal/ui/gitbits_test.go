@@ -635,3 +635,103 @@ func TestGitRowsGroveMenu(t *testing.T) {
 	a.ToggleHistGraph()
 	tt.Frame()
 }
+
+// 变更行放不下时路径先缩，文件名不截断；文件名比整行还长时才截断，行尾的状态字母还在行里。
+func TestChangeNameFirst(t *testing.T) {
+	repo := testutil.NewRepo(t, "names")
+	long := strings.Repeat("很长的名字", 12) + ".vue"
+	deep := "src/views/achievementCollection/components/forms/AdminConfig.vue"
+	repo.Write(deep, "a\n")
+	repo.Write("lib/"+long, "a\n")
+	repo.Commit("初始提交")
+	repo.Write(deep, "b\n")
+	repo.Write("lib/"+long, "b\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Unstaged == 2 })
+
+	width := func(side float32) wui.Rect {
+		t.Helper()
+		a.St.SidebarW = side
+		tt.Frame()
+		tt.Frame()
+		b, ok := tt.Find("AdminConfig.vue")
+		if !ok {
+			t.Fatalf("没有文件名: %q", tt.Texts())
+		}
+		return b
+	}
+	wide, narrow := width(640), width(240)
+	if wide.W != narrow.W {
+		t.Errorf("路径还能缩时文件名被压了：宽 %.1f 窄 %.1f", wide.W, narrow.W)
+	}
+	name, ok := tt.Find(long)
+	if !ok {
+		t.Fatalf("没有长文件名: %q", tt.Texts())
+	}
+	letter, ok := tt.Find("M")
+	if !ok || letter.X+letter.W > 240 {
+		t.Errorf("行尾的状态字母不在行里: %v %v", letter, ok)
+	}
+	if name.X+name.W > letter.X {
+		t.Errorf("长文件名没截断，压到了状态字母: 名 %v 字母 %v", name, letter)
+	}
+}
+
+// 变更行的状态字母在行尾，悬停时让给按钮，文件名不动；提交里的文件字母排在行数右边。
+func TestChangeLetterAtEnd(t *testing.T) {
+	repo := testutil.NewRepo(t, "letter")
+	repo.Write("src/a.txt", "1\n")
+	repo.Commit("初始提交")
+	repo.Write("src/a.txt", "1\n2\n")
+	repo.Commit("加一行")
+	repo.Write("src/a.txt", "1\n2\n3\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Unstaged == 1 })
+	tt.Move(0, 0)
+	tt.Frame()
+
+	name, ok := tt.Find("a.txt")
+	if !ok {
+		t.Fatalf("没有变更行: %q", tt.Texts())
+	}
+	letter, ok := tt.Find("M")
+	if !ok {
+		t.Fatalf("没有状态字母: %q", tt.Texts())
+	}
+	if letter.X <= name.X+name.W {
+		t.Errorf("字母不在文件名右边: 名 %v 字母 %v", name, letter)
+	}
+	hoverOn(t, tt, "a.txt")
+	if _, ok := tt.Find("M"); ok {
+		t.Errorf("悬停时字母没让开: %q", tt.Texts())
+	}
+	if now, _ := tt.Find("a.txt"); now != name {
+		t.Errorf("悬停时文件名动了: %v → %v", name, now)
+	}
+
+	repo.Git("checkout", "src/a.txt") // 工作区干净了，界面上的 M 只剩提交文件行那个
+	a.RefreshRepo(r, app.WhyManual)
+	wait("读状态", func() bool { return idle(r)() && r.Status.Unstaged == 0 })
+	if !a.St.RightBar {
+		a.Exec("view.right")
+	}
+	wait("历史", func() bool { return r.Hist.Loaded && !r.Hist.Loading && len(r.Hist.Commits) == 2 })
+	mustClickRow(t, tt, "加一行")
+	wait("展开", func() bool { return r.Hist.FilesFor != "" && !r.Hist.FilesLoading })
+	tt.Move(0, 0)
+	tt.Frame()
+	tt.Frame()
+	plus, ok := tt.Find("+1")
+	if !ok {
+		t.Fatalf("没有行数: %q", tt.Texts())
+	}
+	if m, ok := tt.Find("M"); !ok || m.X < plus.X+plus.W || m.Y >= plus.Y+plus.H || plus.Y >= m.Y+m.H {
+		t.Errorf("提交文件行的字母不在行数右边: 行数 %v 字母 %v %v", plus, m, ok)
+	}
+}

@@ -500,9 +500,7 @@ func stashFileRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		a.OnChangeSelected(true)
 	}
 	el.Children(func() {
-		changeLabel(c, ch, sel, muted, sideFont)
-		wui.Spacer(c).Grow(1)
-		lineCounts(c, ch, sel, muted)
+		commitFileLabel(a, c, ch, sel, muted)
 	})
 }
 
@@ -551,12 +549,12 @@ func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 		a.OnChangeSelected(true)
 	}
 	el.Children(func() {
-		changeLabel(c, shown, sel, muted, sideFont)
+		changeLabel(a, c, shown, sel, muted, sideFont)
 		if !showActions(a, row, hover) {
 			wui.Box(c).Size(0, rowToolSize).Shrink(0) // 和出按钮时一样高，行不跳
+			codeLetter(c, t, ch.Code, sel)
 			return
 		}
-		wui.Spacer(c).Grow(1)
 		changeActions(a, c, cr, g.do)
 	})
 }
@@ -660,10 +658,9 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 				wui.Icon(c, iconFolder).FontSize(iconInline).TextColor(fg)
 			})
 			pathLabel(c, ch, sel, muted, sideFont)
-			wui.Spacer(c).Grow(1)
 			if !showActions(a, row, hover) {
-				wui.Text(c, dirCount(r, ch.Path)).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 				wui.Box(c).Size(0, rowToolSize).Shrink(0) // 和出按钮时一样高，行不跳
+				wui.Text(c, dirCount(r, ch.Path)).FontSize(sideSub).TextColor(muted).SingleLine().Shrink(0)
 				return
 			}
 			stageActions(a, c, cr, g.do) // 删除 · 暂存，都是整个目录
@@ -755,14 +752,16 @@ func ongoingRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	})
 }
 
-// changeLabel 是一项变更的状态字母、文件名和目录（或重命名前的路径）。
-func changeLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color, size float32) {
-	codeChip(c, ch.Code, sel)
+// changeLabel 是一项变更的文件图标（和文件树同一个）、文件名和目录（或重命名前的路径）。它撑满这一行：
+// 接着画的东西靠右。状态字母 codeLetter 在行尾，由调用的人画，变更行悬停时让给按钮。
+func changeLabel(a *app.App, c *wui.Context, ch git.Change, sel bool, muted wui.Color, size float32) {
+	fileGlyph(a, c, ch.Path, sel).Shrink(0)
 	pathLabel(c, ch, sel, muted, size)
 }
 
-// pathLabel 是 changeLabel 去掉状态字母：文件名、子模块标记、目录（或重命名前的路径）。整个未跟踪的目录
+// pathLabel 是 changeLabel 去掉图标：文件名、子模块标记、目录（或重命名前的路径）。整个未跟踪的目录
 // （git status 给的是 "scripts/"）名字写成 "scripts/"，后面是它的上级目录。
+// 文件名优先：路径的基准宽是 0，只分文件名剩下的地方，放不下先缩路径；文件名比整行还长时才自己截断。
 func pathLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color, size float32) {
 	dir, base := path.Split(strings.TrimSuffix(ch.Path, "/"))
 	if strings.HasSuffix(ch.Path, "/") {
@@ -776,12 +775,18 @@ func pathLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color, size fl
 		}
 		pill(c, i18n.T("子模块"), c.Theme().TextMuted, sel).Tooltip(tip)
 	}
-	switch {
-	case ch.Orig != "":
-		wui.Text(c, "← "+ch.Orig).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
-	case dir != "":
-		wui.Text(c, strings.TrimSuffix(dir, "/")).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(2)
+	rest := strings.TrimSuffix(dir, "/")
+	if ch.Orig != "" {
+		rest = "← " + ch.Orig
 	}
+	if rest == "" {
+		wui.Spacer(c).Grow(1)
+		return
+	}
+	// 裁在一个盒子里：一点地方都不剩时 Text 还会画出一个“…”，跟在截断的文件名后面成了两个
+	wui.Box(c).Basis(0).Grow(1).MinWidth(0).Clip().Children(func() {
+		wui.Text(c, rest).FontSize(sideSub).TextColor(muted).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
+	})
 }
 
 // lineCounts 是提交里的文件行右边的 +12 −3（diff-tree --numstat），二进制是灰的"二进制"，是 0 的一边不画。
@@ -803,11 +808,11 @@ func lineCounts(c *wui.Context, ch git.Change, onAccent bool, muted wui.Color) {
 	}
 }
 
-// commitFileLabel 是提交里的一个文件：changeLabel，右边是行数。
-func commitFileLabel(c *wui.Context, ch git.Change, sel bool, muted wui.Color) {
-	changeLabel(c, ch, sel, muted, sideFont)
-	wui.Spacer(c).Grow(1)
+// commitFileLabel 是提交里的一个文件：changeLabel，右边是行数和状态字母。
+func commitFileLabel(a *app.App, c *wui.Context, ch git.Change, sel bool, muted wui.Color) {
+	changeLabel(a, c, ch, sel, muted, sideFont)
 	lineCounts(c, ch, sel, muted)
+	codeLetter(c, c.Theme(), ch.Code, sel)
 }
 
 // lineTotals 把几个文件的行数加起来。

@@ -567,7 +567,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	})
 }
 
-// codeLetter 是文件树行末的 git 状态字母（M / A / ? …），实心选中块上（sel）是白的。
+// codeLetter 是文件树和 Git 栏行末的 git 状态字母（M / A / ? …），实心选中块上（sel）是白的。
 func codeLetter(c *wui.Context, t *wui.Theme, code byte, sel bool) {
 	col := codeColor(t, code)
 	if sel {
