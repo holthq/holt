@@ -14,6 +14,12 @@ func TestPick(t *testing.T) {
 	if got := Pick("Hack", withMeslo); got != "Hack" {
 		t.Fatalf("WORKBENCH_FONT 应该优先，得到 %q", got)
 	}
+	// 普通（没有 Nerd 图标）的 JetBrains Mono 也优先于别的 Nerd Font：它的字形和自带字体一样，
+	// 图标那几个字形由系统回退补上。
+	withJetBrains := []ui.FontFamily{{Name: "JetBrains Mono", Monospaced: true}, {Name: "MesloLGS Nerd Font Mono", Monospaced: true}}
+	if got := Pick("", withJetBrains); got != "JetBrains Mono" {
+		t.Fatalf("装了 JetBrains Mono 时应该用它，得到 %q", got)
+	}
 	other := []ui.FontFamily{{Name: "Menlo", Monospaced: true}, {Name: "0xProto Nerd Font Mono", Monospaced: true}}
 	if got := Pick("", other); got != "0xProto Nerd Font Mono" {
 		t.Fatalf("别的 Nerd Font 等宽家族也应该用，得到 %q", got)

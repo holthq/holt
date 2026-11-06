@@ -13,13 +13,16 @@ import (
 )
 
 // Bundled 是 resources/fonts 里自带的等宽字体（带 Nerd Font 图标）。
-// 它要占应用自己约 20 MB 内存，所以系统里装了 Nerd Font 时优先用系统的。
+// 它要占应用自己约 20 MB 内存，所以系统里装了 JetBrains Mono 或别的 Nerd Font 时优先用系统的。
 const Bundled = "JetBrainsMono Nerd Font"
 
-// systemNerdFonts 是常见的 Nerd Font 家族，按偏好排序；装了哪个就用哪个。
-var systemNerdFonts = []string{
+// systemMono 是优先用的系统等宽家族，按偏好排序；装了哪个就用哪个。
+// 头几个是自带字体 JetBrains Mono：系统里装的是 Nerd Font 版本时图标齐全；只装了普通的
+// JetBrains Mono 也用它（不加载自带字体，省约 20 MB，缺的图标字形由系统回退补上）。
+var systemMono = []string{
 	"JetBrainsMono Nerd Font Mono",
 	"JetBrainsMono Nerd Font",
+	"JetBrains Mono",
 	"MesloLGS Nerd Font Mono",
 	"MesloLGS Nerd Font",
 	"MesloLGM Nerd Font Mono",
@@ -69,7 +72,7 @@ func Load() bool {
 // Mono 是终端和 diff 用的等宽字体，按这个顺序挑：
 //  1. 环境变量 WORKBENCH_FONT 指定的家族（"monospace" 为系统默认等宽字体，
 //     "JetBrainsMono Nerd Font" 强制用自带字体）；
-//  2. 系统里已经装好的 Nerd Font，不占应用自己的内存；
+//  2. 系统里已经装好的 JetBrains Mono 或别的 Nerd Font，不占应用自己的内存；
 //  3. 自带的 JetBrainsMono Nerd Font；
 //  4. 系统默认等宽字体。
 func Mono() string {
@@ -94,7 +97,7 @@ func Pick(forced string, families []ui.FontFamily) string {
 			have[strings.ToLower(f.Name)] = true
 		}
 	}
-	for _, name := range systemNerdFonts {
+	for _, name := range systemMono {
 		if have[strings.ToLower(name)] {
 			return name
 		}
