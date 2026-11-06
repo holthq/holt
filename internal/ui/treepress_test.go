@@ -56,9 +56,20 @@ func TestTreePressFeel(t *testing.T) {
 		t.Fatalf("松开没打开 b.txt：%+v", d)
 	}
 	released := tt.Image().At(int(x)+40, int(y))
-	if pressed == released || pressed == hover {
-		t.Errorf("按下的底色和选中 / 悬停分不开：悬停 %v 按下 %v 松开 %v", hover, pressed, released)
+	if pressed != released || pressed == hover {
+		t.Errorf("按下就该是选中的底色，松开不再变（不然点一下闪一下）：悬停 %v 按下 %v 松开 %v", hover, pressed, released)
 	}
+	// 按在已经选中的行上：底色一点不变
+	tt.Move(x, y)
+	tt.Frame()
+	tt.Press(x, y)
+	tt.Frame()
+	if again := tt.Image().At(int(x)+40, int(y)); again != released {
+		t.Errorf("按在选中的行上底色变了：%v -> %v", released, again)
+	}
+	tt.Release(x, y)
+	tt.Frame()
+	tt.Frame()
 
 	// 按下拖过几行：拖着选，松开不打开
 	a.Exec("file.closeAll")

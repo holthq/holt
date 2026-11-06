@@ -390,7 +390,7 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
 - 新建、重命名、移到废纸篓在 `app/fileops.go`。文件树的 ⌘Z（`app/fileundo.go`）：重命名 / 移动改回去，新建 / 复制进来的移到废纸篓；移到废纸篓的不记（放回靠访达），没有重做；`undoStale` 发现磁盘在那之后变了就不撤。
 - 悬停目录显示大小和最近改动（`app/dirtip.go`）：只 `Lstat` 树里列着的文件，第一次悬停时在后台算，有上限。
 - 鼠标（issue #46）：没选中的文件 / 目录行没按 ⌘ ⇧ 的单击由行自己接（`ui.treePress`，`HandleInput` 接下按下、移动、松开，不交给列表）：
-  按下那一帧就选中（`PressTreeRow`）、画"按下"的底色（`pressFill`，叠在选中的底上），按着拖到别的行是拖着选（`DragTreePress`，按 `TreeSpans` 找行，
+  按下那一帧就选中（`PressTreeRow`），不画单独的"按下"底色（比选中深一档的话，点一下先深后浅，看着是闪），按着拖到别的行是拖着选（`DragTreePress`，按 `TreeSpans` 找行，
   不会在列表边上自动滚），松开才打开文件 / 展开目录（`ReleaseTreePress`）；那次松开 mygo 下一帧还会报成这一行的单击，`TreeRowClicked` 按 `eat` 吃掉。
   `eat` 只管松开后紧接着的那一帧（`ApplyTreeClick` 每帧末尾清掉），不按时间算：按住多久再松开都只做一次（issue #50）。
   只有文件行认双击（固定打开，`treeDoubleClick` 500 ms 内同一行的第二下）；目录 / 仓库行不认双击，每一下单击都展开 / 收起（同 VS Code、Zed），

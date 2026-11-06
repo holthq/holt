@@ -433,7 +433,6 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	}
 	k, pressing := a.TreePressed()
 	pressing = pressing && k == tr.Key() // 按下时选中了这一行，还按着：松开之前接着收它的移动和松开
-	pressed := pressing && hov
 	var press func(wui.InputEvent) bool
 	if pressing || !a.FileChosen.Has(tr.Key()) {
 		press = treePress(a, row.Index, tr, indent)
@@ -442,7 +441,6 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		// 按下归这一行了（列表接不到点击），点击记下来等列表建好再照列表的规矩做（ApplyTreeClick）
 		el.Drag(dragOf(tr))
-		pressed = pressed || el.Pressed() && !el.Dragging()
 		if el.Clicked() || el.DoubleClicked() {
 			a.TreeRowClicked(row.Index, el.ClickModifiers(), el.Clicked(), el.DoubleClicked(), c.Now())
 			a.TreeTip.Dismiss()
@@ -463,9 +461,6 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	} else if !tr.Dir && el.RowDoubleClicked() {
 		a.OpenFile(r, tr.Path, true)
 		a.TreeTip.Dismiss()
-	}
-	if pressed {
-		el.Radius(rowRadius).Background(pressFill(a, t))
 	}
 	if tr.Dir && !filtering && !tr.Linked && !tr.DirLink() { // 不往链接指的地方放
 		treeDropTarget(a, c, el, tr)
@@ -1222,20 +1217,8 @@ func menuRing(el wui.Element, on *bool) {
 	})
 }
 
-// pressFill 是文件树行按下（还没松开）时盖在行上的底色，比悬停深一档（wu 的 ghost_element_active）：
-// 淡底选中时是字色 8%（深色 10%），叠在选中的淡底上；实心选中时是按下的强调色（AccentPressed）。
-func pressFill(a *app.App, t *wui.Theme) wui.Color {
-	if a.St.Settings.SolidSelection {
-		return t.AccentPressed
-	}
-	if t.Dark {
-		return t.Text.Alpha(0.10)
-	}
-	return t.Text.Alpha(0.08)
-}
-
 // treePress 是没选中的文件 / 目录行（第 i 行）自己接的鼠标按下：没按 ⌘ ⇧ ⌃ 的单击，按下那一帧就选中它
-// （PressTreeRow，这一帧就画成选中加"按下"的底色），按着拖到别的行是拖着选（DragTreePress），松开时才打开
+// （PressTreeRow，这一帧就画成选中），按着拖到别的行是拖着选（DragTreePress），松开时才打开
 // （ReleaseTreePress）。原来交给列表时，列表在按下时选中、Grove 在同一帧就打开了文件，按下和点击分不开。
 // 按 ⌘ ⇧ 的、双击、右键、按在目录的箭头上的不接，照旧交给列表 / 箭头 / 菜单。
 func treePress(a *app.App, i int, tr app.TreeRow, indent float32) func(ev wui.InputEvent) bool {
