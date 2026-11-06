@@ -484,7 +484,8 @@ func histCommitRow(a *app.App, l *listLook, row wui.ListRow, r *app.Repo, ci int
 	}
 	histParts(l, row, top, func() {
 		sel := onAccent(a, row.Selected())
-		el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch).ContextMenu(func(m *wui.Menu) { commitMenu(a, nativeMenu(m), r, cm) })
+		el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch)
+		ctxMenu(a, c, el, menuOwner{"commit", r.Root + "\x00" + cm.Hash}, func(m menu) { commitMenu(a, m, r, cm) })
 		hover := el.Hovered()
 		el.Children(func() {
 			switch {
@@ -713,7 +714,9 @@ func histFileRow(a *app.App, l *listLook, row wui.ListRow, r *app.Repo, ch git.C
 	c := row.Context
 	withTheme(c, l.real, func() {
 		t := c.Theme()
-		wui.Row(c).AlignItems(wui.Stretch).Shrink(0).ContextMenu(func(m *wui.Menu) { changeMenu(a, nativeMenu(m), r, ch) }).Children(func() {
+		chRow := wui.Row(c).AlignItems(wui.Stretch).Shrink(0)
+		ctxMenu(a, c, chRow, menuOwner{"change", r.Root + "\x00" + ch.Path}, func(m menu) { changeMenu(a, m, r, ch) })
+		chRow.Children(func() {
 			graph()
 			slice := wui.Column(c).Grow(1).MinWidth(0).Background(histCardBg(t)).BorderColor(cardLine(t))
 			if last {
@@ -885,8 +888,9 @@ func allHistRow(a *app.App, l *listLook, row wui.ListRow, rows []app.AllHistRow)
 		l.row(c, row.Selected(), row.ListFocused(), func() {
 			t := c.Theme()
 			sel := onAccent(a, row.Selected())
-			wui.Row(c).Height(histRowH).Padding(0, 8).Gap(6).AlignItems(wui.Center).Tooltip(i18n.T("在侧栏的 Git 栏里看这个仓库")).
-				ContextMenu(func(m *wui.Menu) { repoMenu(a, nativeMenu(m), r, false) }).Children(func() {
+			repoRow := wui.Row(c).Height(histRowH).Padding(0, 8).Gap(6).AlignItems(wui.Center).Tooltip(i18n.T("在侧栏的 Git 栏里看这个仓库"))
+			ctxMenu(a, c, repoRow, menuOwner{"histRepo", r.Root}, func(m menu) { repoMenu(a, m, r, false) })
+			repoRow.Children(func() {
 				repoDot(a, c, r, sel)
 				wui.Text(c, r.Name).FontSize(13.5).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).Tooltip(changeSummary(r.Status))
 				pill(c, strconv.Itoa(r.Status.Count), t.Warning, sel)
@@ -913,7 +917,8 @@ func allHistRow(a *app.App, l *listLook, row wui.ListRow, rows []app.AllHistRow)
 		}
 		histParts(l, row, top, func() {
 			sel := onAccent(a, row.Selected())
-			el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch).ContextMenu(func(m *wui.Menu) { commitMenu(a, nativeMenu(m), r, cm) })
+			el := wui.Row(c).Height(histRowH).AlignItems(wui.Stretch)
+			ctxMenu(a, c, el, menuOwner{"commit", r.Root + "\x00" + cm.Hash}, func(m menu) { commitMenu(a, m, r, cm) })
 			hover := el.Hovered()
 			el.Children(func() { commitLine(a, c, r, cm, sel, hover, true, 8) })
 		}, tail)
@@ -947,7 +952,8 @@ func compareRow(a *app.App, row wui.ListRow, r *app.Repo, cp *app.Compare, hr ap
 	}
 	if hr.File >= 0 {
 		ch := cp.Files[hr.File]
-		el := wui.Row(c).ContextMenu(func(m *wui.Menu) { changeMenu(a, nativeMenu(m), r, ch) })
+		el := wui.Row(c)
+		ctxMenu(a, c, el, menuOwner{"change", r.Root + "\x00" + ch.Path}, func(m menu) { changeMenu(a, m, r, ch) })
 		if el.RowDoubleClicked() {
 			a.OpenDiff(r, ch, true)
 		}

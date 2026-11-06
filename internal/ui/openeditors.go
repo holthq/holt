@@ -73,7 +73,8 @@ func openEditorRow(a *app.App, c *wui.Context, r app.OpenEditorRow, indent float
 	cur := a.OpenEditorCurrent(r)
 	on := onAccent(a, cur)
 	el := wui.Row(c).Padding(3, 4, 3, indent).Gap(treeGap).Radius(rowRadius).AlignItems(wui.Center).
-		Cursor(wui.CursorPointer).Label(i18n.Tf("打开的编辑器 %s", d.Title)).ContextMenu(func(m *wui.Menu) { tabMenu(a, nativeMenu(m), d) })
+		Cursor(wui.CursorPointer).Label(i18n.Tf("打开的编辑器 %s", d.Title))
+	ctxMenu(a, c, el, menuOwner{"openEditor", d.Where()}, func(m menu) { tabMenu(a, m, d) })
 	tooltip(c, el, d.Where())
 	hover := el.Hovered()
 	switch {

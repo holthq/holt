@@ -26,7 +26,8 @@ func localHistRow(a *app.App, row wui.ListRow, r *app.Repo, rows []app.HistRow, 
 	if sel {
 		muted = c.Theme().AccentText.Alpha(0.75)
 	}
-	el := wui.Row(c).ContextMenu(func(m *wui.Menu) { localMenu(a, m, abs, e) })
+	el := wui.Row(c)
+	ctxMenu(a, c, el, menuOwner{"localHist", abs + "\x00" + e.SHA}, func(m menu) { localMenu(a, m, abs, e) })
 	if el.RowDoubleClicked() {
 		a.OpenLocalCompare(abs, e, true)
 	}
@@ -76,7 +77,7 @@ func localGraph(c *wui.Context, pass bool, w float32, sel bool) {
 }
 
 // localMenu 是本地行的右键菜单。
-func localMenu(a *app.App, m *wui.Menu, abs string, e lhist.Entry) {
+func localMenu(a *app.App, m menu, abs string, e lhist.Entry) {
 	if m.Item(i18n.T("恢复到这一份")).Chosen() {
 		a.RestoreLocal(abs, e)
 	}
@@ -124,7 +125,8 @@ func localPathView(a *app.App, c *wui.Context) {
 				if sel {
 					muted = c.Theme().AccentText.Alpha(0.75)
 				}
-				el := wui.Row(c).Padding(6, 8).Gap(8).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) { localMenu(a, m, abs, e) })
+				el := wui.Row(c).Padding(6, 8).Gap(8).AlignItems(wui.Center)
+				ctxMenu(a, c, el, menuOwner{"localHist", abs + "\x00" + e.SHA}, func(m menu) { localMenu(a, m, abs, e) })
 				if el.RowDoubleClicked() {
 					a.OpenLocalCompare(abs, e, true)
 				}

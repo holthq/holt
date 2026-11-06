@@ -311,7 +311,7 @@ func TestAccessLabels(t *testing.T) {
 	a.CancelOp(r)
 	wait("取消", idle(r))
 
-	mustClick(t, tt, "A 返回 1")
+	mustClickRow(t, tt, "A 返回 1") // 提交行装了 Grove 的右键菜单（ctxMenu），点它按坐标
 	wait("展开的提交", func() bool { return r.Hist.Expanded != "" && !r.Hist.FilesLoading })
 	accessCheck(t, tt, "展开的提交")
 	// 头部的图标开关是切换按钮（按下 = 开）

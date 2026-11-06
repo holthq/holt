@@ -128,8 +128,8 @@ func TestMirrorTabUI(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("在另一组里再开一份"); err != nil {
-		t.Fatalf("标签菜单：%v，%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "在另一组里再开一份"); err != nil {
+		t.Fatalf("标签菜单：%v，%q", err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	tt.Frame()

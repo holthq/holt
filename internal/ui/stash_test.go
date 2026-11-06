@@ -123,10 +123,10 @@ func TestStashAndWeb(t *testing.T) {
 	if err := rightClickRow(tt, "初始提交"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("在 GitHub 打开"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "在 GitHub 打开"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("没推送的提交不该能在 GitHub 打开: %v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	repo.Git("update-ref", "refs/remotes/origin/main", "HEAD") // 当它推送过了（只改本地的远程分支引用）
 	a.RefreshRepo(r, app.WhyManual)
 	wait("推送后的状态", func() bool { return idle(r)() && r.Extra.HeadPushed() })

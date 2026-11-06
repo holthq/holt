@@ -322,9 +322,8 @@ func tab(a *app.App, c *wui.Context, g *app.Group, i int, d *docs.Doc, active bo
 		return
 	}
 	// 当前标签和卡身同色、盖住卡片头底下那条线；别的标签是头上的一个圆角块，悬停才有底色
-	el := tooltip(c, panelTab(c, active).Label(i18n.Tf("标签 %s", d.Title)), d.Where()).ContextMenu(func(m *wui.Menu) {
-		tabMenu(a, nativeMenu(m), d)
-	})
+	el := tooltip(c, panelTab(c, active).Label(i18n.Tf("标签 %s", d.Title)), d.Where())
+	ctxMenu(a, c, el, menuOwner{"tab", fmt.Sprintf("%p", d)}, func(m menu) { tabMenu(a, m, d) })
 	hover := el.Hovered()
 	if active && g.TabShown != d { // 换了当前标签（点、新开的、关掉别的、后退 / 前进）：滚到看得见
 		g.TabShown = d

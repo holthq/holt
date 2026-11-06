@@ -422,8 +422,8 @@ func stashRow(a *app.App, row wui.ListRow, r *app.Repo, s git.Stash) {
 	open := r.StashOpen == s.Hash
 	toggle := func() { a.ToggleStash(r, s) }
 	el := wui.Row(c).Height(26).Padding(0, 4, 0, 16).Gap(6).AlignItems(wui.Center).
-		Tooltip(s.Ref + "  " + s.Message + "\n" + s.Date.Local().Format("2006-01-02 15:04")).
-		ContextMenu(func(m *wui.Menu) { stashMenu(a, nativeMenu(m), r, s) })
+		Tooltip(s.Ref + "  " + s.Message + "\n" + s.Date.Local().Format("2006-01-02 15:04"))
+	ctxMenu(a, c, el, menuOwner{"stash", r.Root + "\x00" + s.Hash}, func(m menu) { stashMenu(a, m, r, s) })
 	hover := el.Hovered()
 	if hover {
 		a.GitHover = row.Index
