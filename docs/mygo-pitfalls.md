@@ -78,6 +78,8 @@
   行高 24 的列表看着一顿一顿的；`Tester.Wheel` 发这种滚轮、`Tester.Scroll` 发触控板的。
 - 元素的 `Bounds()` 是上一帧的布局；拿它当行的位置画叠在列表上的东西（吸顶栈）会比行晚一帧，要按列表两帧偏移之差挪一下。
 - 输入回调里 `Context.Now()` 不是事件的时间，用 `InputEvent.Time`。
+- `SetMenuPresentation(PopoverMenus)` 下 `ContextMenu` / `Menu` 的菜单每帧重建（系统菜单是打开时的快照）：开着时状态变了，项跟着变灰；
+  测试里"选了打开时还能用、现在不能用的项"这种场景不再有，`Tester.Menu` / `ChooseMenuItem` 照样能用。
 - 双击：List 的行用 `RowDoubleClicked`，普通元素用 `DoubleClicked`。
 - 行里的子元素一旦 `Clicked()` / `Pressed()` / `Drag`，会消耗该事件，列表无法再收到。不要为了获取修饰键而给行添加 `Clicked()`。
   文件树的做法：只让选中的行当拖动源（没选中的按下还是列表的拖选）；选中行的点击由 `TreeRowClicked` 记下，列表构建完成后，`ApplyTreeClick`

@@ -332,6 +332,7 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）、Git 栏段头的右键菜单和分支菜单、标题栏分支胶囊的菜单是 Grove 自己画的（issue #48、#58），不用系统菜单
 右键一行时菜单用 `PopMenu.OpenRow` 开：在指针的横坐标、那一行底下展开，下面放不下翻到那一行上面，不盖住它；比 `MenuRowMax`（64）高的（列表空白处）按指针处开。菜单开着时右键别的登记过的地方也一样。
 文件树以外用 `ctxMenu`（右键）/ `openMenuBelow`（按钮）的：Git 栏段头、分支胶囊和段头的分支、编辑器标签、打开的编辑器、贮藏、历史的提交 / 改动 / 仓库行、本地历史。还是系统菜单（`ContextMenu` / `Menu`）的：工作树、blame、终端标签、搜索结果（它们的建菜单函数用 `do` 把动作推迟到列表建完，Grove 菜单在帧末尾执行选中项，推迟的那一下就丢了，要先改成直接做）、推送按钮、状态栏、⋯ Git 操作、队列、设置。
+`root` 每帧 `c.SetMenuPresentation(wui.PopoverMenus)`：这些还是 `ContextMenu` / `Menu` 的、编辑器的右键菜单（`d.St.ContextMenu`，mygo 编辑器自己开的，Grove 接不过来）、文本框和可选中文字的编辑菜单都由 mygo 画在窗口里（mygo 的 `PopoverMenu` 的样子，不是 Grove 菜单的）。
 （窗口靠下时会折成带滚动箭头的，见 `docs/mygo-pitfalls.md`），也不用 mygo 的 `PopoverMenu`（不能按住右键拖到项上松开、子菜单没有延迟和安全三角、
 灰项说不了原因、点外面那一下会落到底下）：
 

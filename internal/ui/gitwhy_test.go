@@ -55,12 +55,17 @@ func TestGitWhyMenus(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("一致", func() bool { return idle(r)() && r.Status.Ahead == 0 })
 	a.Toast = ""
-	if err := chooseMenu(t, tt, "推送"); err != nil {
-		t.Fatalf("选推送: %v", err)
+	// 菜单画在窗口里（SetMenuPresentation），每帧重建：推送跟着状态变灰、标签里写原因，选不了
+	tt.Frame()
+	if m := shownMenu(t, tt); !slices.Contains(m, "推送（和 origin 一致）") {
+		t.Fatalf("状态变了以后菜单里的推送该灰着说原因: %q", m)
 	}
+	if err := chooseMenu(t, tt, "推送（和 origin 一致）"); err == nil {
+		t.Fatal("状态变了以后推送还能选")
+	}
+	closeMenu(t, tt)
 	tt.Frame()
 	if len(r.Queue) > 0 || r.Running() != nil {
 		t.Fatal("状态变了以后还排了推送")
 	}
-	mustText(t, tt, "和 origin 一致") // 提示出原因
 }

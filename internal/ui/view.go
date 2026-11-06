@@ -25,6 +25,9 @@ func root(a *app.App, c *wui.Context) {
 	t := c.Theme()
 	applyAccent(a, t)
 	c.SetZoom(a.ZoomFactor()) // 界面缩放（⌘= ⌘- ⌘0）：按窗口的，每个窗口自己设
+	// mygo 自己建的菜单（编辑器的右键菜单、文本框和可选中文字的编辑菜单）和还没换成 Grove 菜单的 ContextMenu / Menu
+	// 画在窗口里（issue #58），不和 Grove 画的菜单混着出系统菜单；菜单栏、程序坞菜单还是系统的
+	c.SetMenuPresentation(wui.PopoverMenus)
 	a.BindShortcuts(c)
 	a.SyncMenu()
 	a.AutoSaveTick()

@@ -108,13 +108,13 @@ func TestOpenToSide(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if m := tt.Menu(); !slices.Contains(m, "拆分") || slices.Index(m, "在另一组里再开一份") != slices.Index(m, "拆分")+1 || slices.Index(m, "固定标签") != slices.Index(m, "拆分")+2 {
+	if m := shownMenu(t, tt); !slices.Contains(m, "拆分") || slices.Index(m, "在另一组里再开一份") != slices.Index(m, "拆分")+1 || slices.Index(m, "固定标签") != slices.Index(m, "拆分")+2 {
 		t.Fatalf("标签菜单：%q", m)
 	}
-	if err := tt.ChooseMenuItem("拆分", "向左拆分"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "拆分", "向左拆分"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Fatalf("太窄时向左拆分：%v", err)
 	}
-	if err := tt.ChooseMenuItem("拆分", "向下拆分"); err != nil {
+	if err := chooseMenu(t, tt, "拆分", "向下拆分"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -130,10 +130,10 @@ func TestOpenToSide(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("拆分", "向右拆分"); err == nil || !strings.Contains(err.Error(), `"拆分" is disabled`) {
+	if err := chooseMenu(t, tt, "拆分", "向右拆分"); err == nil || !strings.Contains(err.Error(), `"拆分" is disabled`) {
 		t.Fatalf("一个标签时拆分：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	// 向左：左边那组再开一个，把它分到左边
 	a.FocusGroup(a.GroupOf(readme))
 	e := a.OpenFile(r, "e.txt", true)
