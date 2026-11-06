@@ -6,125 +6,88 @@ import (
 	"fmt"
 	"net/http"
 	"net/http/httptest"
-	"strconv"
 	"strings"
 	"testing"
-	"time"
 )
 
-// serve 起一个 httptest.Server 当作 GitHub API，测试期间把 apiBase 指过去，结束时换回来。
-func serve(t *testing.T, h http.HandlerFunc) {
+// serve 起一个 httptest.Server 当作 github.com，测试期间把 siteBase 指过去，结束时换回来。
+func serve(t *testing.T, h http.HandlerFunc) *httptest.Server {
 	t.Helper()
 	srv := httptest.NewServer(h)
-	old := apiBase
-	apiBase = srv.URL
+	old := siteBase
+	siteBase = srv.URL
 	t.Cleanup(func() {
-		apiBase = old
+		siteBase = old
 		srv.Close()
 	})
+	return srv
 }
 
-// 正常 release：请求方法、路径、两个头；tag_name 去掉 v，html_url 和正文原样带回来。
+// 正常 release：打开 /octo/holt/releases/latest，跟着跳到 /releases/tag/<标签>，从最后落在的地址取版本；
+// 不走 API 的 /repos/… 路径。
 func TestLatest(t *testing.T) {
-	serve(t, func(w http.ResponseWriter, r *http.Request) {
-		if r.Method != http.MethodGet {
-			t.Errorf("方法 = %s，要 GET", r.Method)
+	var srv *httptest.Server
+	srv = serve(t, func(w http.ResponseWriter, r *http.Request) {
+		if strings.HasPrefix(r.URL.Path, "/repos/") {
+			t.Errorf("用了 GitHub API：%s", r.URL.Path)
 		}
-		if r.URL.Path != "/repos/octo/grove/releases/latest" {
-			t.Errorf("路径 = %q", r.URL.Path)
+		switch r.URL.Path {
+		case "/octo/holt/releases/latest":
+			if r.Method != http.MethodGet {
+				t.Errorf("方法 = %s，要 GET", r.Method)
+			}
+			if ua := r.Header.Get("User-Agent"); ua != "Holt" {
+				t.Errorf("User-Agent = %q，要 Holt", ua)
+			}
+			http.Redirect(w, r, "/octo/holt/releases/tag/v0.1.3", http.StatusFound)
+		case "/octo/holt/releases/tag/v0.1.3":
+			w.Header().Set("Content-Type", "text/html; charset=utf-8")
+			fmt.Fprint(w, `<html><body>Holt 0.1.3</body></html>`)
+		default:
+			http.NotFound(w, r)
 		}
-		if ua := r.Header.Get("User-Agent"); ua != "Holt" {
-			t.Errorf("User-Agent = %q，要 Holt", ua)
-		}
-		if accept := r.Header.Get("Accept"); accept != "application/vnd.github+json" {
-			t.Errorf("Accept = %q", accept)
-		}
-		w.Header().Set("Content-Type", "application/json")
-		fmt.Fprint(w, `{
-			"tag_name": "v0.1.3",
-			"html_url": "https://github.com/octo/grove/releases/tag/v0.1.3",
-			"body": "修了文件树的滚动。\n\n还有别的。",
-			"name": "Holt 0.1.3",
-			"draft": false
-		}`)
 	})
 
-	rel, err := Latest(context.Background(), "octo", "grove")
+	rel, err := Latest(context.Background(), "octo", "holt")
 	if err != nil {
 		t.Fatal(err)
 	}
-	want := Release{
-		Version: "0.1.3",
-		URL:     "https://github.com/octo/grove/releases/tag/v0.1.3",
-		Notes:   "修了文件树的滚动。\n\n还有别的。",
-	}
+	want := Release{Version: "0.1.3", URL: srv.URL + "/octo/holt/releases/tag/v0.1.3"}
 	if rel != want {
 		t.Fatalf("Latest() = %+v，要 %+v", rel, want)
 	}
 }
 
-// 404 是 ErrNoRelease；别的状态码、坏 JSON 都是别的错误，错误里要有状态码或 GitHub 的说明。
+// 出错的情况：404 / 没有 release（送到 /releases）/ 别的状态码。
 func TestLatestErrors(t *testing.T) {
-	reset := time.Now().Add(time.Hour).Unix()
 	for _, c := range []struct {
 		name     string
 		status   int
-		body     string
-		header   map[string]string
-		sentinel error    // 要 errors.Is 上的哨兵；nil 表示只要 err != nil
-		want     []string // 错误里要有的话
+		redirect string // 不是空时跳到这里
+		sentinel error  // 要 errors.Is 上的哨兵；nil 表示只要 err != nil
+		want     []string
 	}{
-		{
-			name:     "404 没有 release",
-			status:   http.StatusNotFound,
-			body:     `{"message":"Not Found"}`,
-			sentinel: ErrNoRelease,
-		},
-		{
-			name:   "500",
-			status: http.StatusInternalServerError,
-			body:   `{"message":"Internal Server Error"}`,
-			want:   []string{"500", "Internal Server Error"},
-		},
-		{
-			name:   "坏 JSON",
-			status: http.StatusOK,
-			body:   `{"tag_name":`,
-			want:   []string{"JSON"},
-		},
-		{
-			name:   "限流",
-			status: http.StatusForbidden,
-			body:   `{"message":"API rate limit exceeded for 1.2.3.4."}`,
-			header: map[string]string{
-				"X-RateLimit-Remaining": "0",
-				"X-RateLimit-Reset":     strconv.FormatInt(reset, 10),
-			},
-			want: []string{"403", "rate limit", "重置"},
-		},
-		{
-			name:   "没有 message 的状态码",
-			status: http.StatusBadGateway,
-			body:   `not json`,
-			want:   []string{"502", "Bad Gateway"},
-		},
-		{
-			name:   "状态码连英文都没有",
-			status: 599,
-			body:   `not json`,
-			want:   []string{"599", "没有说明"},
-		},
+		{name: "404", status: http.StatusNotFound, sentinel: ErrNoRelease},
+		{name: "还没有 release，送到 /releases", status: http.StatusFound, redirect: "/octo/holt/releases", sentinel: ErrNoRelease},
+		{name: "500", status: http.StatusInternalServerError, want: []string{"500", "Internal Server Error"}},
+		{name: "502", status: http.StatusBadGateway, want: []string{"502", "Bad Gateway"}},
+		{name: "403", status: http.StatusForbidden, want: []string{"403", "Forbidden"}},
 	} {
 		t.Run(c.name, func(t *testing.T) {
 			serve(t, func(w http.ResponseWriter, r *http.Request) {
-				for k, v := range c.header {
-					w.Header().Set(k, v)
+				if c.redirect != "" && r.URL.Path == "/octo/holt/releases/latest" {
+					http.Redirect(w, r, c.redirect, http.StatusFound)
+					return
+				}
+				if c.redirect != "" { // 跳过去以后的那一页
+					fmt.Fprint(w, "<html>releases</html>")
+					return
 				}
 				w.WriteHeader(c.status)
-				fmt.Fprint(w, c.body)
+				fmt.Fprint(w, "<html>oops</html>")
 			})
 
-			rel, err := Latest(context.Background(), "octo", "grove")
+			rel, err := Latest(context.Background(), "octo", "holt")
 			if rel != (Release{}) {
 				t.Errorf("出错时还给了 release：%+v", rel)
 			}
@@ -146,25 +109,13 @@ func TestLatestErrors(t *testing.T) {
 	}
 }
 
-// 响应体最多读 1 MB：再大的直接报错，不整个读进来。
-func TestLatestBodyLimit(t *testing.T) {
-	serve(t, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"tag_name":"v0.1.0","body":"`+strings.Repeat("a", maxBody)+`"}`)
-	})
-	_, err := Latest(context.Background(), "octo", "grove")
-	if err == nil || !strings.Contains(err.Error(), "超过") {
-		t.Fatalf("错误 = %v，要提示响应太大", err)
-	}
-}
-
-// 200 但没有 tag_name：认不出版本，算错误。
+// 200 但没有跳到 tag：认不出版本，算“还没有 release”。
 func TestLatestNoTag(t *testing.T) {
 	serve(t, func(w http.ResponseWriter, r *http.Request) {
-		fmt.Fprint(w, `{"html_url":"https://github.com/octo/grove/releases/tag/v0.1.0"}`)
+		fmt.Fprint(w, "<html>latest</html>")
 	})
-	_, err := Latest(context.Background(), "octo", "grove")
-	if err == nil || !strings.Contains(err.Error(), "tag_name") {
-		t.Fatalf("错误 = %v，要说明没有 tag_name", err)
+	if _, err := Latest(context.Background(), "octo", "holt"); err != ErrNoRelease {
+		t.Fatalf("错误 = %v，要 ErrNoRelease", err)
 	}
 }
 
@@ -173,7 +124,7 @@ func TestLatestEmptyRepo(t *testing.T) {
 	serve(t, func(w http.ResponseWriter, r *http.Request) {
 		t.Error("owner 或 repo 是空的，不该发请求")
 	})
-	if _, err := Latest(context.Background(), "", "grove"); err == nil {
+	if _, err := Latest(context.Background(), "", "holt"); err == nil {
 		t.Fatal("没有出错")
 	}
 	if _, err := Latest(context.Background(), "octo", ""); err == nil {
@@ -188,7 +139,7 @@ func TestLatestContext(t *testing.T) {
 	})
 	ctx, cancel := context.WithCancel(context.Background())
 	cancel()
-	if _, err := Latest(ctx, "octo", "grove"); !errors.Is(err, context.Canceled) {
+	if _, err := Latest(ctx, "octo", "holt"); !errors.Is(err, context.Canceled) {
 		t.Fatalf("错误 = %v，要 context.Canceled", err)
 	}
 }

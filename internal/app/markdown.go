@@ -29,11 +29,11 @@ func (a *App) TogglePreview() {
 	a.FocusDoc = !d.Preview || docs.IsSVG(d.Name())
 }
 
-// MarkdownOptions 是 d 的预览选项：图片从文件所在的目录读，链接交给 MarkdownLink。
+// MarkdownOptions 是 d 的预览选项：图片从文件所在的目录读（http / https 的从网上下，见 markdownimage.go），链接交给 MarkdownLink。
 func (a *App) MarkdownOptions(d *docs.Doc) *markdown.Options {
 	if d.MD == nil {
 		d.MD = &markdown.Options{
-			LoadImage: markdown.FileImages(d.Dir()),
+			LoadImage: markdownImages(d.Dir()),
 			OnLink:    func(u string) { a.MarkdownLink(d, u) },
 		}
 	}

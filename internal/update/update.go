@@ -3,13 +3,11 @@ package update
 
 import (
 	"context"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"io"
 	"net/http"
 	"net/url"
-	"strconv"
 	"strings"
 	"time"
 )
@@ -17,108 +15,67 @@ import (
 // Release 是一次发布。
 type Release struct {
 	Version string // 标签去掉前缀 v，如 "0.1.3"
-	URL     string // 发布页 html_url
-	Notes   string // 发布说明（正文）
+	URL     string // 发布页（最后落在的 /releases/tag/… 地址）
 }
 
-// ErrNoRelease 是这个仓库还没有发布过 release（GitHub 返回 404）。
+// ErrNoRelease 是这个仓库还没有发布过 release。
 var ErrNoRelease = errors.New("这个仓库还没有 release")
 
-// apiBase 是 GitHub REST 的根。测试里换成 httptest.Server 的地址。
-var apiBase = "https://api.github.com"
+// siteBase 是 GitHub 站点（测试里换成 httptest.Server 的地址）。
+var siteBase = "https://github.com"
 
 // client 只给 Latest 用：调用方的 ctx 先到时请求立刻取消，这是没人取消时的兜底。
 var client = &http.Client{Timeout: 10 * time.Second}
 
-// maxBody 是最多读多少响应：release 的说明再长也到不了 1 MB。
-const maxBody = 1 << 20
-
-// Latest 查 owner/repo 的最新 release（GitHub REST：GET https://api.github.com/repos/{owner}/{repo}/releases/latest）。
-// 请求跟着 ctx 走，超时由调用方控制（比如 20 秒）；client 另有 10 秒兜底。失败时错误里带上状态码或原因。
-// 没有 release（404）返回 ErrNoRelease。
+// Latest 查 owner/repo 的最新 release：打开 https://github.com/{owner}/{repo}/releases/latest，
+// GitHub 会 302 到 /releases/tag/<标签>，从最后落到的地址里取标签。不走 API，不占限额，也不读那一页 HTML。
+// 请求跟着 ctx 走；没有 release 时（GitHub 把人送到 /releases，或者 404）返回 ErrNoRelease。
 func Latest(ctx context.Context, owner, repo string) (Release, error) {
 	if owner == "" || repo == "" {
 		return Release{}, errors.New("检查更新：owner 或 repo 是空的")
 	}
-	u := strings.TrimRight(apiBase, "/") + "/repos/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/releases/latest"
-	req, err := http.NewRequestWithContext(ctx, http.MethodGet, u, nil)
+	page := strings.TrimRight(siteBase, "/") + "/" + url.PathEscape(owner) + "/" + url.PathEscape(repo) + "/releases/latest"
+	req, err := http.NewRequestWithContext(ctx, http.MethodGet, page, nil)
 	if err != nil {
 		return Release{}, fmt.Errorf("检查更新：%w", err)
 	}
 	req.Header.Set("User-Agent", "Holt")
-	req.Header.Set("Accept", "application/vnd.github+json")
+	req.Header.Set("Accept", "text/html")
 
 	resp, err := client.Do(req)
 	if err != nil {
 		return Release{}, fmt.Errorf("检查更新：%w", err)
 	}
 	defer resp.Body.Close()
+	// 只要最后落在哪，不读那一页（它可能有几十 KB）：关掉就行。
+	_, _ = io.Copy(io.Discard, io.LimitReader(resp.Body, 32<<10))
 
-	body, err := io.ReadAll(io.LimitReader(resp.Body, maxBody+1))
-	if err != nil {
-		return Release{}, fmt.Errorf("检查更新：读 GitHub 的响应：%w", err)
-	}
-	switch {
-	case resp.StatusCode == http.StatusNotFound:
+	switch resp.StatusCode {
+	case http.StatusNotFound:
 		return Release{}, ErrNoRelease
-	case resp.StatusCode != http.StatusOK:
-		return Release{}, githubError(resp, body)
-	case len(body) > maxBody:
-		return Release{}, fmt.Errorf("检查更新：GitHub 的响应超过 %d KB", maxBody>>10)
+	case http.StatusOK:
+	default:
+		return Release{}, fmt.Errorf("检查更新：GitHub 返回 %d：%s", resp.StatusCode, http.StatusText(resp.StatusCode))
 	}
-
-	// 只取用得到的三个字段：别的一律不读。
-	var payload struct {
-		TagName string `json:"tag_name"`
-		HTMLURL string `json:"html_url"`
-		Body    string `json:"body"`
+	tag, ok := tagOf(resp.Request.URL)
+	if !ok {
+		return Release{}, ErrNoRelease // 送到了 /releases：还没有 release
 	}
-	if err := json.Unmarshal(body, &payload); err != nil {
-		return Release{}, fmt.Errorf("检查更新：GitHub 的响应不是 JSON：%w", err)
-	}
-	tag := strings.TrimSpace(payload.TagName)
-	if tag == "" {
-		return Release{}, errors.New("检查更新：GitHub 的 release 没有 tag_name")
-	}
-	return Release{
-		Version: strings.TrimPrefix(tag, "v"),
-		URL:     payload.HTMLURL,
-		Notes:   payload.Body,
-	}, nil
+	return Release{Version: strings.TrimPrefix(tag, "v"), URL: resp.Request.URL.String()}, nil
 }
 
-// httpError 是 GitHub 返回的非 200、非 404 响应：错误里带状态码和 GitHub 的一句说明。
-type httpError struct {
-	Code    int    // HTTP 状态码
-	Message string // GitHub 的 message，没有时是状态码的英文
-}
-
-func (e *httpError) Error() string {
-	return fmt.Sprintf("GitHub 返回 %d：%s", e.Code, e.Message)
-}
-
-// githubError 把错误响应拼成 httpError：message 取 GitHub 的 JSON，不是 JSON 就用状态码的英文；
-// 限额用完时（X-RateLimit-Remaining: 0）再带上一个重置时间。
-func githubError(resp *http.Response, body []byte) error {
-	var payload struct {
-		Message string `json:"message"`
+// tagOf 从 /releases/tag/<标签> 里取标签（去掉 path 转义）。
+func tagOf(u *url.URL) (string, bool) {
+	const marker = "/releases/tag/"
+	i := strings.Index(u.Path, marker)
+	if i < 0 {
+		return "", false
 	}
-	_ = json.Unmarshal(body, &payload) // 读不出来也不要紧，下面还有状态码
-	msg := strings.Join(strings.Fields(payload.Message), " ")
-	if msg == "" {
-		msg = http.StatusText(resp.StatusCode)
+	tag, err := url.PathUnescape(u.Path[i+len(marker):])
+	if err != nil || tag == "" {
+		return "", false
 	}
-	if msg == "" {
-		msg = "没有说明"
-	}
-	if resp.Header.Get("X-RateLimit-Remaining") == "0" {
-		msg += "（GitHub 的限额已用完"
-		if sec, err := strconv.ParseInt(resp.Header.Get("X-RateLimit-Reset"), 10, 64); err == nil {
-			msg += "，" + time.Unix(sec, 0).Local().Format("15:04") + " 重置"
-		}
-		msg += "）"
-	}
-	return &httpError{Code: resp.StatusCode, Message: msg}
+	return tag, true
 }
 
 // Newer 报告 latest 是否比 current 新。按数字逐段比（"0.2.0" > "0.1.9"），认 v 前缀，

@@ -4,6 +4,12 @@
 
 ## 未发布
 
+- 文件树的右键菜单不再闪一下就关：窗口里别的东西拿键盘（列表在右键按下时自己会拿）不再当成窗口失去焦点；
+  只有窗口真的不再是输入去的那个才关。
+- Markdown 预览支持网络图片：README 的徽章、GitHub 上的截图（http / https）下下来解码（最多 8 MB），成功过的按地址留着，
+  本地路径照旧从文档所在的目录读。
+- 检查更新不再走 GitHub API：打开 `https://github.com/holthq/holt/releases/latest`，跟着跳到 `/releases/tag/<标签>` 取版本，
+  不占 API 限额、也不用读那一页 HTML。
 - 仓库规范化，方便国外贡献者提 PR：[CONTRIBUTING.md](CONTRIBUTING.md)（英文为主，中文在末尾）、
   [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)、[SECURITY.md](SECURITY.md)、issue / PR 模板、`.editorconfig`、
   `.gitattributes`；LICENSE 加上 holthq 的版权行。CI 加了 Linux / Windows 的 `go build` + `go vet` 矩阵（macOS 照旧跑测试和打包），

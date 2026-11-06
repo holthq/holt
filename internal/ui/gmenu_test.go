@@ -136,16 +136,18 @@ func TestTreeHoltMenu(t *testing.T) {
 	if a.Menu.IsOpen() {
 		t.Fatal("Esc 该关")
 	}
-	// 失去焦点
+	// 失去焦点（窗口不再是输入去的那个）；窗口里别的东西拿键盘不算
 	open("menu.txt")
 	tt.Frame()
 	tt.Frame()
 	tt.SetFocused(false)
+	tt.SetWindowActive(false)
 	tt.Frame()
 	tt.Frame()
 	if a.Menu.IsOpen() {
 		t.Fatal("窗口失去焦点该关")
 	}
+	tt.SetWindowActive(true)
 	tt.SetFocused(true)
 	tt.Frame()
 	// 滚文件树

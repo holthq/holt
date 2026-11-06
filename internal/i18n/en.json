@@ -2214,5 +2214,7 @@
   "已是最新版本（%s）": "You're up to date (%s)",
   "Grove 的 fork，MIT 许可，原作者的版权行照旧。": "A fork of Grove, MIT-licensed, with the original copyright notice.",
   "检查更新": "Check for Updates",
-  "查 GitHub 上最新的 release，和这个版本比": "Check the latest release on GitHub against this version"
+  "查 GitHub 上最新的 release，和这个版本比": "Check the latest release on GitHub against this version",
+  "图片 %s：HTTP %d": "Image %s: HTTP %d",
+  "图片 %s 超过 %d MB": "Image %s is larger than %d MB"
 }

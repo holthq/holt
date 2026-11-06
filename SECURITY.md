@@ -28,6 +28,7 @@ reasonable amount of time before disclosing the issue publicly.
 
 ## What Holt does with the network
 
-Holt only connects to the network when you ask it to: Git fetch/pull/push/clone, opening links in the browser, and
-Check for Updates (a read-only request to the GitHub releases API). It does not upload data on its own, and it has
-no telemetry.
+Holt only connects to the network when you ask it to: Git fetch/pull/push/clone, opening links in the browser,
+Check for Updates (a read-only request to the GitHub releases page), and Markdown previews that contain remote
+images (a GET for each `http(s)` image, up to 8 MB, cached in memory). It does not upload data on its own, and it
+has no telemetry.

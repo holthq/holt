@@ -292,7 +292,7 @@ func gmenuView(a *app.App, c *wui.Context, chose bool) {
 		} else {
 			c.Invalidate()
 		}
-		if a.MenuShown > 2 && !catcher.Focused() { // 窗口失去焦点（或者焦点被别处拿走）
+		if a.MenuShown > 2 && !c.WindowActive() { // 窗口失去焦点（不是窗口里别的东西拿了键盘：列表在按下时自己会拿）
 			m.Close()
 			c.Invalidate()
 		}
