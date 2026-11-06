@@ -140,8 +140,8 @@ func termTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab, active bo
 	b := panelTab(c, active).Label(label).Tooltip(i18n.T("双击改名"))
 	fg := panelTabColor(c, b, active)
 	hover := b.Hovered()
-	if active && r.TermShown != tt { // 换了当前终端标签：滚到看得见（同编辑器的 g.TabShown）
-		r.TermShown = tt
+	if active && r.TermShown != tt.Num { // 换了当前终端标签：滚到看得见（同编辑器的 g.TabShown）
+		r.TermShown = tt.Num
 		b.ScrollIntoView()
 	}
 	b.ContextMenu(func(m *wui.Menu) { termTabMenu(a, m, r, tt) })

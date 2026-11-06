@@ -111,7 +111,7 @@ type Repo struct {
 	EdTerms    []*TermTab       // 开在编辑器区的终端标签：各是一个 docs.Term 标签，底栏的标签条、TermSel 不算它们
 	TermSel    int              // 当前的终端标签
 	TermStrip  ui.ScrollState   // 底栏终端标签条的横向滚动（界面按它画底边的细滚动条）
-	TermShown  *TermTab         // 上次滚到看得见的终端标签：换了当前标签才再滚一次（同 Group.TabShown）
+	TermShown  int              // 上次滚到看得见的终端标签的 Num：换了当前标签才再滚一次（记编号不记指针，关掉的标签连同回看不被留着）
 	termNum    int              // 开过几个终端标签（默认名"终端 n"用）
 	termsInit  bool             // Terms 建过了
 	savedTerms *workspace.Terms // 会话里记着的终端标签，initTerms 用

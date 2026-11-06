@@ -204,8 +204,9 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 			name.TextColor(t.Text.Alpha(0.85))
 		}
 		if r.Loaded && r.Err == nil && !r.Plain {
-			wui.Row(c).Gap(3).AlignItems(wui.Center).MinWidth(0).Shrink(2).Children(func() {
-				wui.Icon(c, iconBranch).FontSize(iconInline).TextColor(t.TextMuted)
+			// 段头挤的时候分支先缩到只剩图标，再轮到仓库名（"全部暂存"一直在，右边少了一格）
+			wui.Row(c).Gap(3).AlignItems(wui.Center).MinWidth(iconInline).Shrink(1000).Children(func() {
+				wui.Icon(c, iconBranch).FontSize(iconInline).TextColor(t.TextMuted).Shrink(0)
 				wui.Text(c, r.Status.Branch).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 			})
 		}
@@ -692,14 +693,11 @@ func ongoingRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		})
 		wui.Row(c).Gap(6).Padding(2, 0, 0, indent).AlignItems(wui.Center).Children(func() {
 			n := r.Status.Conflicts
-			tip := i18n.Tf("%s：git %s，用原来的提交信息", op.ContinueLabel(), strings.Join(op.ContinueArgs(), " "))
-			if n > 0 {
-				tip = i18n.Tn("还有 %d 个文件有冲突：先解决、标记为已解决，才能继续", n)
-			}
 			// 继续：强调色的图标，有冲突时灰、提示里写还剩几个文件
+			tip := i18n.Tf("%s：git %s，用原来的提交信息", op.ContinueLabel(), strings.Join(op.ContinueArgs(), " "))
 			why := ""
 			if n > 0 {
-				why = i18n.Tn("还有 %d 个文件有冲突", n)
+				tip, why = "", i18n.Tn("还有 %d 个文件有冲突：先解决、标记为已解决，才能继续", n)
 			}
 			if iconAction(c.Key("continue"), iconPlay, op.ContinueLabel(), tip, why, t.Accent) {
 				a.ContinueOngoing(r)
