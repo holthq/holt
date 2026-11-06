@@ -469,7 +469,7 @@ func sideScroll(a *app.App, st *wui.ListState) *app.SideScroll {
 	return s
 }
 
-// sideWheel 接侧栏列表 st 上的鼠标滚轮（不是 precise 的；带 ⇧ 横着滚、带 ⌃ 的不接）：一格一个行高，加速的按平方根压、
+// sideWheel 接侧栏列表 st 上的鼠标滚轮（不是 precise 的；带 ⇧ 横着滚、带 ⌃ 的不接）：一格一个行高，加速的照走、
 // 一次最多 6 行，约 160 ms 滑到累计的目标，连续几格接成一段，到头夹住，反向立刻转向（app.SideScroll）。
 // 系统"减弱动态效果"时直接到位。
 func sideWheel(a *app.App, c *wui.Context, st *wui.ListState, ev wui.InputEvent) bool {

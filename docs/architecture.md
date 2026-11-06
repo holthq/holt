@@ -379,10 +379,10 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
   吸顶栈读 `TreeSpans`（行上一帧的位置），建完列表后按 `sideShift`（列表上一帧画时的偏移减这一帧的）挪到这一帧，和行同帧。
   光标那行被盖住时栈让位（那层和下面的不画），只限光标刚走到的行：`stickyYields` 看 `App.TreeYield`，光标换行后那行落进列表，之后列表再滚动就不让了（滚过选中的行时栈不能没）；整行在列表上面的（列表多建的两行）不让。`TreeRootH` 没量过时先按 `treeRowH` 算，钉着的那层画出来再量。
 - 滚动（`ui/widgets.go` 的 `sideList`，文件树、Git 栏、搜索结果共用）：列表 `TrackScroll` 一份 `app.SideScroll`（`App.SideScrolls`，按 `*ListState`）。
-  触控板（precise）的交给 mygo；鼠标滚轮的由 `sideWheel` 接（带 ⇧ / ⌃ 的不接）：一格（mygo 的 40 DIP）一个行高，n 行按 √n 压、最多 6 行，
+  触控板（precise）的交给 mygo；鼠标滚轮的由 `sideWheel` 接（带 ⇧ / ⌃ 的不接）：一格（mygo 的 40 DIP）一个行高，n 行走 n 行、最多 6 行，
   `WheelGlide` 160 ms 三次缓出滑到累计目标，同方向接着累加、反方向从当前位置重来。滑动是每帧建列表前自己写 `ScrollState.Y`（`SideScroll.Step`），
   不用 `ScrollState.ScrollTo`：后者每帧在布局前把偏移拽回滑动的路上，半路的 `ListState.ScrollTo` / `ScrollIntoView` 会被吞掉；
-  自己写的话 `S.Y` 不是上一帧写的那个就知道别处挪过了，停下让给它。文件树的列表 `HandleInput` 被 `menuPress` 换掉，所以它在自己的回调里先调 `sideWheel`。
+  自己写的话 `S.Y` 不是上一帧写的那个就知道别处挪过了：差一行以上是别处滚走了，停下让给它；不到一行是列表量到新行修的偏移，整段滑动跟着平移，接着走。从底往上时每帧至少离底 1 DIP，不然第一帧走得太少会被 `ListState` 拉回底上。文件树的列表 `HandleInput` 被 `menuPress` 换掉，所以它在自己的回调里先调 `sideWheel`。
 - 多选（`FileChosen`）：⌘ 点、⇧ 点；拖动在 `TreeDrag` 里：同仓库是移动，别的仓库来的是复制（先问），按着 ⌥ 是复制；目录、多项、有没保存的标签时先问，写盘只在松手之后。悬停在收起的目录上一会儿会展开（`DwellTree`）。从访达拖到目录行上是复制进来（本来就在这个仓库里的是移动，`DropFiles`），拖到窗口别处是打开。复制逻辑由 `copyIn` / `copyDir` / `copyNode` 实现：`os.CopyFS` 遇到符号链接直接报错，这里链接照原样复制一个、普通文件保留权限位。
 - 复制 / 粘贴 / 创建副本（`app/treeclip.go`）：重名时用 `freeName` 起“名字 副本”“名字 副本 2”。
 - 新建、重命名、移到废纸篓在 `app/fileops.go`。文件树的 ⌘Z（`app/fileundo.go`）：重命名 / 移动改回去，新建 / 复制进来的移到废纸篓；移到废纸篓的不记（放回靠访达），没有重做；`undoStale` 发现磁盘在那之后变了就不撤。
