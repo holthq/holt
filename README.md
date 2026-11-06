@@ -103,3 +103,6 @@ GOTOOLCHAIN=auto go test ./...
 ## 许可证
 
 [MIT](LICENSE)
+
+## 友情链接
+[linuxdo](https://linux.do)
