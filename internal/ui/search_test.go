@@ -46,7 +46,7 @@ func TestSearchPage(t *testing.T) {
 	mustText(t, tt, "结果文件 demo/a.txt")
 
 	// 点那一处："第 20 行（改过）"里"改"在第 13 个字节
-	mustClick(t, tt, "结果 demo/a.txt:20:14")
+	mustClickRow(t, tt, "结果 demo/a.txt:20:14")
 	d := a.CurrentDoc()
 	if d == nil || d.Rel != "a.txt" || d.Pinned {
 		t.Fatalf("没在预览标签里打开 a.txt：%+v", d)
@@ -230,7 +230,7 @@ func TestSearchMultiLine(t *testing.T) {
 	}
 
 	// 打开 CRLF 的那处：选中整个匹配（缓冲区里没有 \r）
-	mustClick(t, tt, "结果 demo/b.txt:1:1")
+	mustClickRow(t, tt, "结果 demo/b.txt:1:1")
 	d := a.CurrentDoc()
 	wait("读 b.txt", func() bool { return d != nil && d.Buf != nil && d.St.SelectedText() != "" })
 	if got := d.St.SelectedText(); got != "foo\nbar" {

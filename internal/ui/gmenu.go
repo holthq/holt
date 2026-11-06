@@ -145,6 +145,11 @@ func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, own
 	}
 }
 
+// menuDo 给建菜单的函数里"等列表建完再做"的动作（搜索结果的 do）用：Grove 菜单选中的项是在整棵树建完之后、
+// gmenuView 里再跑一遍建菜单的函数时执行的，列表早建完了，直接做。建菜单时捕获的 do 是打开菜单那一帧的，
+// 那一帧的列表早就过去了，交给它的动作没人执行。
+func menuDo(fn func()) { fn() }
+
 // menuKeyTarget 登记这一帧键盘能开菜单的地方（后登记的是里面的，盖掉外面的）；帧末 gmenuView 认 ⇧F10 / 菜单键。
 func menuKeyTarget(a *app.App, el wui.Element, owner menuOwner, build func(menu)) {
 	b := el.Bounds()

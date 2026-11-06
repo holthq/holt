@@ -33,7 +33,7 @@ func searchView(a *app.App, c *wui.Context) {
 		if text != "" || s.Running || s.CanUndoReplace() { // 撤销上次替换在搜索框清空之后也还在
 			row := wui.Row(c).Padding(0, 12, 4, 12).Gap(6).AlignItems(wui.Center).Shrink(0)
 			if s.CanOpenSearchEditor() {
-				row.ContextMenu(func(m *wui.Menu) {
+				ctxMenu(a, c, row, menuOwner{"searchSummary", ""}, func(m menu) {
 					if m.Item(i18n.T("在编辑器里打开")).Chosen() {
 						a.OpenSearchEditor()
 					}
@@ -576,8 +576,8 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 	}
 	replacing := s.Replacing && s.CanReplace()
 	if sr.File {
-		el := wui.Row(c).Height(24).Padding(0, 4, 0, 4).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer).Tooltip(m.Repo + "/" + m.Path).
-			ContextMenu(func(mn *wui.Menu) { searchFileMenu(a, mn, sr, do) })
+		el := wui.Row(c).Height(24).Padding(0, 4, 0, 4).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer).Tooltip(m.Repo + "/" + m.Path)
+		ctxMenuRow(a, c, row, el, menuOwner{"searchFile", m.Root + "\x00" + m.Path}, func(mn menu) { searchFileMenu(a, mn, sr, menuDo) })
 		hover := el.Hovered()
 		if hover {
 			s.Hover = row.Index
@@ -610,8 +610,8 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 		})
 		return
 	}
-	el := wui.Row(c).Height(22).Padding(0, 4, 0, 24).Gap(8).AlignItems(wui.Center).
-		ContextMenu(func(mn *wui.Menu) { searchMatchMenu(a, mn, sr, do) })
+	el := wui.Row(c).Height(22).Padding(0, 4, 0, 24).Gap(8).AlignItems(wui.Center)
+	ctxMenuRow(a, c, row, el, menuOwner{"searchMatch", strconv.Itoa(sr.Match)}, func(mn menu) { searchMatchMenu(a, mn, sr, menuDo) })
 	hover := el.Hovered()
 	if hover {
 		s.Hover = row.Index
@@ -641,8 +641,8 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 	})
 }
 
-// searchMatchMenu 是结果里一处的右键菜单；改结果的动作经 do 等列表建完再做。
-func searchMatchMenu(a *app.App, m *wui.Menu, sr app.SearchRow, do func(func())) {
+// searchMatchMenu 是结果里一处的右键菜单；改结果的动作经 do 等列表建完再做（Grove 菜单传 menuDo）。
+func searchMatchMenu(a *app.App, m menu, sr app.SearchRow, do func(func())) {
 	s := &a.Search
 	mt := s.Res.Matches[sr.Match]
 	if s.Replacing {
@@ -671,8 +671,8 @@ func searchMatchMenu(a *app.App, m *wui.Menu, sr app.SearchRow, do func(func()))
 	}
 }
 
-// searchFileMenu 是结果里文件行的右键菜单；改结果的动作经 do 等列表建完再做。
-func searchFileMenu(a *app.App, m *wui.Menu, sr app.SearchRow, do func(func())) {
+// searchFileMenu 是结果里文件行的右键菜单；改结果的动作经 do 等列表建完再做（Grove 菜单传 menuDo）。
+func searchFileMenu(a *app.App, m menu, sr app.SearchRow, do func(func())) {
 	s := &a.Search
 	mt := s.Res.Matches[sr.Match]
 	if s.Replacing {
