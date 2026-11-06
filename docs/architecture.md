@@ -377,6 +377,7 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
 - 跟随：切标签时在树里展开到那个文件、选中、滚到（`FollowCurrent`，设置 `TreeNoFollow` 关掉）；⌥⇧⌘E 手动定位（`RevealCurrent`）。
 - 吸顶：滚动时仓库段头和最多 `maxSticky` 3 层祖先目录贴在顶上（`stickyStack`），最底下那层往下投阴影（`stickyShadow`，浅色同编辑器的粘性滚动，深色加深），不画边线。缩进参考线由 `Draw` 画。
   吸顶栈读 `TreeSpans`（行上一帧的位置），建完列表后按 `sideShift`（列表上一帧画时的偏移减这一帧的）挪到这一帧，和行同帧。
+  光标那行被盖住时栈让位（那层和下面的不画），只限光标刚走到的行：`stickyYields` 看 `App.TreeYield`，光标换行后那行落进列表，之后列表再滚动就不让了（滚过选中的行时栈不能没）；整行在列表上面的（列表多建的两行）不让。`TreeRootH` 没量过时先按 `treeRowH` 算，钉着的那层画出来再量。
 - 滚动（`ui/widgets.go` 的 `sideList`，文件树、Git 栏、搜索结果共用）：列表 `TrackScroll` 一份 `app.SideScroll`（`App.SideScrolls`，按 `*ListState`）。
   触控板（precise）的交给 mygo；鼠标滚轮的由 `sideWheel` 接（带 ⇧ / ⌃ 的不接）：一格（mygo 的 40 DIP）一个行高，n 行按 √n 压、最多 6 行，
   `WheelGlide` 160 ms 三次缓出滑到累计目标，同方向接着累加、反方向从当前位置重来。滑动是每帧建列表前自己写 `ScrollState.Y`（`SideScroll.Step`），

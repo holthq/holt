@@ -25,6 +25,14 @@ func (row TreeRow) Key() FileKey {
 	return FileKey{row.Repo.Root, row.Path, row.Note}
 }
 
+// TreeYield 记吸顶栈该不该给光标那行让位：光标换到 Sel 那行、那行落进列表（Landed）之后列表滚动过（Scrolled）就不让了。
+type TreeYield struct {
+	Sel      FileKey
+	Y        float32 // 落进列表时列表的偏移
+	Landed   bool
+	Scrolled bool
+}
+
 // OpenAsk 是一次打开这么多个文件以上先问。
 const OpenAsk = 20
 

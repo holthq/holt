@@ -259,6 +259,7 @@ type App struct {
 	SideScrolls  map[*ui.ListState]*SideScroll // 侧栏列表（文件树、Git 栏、搜索结果）的滚轮状态（sideList）
 	TreeRootH    float32                       // 上一帧仓库行的高
 	TreeRowH     float32                       // 上一帧目录 / 文件行的高
+	TreeYield    TreeYield                     // 吸顶栈给光标那行让位的状态（界面每帧更新）
 	TreeClip     []string                      // 文件树里 ⌘C 复制的文件 / 目录（绝对路径），⌘V 粘贴它们；应用里记着，不读系统剪贴板
 	rowTips      map[FileKey]rowTip            // 文件树行的悬停提示，仓库刷新之后重算（RowTip）
 	TreeTip      TreeTip                       // 文件树行的悬停提示停了多久（treetip.go；界面写）

@@ -856,19 +856,23 @@ const maxSticky = 3
 
 // stickyStack 是列表顶上叠着的吸顶栈（box 是列表那一块）：最上面那行看得见的行的祖先（仓库行、展开的目录行，合并行算一层），
 // 滚过去了的从上往下叠着，每层一行高；点一层滚到那一行，右键是它的菜单，箭头收起它。一个仓库 / 目录的最后一行上来时把它那层
-// 顶出去。筛选时不钉；不在键盘的走法里（键盘走列表里真的行），光标那行被哪层盖住时那层和下面的都不画。
+// 顶出去。筛选时不钉；不在键盘的走法里（键盘走列表里真的行），光标刚走到的那行被哪层盖住时那层和下面的都不画（stickyYields）。
 // 用的是上一帧的位置（Visible、TreeSpans），滚得快时晚一帧跟上。
 func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 	first, last := a.FileList.Visible()
-	if a.Filtering() || first < 0 || last < first || a.TreeRootH <= 0 {
+	if a.Filtering() || first < 0 || last < first {
 		return
 	}
+	if a.TreeRootH <= 0 {
+		a.TreeRootH = treeRowH // 一打开就滚在中间、仓库行还没画过：先按行高算，钉着的那层画出来就量到了
+	}
+	yields := stickyYields(a, rows, box)
 	layers := stickyLayers(a, rows, box, first, min(last, len(rows)-1))
 	if len(layers) == 0 {
 		return
 	}
-	// 光标那行（↑ 走上去滚到顶的）在哪层底下：那层和下面的先不画，让光标那行看得见
-	if sel, ok := a.TreeSpans[a.FileSel]; ok {
+	// 光标那行（↑ 走上去滚到顶的）在哪层底下：那层和下面的先不画，让光标那行看得见。整行都在列表上面的（列表多建的那两行）看不见，不用让
+	if sel, ok := a.TreeSpans[a.FileSel]; ok && yields && sel.Y+sel.H > box.Y+0.5 {
 		for k, l := range layers {
 			if a.FileSel > l.i && sel.Y < box.Y+l.y+l.h-0.5 {
 				layers = layers[:k]
@@ -898,6 +902,9 @@ func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 			if tr.Root {
 				el = repoLine(a, c, tr, false, false, true, func(m menu) { repoMenu(a, m, tr.Repo, true) }).
 					Label(i18n.Tf("%s（仓库，钉在顶上）", tr.Repo.Name))
+				if b := el.Bounds(); b.H > 0 {
+					a.TreeRootH = b.H
+				}
 			} else {
 				el = stickyDir(a, c, tr)
 			}
@@ -907,6 +914,28 @@ func stickyStack(a *app.App, c *wui.Context, rows []app.TreeRow, box wui.Rect) {
 			}
 		})
 	}
+}
+
+// stickyYields 是吸顶栈这一帧还给不给光标那行让位。让位是为了光标刚走到的行（↑ 走到顶、跟随当前文件）：光标换了行就让，
+// 那行落进列表之后列表再滚动（滚轮、触控板、拖滚动条、点吸顶层）就不让了，不然滚过选中的行时整个栈跟着没了。
+// 落进列表之前的滚动是列表跟着光标滚的（比换行晚几帧），不算。
+func stickyYields(a *app.App, rows []app.TreeRow, box wui.Rect) bool {
+	var sel app.FileKey
+	if a.FileSel >= 0 && a.FileSel < len(rows) {
+		sel = rows[a.FileSel].Key()
+	}
+	y, at := &a.TreeYield, sideScroll(a, &a.FileList).S.Y
+	if sel != y.Sel {
+		*y = app.TreeYield{Sel: sel}
+	}
+	switch {
+	case !y.Landed:
+		r, ok := a.TreeSpans[a.FileSel]
+		y.Landed, y.Y = ok && r.Y >= box.Y-0.5 && r.Y+r.H <= box.Y+box.H+0.5, at
+	case abs32(at-y.Y) > 0.5:
+		y.Scrolled = true
+	}
+	return !y.Scrolled
 }
 
 // stickyShadow 是吸顶栈底下的阴影（x、y 偏移、模糊、颜色）：浅色同编辑器的粘性滚动（sticky.go）；
