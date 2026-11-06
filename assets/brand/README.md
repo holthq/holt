@@ -7,7 +7,7 @@ Holt 是 macOS 上的下一代 IDE：多个仓库同时摆在一个工作台里�
 
 ## 文件
 
-每个图两版：`original/` 是原图，`1mb/` 是压到 1 MiB 以内、直接上传用的版本。
+每个图两版：`original/` 是原图，`1mb/` 是压到 1 MiB 以内、直接上传用的版本。下面的路径都相对这个目录。
 
 | 文件 | 尺寸 | 用途 |
 |---|---|---|
@@ -42,7 +42,7 @@ Holt 是 macOS 上的下一代 IDE：多个仓库同时摆在一个工作台里�
 ## 重新生成
 
 ```sh
-./src/make.sh   # 需要 ImageMagick 和 rsvg-convert：brew install imagemagick librsvg
+./assets/brand/src/make.sh   # 需要 ImageMagick 和 rsvg-convert：brew install imagemagick librsvg
 ```
 
 `src/art.png` 是 AI 生成的底图（1254 × 1254），脚本负责裁切、圆角、内侧微光、社交卡的排版，
