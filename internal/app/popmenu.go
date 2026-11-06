@@ -54,20 +54,21 @@ type MenuEntry struct {
 
 // 量菜单的几个尺寸（pt），界面照这些画：外边距 4、项高 24、分隔线占 9（上下各留 4）、圆角 8（界面里用）。
 const (
-	MenuPad      = 4
-	MenuItemH    = 24
-	MenuSepH     = 9
-	MenuMargin   = 6  // 菜单离窗口边至少这么远
-	MenuTextL    = 24 // 这一层有勾选项时字左边留的（勾在里面）
-	MenuTextL0   = 10 // 这一层没有勾选项时字左边留的
-	MenuTextR    = 10
-	MenuKeysGap  = 28 // 标签和快捷键之间至少空这么多
-	MenuArrowW   = 14 // 子菜单的箭头占的
-	MenuMinW     = 180
-	MenuSubDelay = 200 * time.Millisecond // 指针停在有子菜单的项上多久才开
-	MenuTipDelay = 500 * time.Millisecond // 灰着的项停多久出原因
-	MenuHoldMin  = 150 * time.Millisecond // 右键按下后过了这么久（或动过）再松开，才算拖到项上松开选它
-	menuMoveSlop = 4
+	MenuPad        = 4
+	MenuItemH      = 24
+	MenuSepH       = 9
+	MenuMargin     = 6  // 菜单离窗口边至少这么远
+	MenuTextL      = 24 // 这一层有勾选项时字左边留的（勾在里面）
+	MenuTextL0     = 10 // 这一层没有勾选项时字左边留的
+	MenuTextR      = 10
+	MenuKeysGap    = 28 // 标签和快捷键之间至少空这么多
+	MenuArrowW     = 14 // 子菜单的箭头占的
+	MenuMinW       = 180
+	MenuSubDelay   = 200 * time.Millisecond // 指针停在有子菜单的项上多久才开
+	MenuTipDelay   = 500 * time.Millisecond // 灰着的项停多久出原因
+	MenuHoldMin    = 150 * time.Millisecond // 右键按下后过了这么久（或动过）再松开，才算拖到项上松开选它
+	menuMoveSlop   = 4
+	menuScrollSlop = 0.01 // 小于这个的滚动当没滚（右键和触摸板的相位事件会送来 0）
 )
 
 // menuDebug 是 WORKBENCH_MENU_LOG=1 时把菜单的输入、开关记进日志——临时排查“右键菜单闪一下就消失”用。
@@ -687,8 +688,11 @@ func (m *PopMenu) Scroll(x, y, dy float32) {
 	if !m.open {
 		return
 	}
+	if abs32(dy) < menuScrollSlop { // 右键、触摸板的相位事件会送来 0 的滚动：不算滚，不关菜单
+		return
+	}
 	lv, _ := m.hit(x, y)
-	MenuLogf("Scroll (%.1f, %.1f) dy=%.2f 菜单里=%d", x, y, dy, lv)
+	MenuLogf("Scroll (%.1f, %.1f) dy=%.4f 菜单里=%d", x, y, dy, lv)
 	if lv < 0 || m.levels[lv].Full <= m.levels[lv].Rect.H {
 		m.CloseWhy("在菜单外面滚动")
 		return

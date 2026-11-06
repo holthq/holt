@@ -87,8 +87,9 @@ const (
 // 按着时的移动和松开转给菜单。el 是装它的元素（建的时候取它上一帧的位置，事件里换算成窗口坐标）；other 是这个元素原来的 HandleInput（可以为空），
 // 不是右键的事件照旧交给它。
 func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func(menu), other func(wui.InputEvent) bool) {
-	held := false    // 这次右键按下是这个元素接的
-	b := el.Bounds() // 上一帧的位置（事件里不能再用元素）
+	held := false             // 这次右键按下是这个元素接的
+	b := el.Bounds()          // 上一帧的位置（事件里不能再用元素）
+	root := c.Root().Bounds() // 上一帧的窗口大小（事件里 c.Root() 是空的）
 	// 登记成能开菜单的地方：菜单开着时右键这里，关掉那份、在这里开新的（接收层盖着，事件到不了这个元素）
 	a.Menu.AddTarget(app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, menuZ(owner), owner, build)
 	el.HandleInput(func(ev wui.InputEvent) bool {
@@ -98,7 +99,6 @@ func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func
 		case wui.InputPointerDown:
 			if ev.Button == 1 || ev.Button == 0 && ev.Mods&wui.Ctrl != 0 {
 				a.TreeTip.Dismiss()
-				root := c.Root().Bounds()
 				gmenuMeasure(a, c)
 				app.MenuLogf("行右键：el=%+v ev=(%.1f, %.1f) → 窗口 (%.1f, %.1f) 窗口大小 %.0fx%.0f", b, ev.X, ev.Y, x, y, root.W, root.H)
 				m.OpenRow(owner, build, x, y, app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, root.W, root.H, true, ev.Time)

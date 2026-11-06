@@ -202,6 +202,13 @@ func TestPopMenuEscScrollBlur(t *testing.T) {
 	if k.m.IsOpen() {
 		t.Fatal("在菜单外面滚（滚文件树）该关掉")
 	}
+	// 0 的滚动（右键、触摸板的相位事件）不算滚，菜单留着
+	k.open(false)
+	k.m.Scroll(10, 10, 0)
+	k.m.Scroll(10, 10, 0.001)
+	if !k.m.IsOpen() {
+		t.Fatal("0 的滚动不该关菜单")
+	}
 	k.open(false)
 	k.m.Close()
 	if k.m.IsOpen() {
