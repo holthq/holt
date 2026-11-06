@@ -26,7 +26,23 @@
 2. 把 `CHANGELOG.md` 的 `## 未发布` 改成 `## v<版本> — <日期>`，在上方新增一个空的 `## 未发布`；
 3. `GOTOOLCHAIN=auto go vet ./... && GOTOOLCHAIN=auto go test -count=1 ./... && GOTOOLCHAIN=auto go test -race ./...`；
 4. 按下文构建，在真实窗口中手动检查截图无法验证的部分（菜单、对话框、毛玻璃、拖放、终端）；
-5. 合入 main 后，在该提交上打 `v<版本>` 标签。
+5. 合入 main 后，在该提交上打 `v<版本>` 标签；
+6. 构建 app 和 DMG（去掉 `-skip-dmg`），把 DMG 和 app 的 zip 发到 GitHub Releases（见下）。
+
+## 发布 GitHub Release
+
+```bash
+GOTOOLCHAIN=auto go tool mygo build -sign - -skip-notarize      # 出 build/darwin-arm64/Holt.app 和 holt-<版本>-arm64.dmg
+hdiutil verify build/darwin-arm64/holt-<版本>-arm64.dmg
+ditto -c -k --keepParent build/darwin-arm64/Holt.app build/darwin-arm64/Holt-<版本>-arm64.zip
+git tag -a v<版本> -m "Holt <版本>" && git push origin v<版本>
+gh release create v<版本> \
+  build/darwin-arm64/holt-<版本>-arm64.dmg build/darwin-arm64/Holt-<版本>-arm64.zip \
+  --title "Holt <版本>" --notes-file <发布说明>
+```
+
+发布说明从 `CHANGELOG.md` 的 `## v<版本>` 小节抄，开头写清系统要求（macOS 13+、Apple Silicon）和
+Gatekeeper 要右键打开（ad-hoc 签名、没有公证）。
 
 ## 构建
 

@@ -1,6 +1,7 @@
 # Holt
 
 [![CI](https://github.com/holthq/holt/actions/workflows/ci.yml/badge.svg)](https://github.com/holthq/holt/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/holthq/holt?label=release)](https://github.com/holthq/holt/releases)
 
 中文 · [English](README.en.md)
 
@@ -13,12 +14,22 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 
 ![Holt](docs/screenshots/light.png)
 
+## 下载
+
+最新版本在 [Releases](https://github.com/holthq/holt/releases)：下载 `holt-<版本>-arm64.dmg`，打开后把 Holt 拖进「应用程序」。
+
+- 需要 macOS 13 或更新版本，Apple Silicon（arm64）。
+- 安装包是 ad-hoc 签名、没有经过 Apple 公证：第一次打开请**右键点 Holt → 打开**，或者运行
+  `xattr -dr com.apple.quarantine /Applications/Holt.app`。之后正常双击即可。
+- Linux / Windows 目前只到“能编译”，还没有可用的安装包，见下面的「平台」。
+
 ## 三条原则
 
 - **所有仓库同时可见**：文件树和 Git 栏同时列出所有仓库，搜索、历史和终端也按仓库组织。
 - **由你决定何时修改**：自动刷新只执行只读的 Git 命令（设置 `GIT_OPTIONAL_LOCKS=0`，不修改索引）。暂存、提交、推送等操作
   都需要手动触发，可能造成数据丢失的操作会先要求确认。
-- **不主动上传数据**：只有你发起抓取、拉取、推送或克隆等 Git 操作时，Holt 才会连接远程仓库。
+- **不主动上传数据**：只在你自己发起 Git 抓取 / 拉取 / 推送 / 克隆、点「检查更新」、或者预览里加载网络图片时联网；
+  没有遥测，也不会上传代码。
 
 ## 功能
 
@@ -47,16 +58,16 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 
 ## 平台
 
-正式支持 macOS 13+。Linux 和 Windows 在 CI 里能 `go build` / `go vet` 通过，但运行时还没验证：Windows 上终端后台进程
-（termd）是桩，终端只在窗口里跑。想帮忙把这两端跑起来，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+正式支持 macOS 13+（Apple Silicon）。Linux 和 Windows 在 CI 里能 `go build` / `go vet` 通过，但运行时还没验证：
+Windows 上终端后台进程（termd）是桩，终端只在窗口里跑。想帮忙把这两端跑起来，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
-## 构建
+## 从源码构建
 
-需要搭载 Apple Silicon 芯片、运行 macOS 13 或更新版本的 Mac。目前还没有安装包，需要自行构建：
+想在本地从源码跑（开发或自己改）：
 
 ```bash
 git clone https://github.com/holthq/holt.git
-cd grove
+cd holt
 GOTOOLCHAIN=auto go tool mygo build -skip-dmg -skip-notarize -sign -
 open build/darwin-arm64/Holt.app
 ```
@@ -75,7 +86,12 @@ mygo 已在 `go.mod` 中声明，无需单独安装。如果本机 Go 版本较�
 ## 已知限制
 
 - 没有 LSP，所以没有自动补全和跳转到定义。
-- 只有 macOS（Apple Silicon）版本，没有自动更新，也没有插件系统。
+- 只有 macOS（Apple Silicon）能运行；Linux / Windows 只到能编译。
+- 没有自动更新（应用菜单里可以手动「检查更新」），也没有插件系统。
+
+## 反馈
+
+遇到问题或想提建议：开一个 [issue](https://github.com/holthq/holt/issues)。安全问题按 [SECURITY.md](SECURITY.md) 私下报。
 
 ## 开发
 
@@ -105,4 +121,5 @@ GOTOOLCHAIN=auto go test ./...
 [MIT](LICENSE)
 
 ## 友情链接
+
 [linuxdo](https://linux.do)

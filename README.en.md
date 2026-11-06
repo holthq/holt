@@ -1,6 +1,7 @@
 # Holt
 
 [![CI](https://github.com/holthq/holt/actions/workflows/ci.yml/badge.svg)](https://github.com/holthq/holt/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/holthq/holt?label=release)](https://github.com/holthq/holt/releases)
 
 [中文](README.md) · English
 
@@ -16,6 +17,16 @@ license and the original author's copyright notice.
 
 ![Holt](docs/screenshots/light.png)
 
+## Download
+
+The latest version is on the [Releases](https://github.com/holthq/holt/releases) page: download
+`holt-<version>-arm64.dmg` and drag Holt into Applications.
+
+- macOS 13 or later, Apple Silicon (arm64).
+- The app is ad-hoc signed and not notarized by Apple: the first time, **right-click Holt → Open** (or run
+  `xattr -dr com.apple.quarantine /Applications/Holt.app`). After that, double-clicking works normally.
+- Linux and Windows only compile for now, with no installable build yet; see Platform support below.
+
 ## Three principles
 
 - **Every repo visible at once**: the file tree and Git bar show all repos. Search, history and terminals are also
@@ -23,8 +34,8 @@ license and the original author's copyright notice.
 - **You decide when to make changes**: automatic refreshes only run read-only Git commands, with
   `GIT_OPTIONAL_LOCKS=0` to leave the index unchanged. Staging, committing, pushing and other write operations require
   your input. Operations that could cause data loss ask for confirmation first.
-- **No automatic uploads**: Holt only connects to remote repos when you start a Git operation such as fetch, pull,
-  push or clone.
+- **No automatic uploads**: Holt only connects to the network when you start a Git fetch / pull / push / clone, click
+  Check for Updates, or a preview loads a remote image. There is no telemetry, and your code is never uploaded.
 
 ## Features
 
@@ -63,18 +74,17 @@ license and the original author's copyright notice.
 
 ## Platform support
 
-macOS 13+ is supported. Linux and Windows build and pass `go vet` in CI, but their runtime is not verified yet:
-on Windows the terminal daemon (`termd`) is a stub, so terminals only run inside the window. If you want to help
-bring those platforms up, see [CONTRIBUTING.md](CONTRIBUTING.md).
+macOS 13+ on Apple Silicon is supported. Linux and Windows build and pass `go vet` in CI, but their runtime is not
+verified yet: on Windows the terminal daemon (`termd`) is a stub, so terminals only run inside the window. If you want
+to help bring those platforms up, see [CONTRIBUTING.md](CONTRIBUTING.md).
 
-## Building
+## Building from source
 
-Requires a Mac with Apple Silicon running macOS 13 or later. There are no prebuilt downloads yet, so you'll need to
-build Holt yourself:
+To run Holt from source (for development or your own changes):
 
 ```bash
 git clone https://github.com/holthq/holt.git
-cd grove
+cd holt
 GOTOOLCHAIN=auto go tool mygo build -skip-dmg -skip-notarize -sign -
 open build/darwin-arm64/Holt.app
 ```
@@ -94,7 +104,13 @@ Settings and sessions are saved in `~/Library/Application Support/Holt/`. Logs a
 ## Known limitations
 
 - No LSP support, so there's no code completion or go-to-definition.
-- Only available for macOS on Apple Silicon. No automatic updates or plugin system.
+- Only macOS on Apple Silicon can run it; Linux and Windows only compile.
+- No automatic updates (use Check for Updates in the app menu) and no plugin system.
+
+## Feedback
+
+Please open an [issue](https://github.com/holthq/holt/issues) for bugs or ideas. Report security issues privately as
+described in [SECURITY.md](SECURITY.md).
 
 ## Development
 
@@ -125,3 +141,7 @@ not in a public issue.
 ## License
 
 [MIT](LICENSE)
+
+## Links
+
+[linuxdo](https://linux.do)
