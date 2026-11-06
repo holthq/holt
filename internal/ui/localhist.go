@@ -27,7 +27,7 @@ func localHistRow(a *app.App, row wui.ListRow, r *app.Repo, rows []app.HistRow, 
 		muted = c.Theme().AccentText.Alpha(0.75)
 	}
 	el := wui.Row(c)
-	ctxMenu(a, c, el, menuOwner{"localHist", abs + "\x00" + e.SHA}, func(m menu) { localMenu(a, m, abs, e) })
+	ctxMenuRow(a, c, row, el, menuOwner{"localHist", abs + "\x00" + e.SHA}, func(m menu) { localMenu(a, m, abs, e) })
 	if el.RowDoubleClicked() {
 		a.OpenLocalCompare(abs, e, true)
 	}
@@ -126,7 +126,7 @@ func localPathView(a *app.App, c *wui.Context) {
 					muted = c.Theme().AccentText.Alpha(0.75)
 				}
 				el := wui.Row(c).Padding(6, 8).Gap(8).AlignItems(wui.Center)
-				ctxMenu(a, c, el, menuOwner{"localHist", abs + "\x00" + e.SHA}, func(m menu) { localMenu(a, m, abs, e) })
+				ctxMenuRow(a, c, row, el, menuOwner{"localHist", abs + "\x00" + e.SHA}, func(m menu) { localMenu(a, m, abs, e) })
 				if el.RowDoubleClicked() {
 					a.OpenLocalCompare(abs, e, true)
 				}

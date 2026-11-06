@@ -265,6 +265,7 @@ type App struct {
 	Menu         PopMenu                       // Grove 自己画的菜单（文件树和 Git 栏的右键、分支菜单，popmenu.go；界面喂事件）
 	MenuShown    int                           // 菜单开着画了几帧（界面用：画过两帧后接收层没了焦点就是窗口失去了焦点）
 	MenuByKey    bool                          // 菜单是 ⇧F10 / 菜单键开的：没选就关了时键盘回到文件树
+	MenuKeyAt    *MenuKeyTarget                // 这一帧有键盘、装了 Grove 右键菜单的元素：⇧F10 / 菜单键开它的菜单（界面每帧写、帧末用掉）
 	dirInfos     map[FileKey]*dirInfo          // 目录行悬停提示的大小、最近改动（dirtip.go）
 	Edit         *TreeEdit                     // 文件树里正在输入的名字（新建 / 重命名），nil 为没有
 	TreeFocused  bool                          // 这一帧文件树有焦点（界面每帧写；⌘N 据此决定建在哪）

@@ -818,3 +818,10 @@ func (p popItem) Chosen() bool {
 	e := p.e()
 	return p.s.choose != 0 && e.seq == p.s.choose && e.Label == p.s.label && !e.Disabled && !e.HasSub
 }
+
+// MenuKeyTarget 是键盘能开菜单的地方：菜单对着的东西、建菜单的函数和菜单的左上角（元素左下角，窗口坐标）。
+type MenuKeyTarget struct {
+	Owner any
+	Build func(MenuSink)
+	X, Y  float32
+}

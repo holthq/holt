@@ -127,8 +127,28 @@ type menuOwner struct{ Kind, Key string }
 
 // ctxMenu 给 el 装上 Grove 画的右键菜单（文件树以外的地方用它代替 ContextMenu）：和文件树的行一样，
 // 右键按下打开、按住拖到项上松开选它，菜单开着时在别处右键换成那里的。el 不能再挂别的 HandleInput。
+//
+// el 有键盘（或键盘在它里面）时 ⇧F10 / 菜单键在它左下角下面开同一份菜单，第一项高亮（menuKeyTarget）。
 func ctxMenu(a *app.App, c *wui.Context, el wui.Element, owner menuOwner, build func(menu)) {
 	menuPress(a, c, el, owner, build, nil)
+	if el.FocusWithin() {
+		menuKeyTarget(a, el, owner, build)
+	}
+}
+
+// ctxMenuRow 是列表行上的 ctxMenu：键盘在列表上、这一行是选中的那行时 ⇧F10 / 菜单键开它的菜单
+// （行自己不拿键盘，键盘在列表上）。
+func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, owner menuOwner, build func(menu)) {
+	menuPress(a, c, el, owner, build, nil)
+	if row.Selected() && row.ListFocused() {
+		menuKeyTarget(a, el, owner, build)
+	}
+}
+
+// menuKeyTarget 登记这一帧键盘能开菜单的地方（后登记的是里面的，盖掉外面的）；帧末 gmenuView 认 ⇧F10 / 菜单键。
+func menuKeyTarget(a *app.App, el wui.Element, owner menuOwner, build func(menu)) {
+	b := el.Bounds()
+	a.MenuKeyAt = &app.MenuKeyTarget{Owner: owner, Build: build, X: b.X, Y: b.Y + b.H}
 }
 
 // openMenuBelow 在按钮 b（上一帧的位置）左下角下面打开 build 建的 Grove 菜单（按钮的菜单用它代替 Menu）。
@@ -202,6 +222,17 @@ func menuOwned(a *app.App, owner any) bool {
 func gmenuView(a *app.App, c *wui.Context) {
 	m := &a.Menu
 	m.EndFrame() // 这一帧的树已经建完，能开菜单的地方都登记了
+	if k := a.MenuKeyAt; k != nil {
+		a.MenuKeyAt = nil
+		// 只在有这样的元素时登记这两个键：别处照旧归 mygo（文本框的系统菜单）和文件树自己（openTreeMenuByKey）
+		if !m.IsOpen() && (c.Shortcut(wui.Shift, wui.KeyF10) || c.Shortcut(0, wui.KeyContextMenu)) {
+			root := c.Root().Bounds()
+			gmenuMeasure(a, c)
+			a.TreeTip.Dismiss()
+			m.OpenByKey(k.Owner, k.Build, k.X, k.Y, root.W, root.H, c.Now())
+			c.Invalidate()
+		}
+	}
 	chose := m.Chosen()
 	if chose {
 		m.RunChoice()

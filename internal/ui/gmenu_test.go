@@ -390,3 +390,40 @@ func TestGroveMenuGivesFocusBack(t *testing.T) {
 		t.Fatalf("“关闭其他”该只剩一个标签：%d", n)
 	}
 }
+
+// ⇧F10 / 菜单键：键盘在历史列表上时开选中那个提交的 Grove 菜单，在那一行左下角，第一项高亮；Esc 关掉。
+func TestCtxMenuByKey(t *testing.T) {
+	_, _, _, ws := testutil.ThreeRepos(t)
+	a, tt, wait := newUI(t, ws, t.TempDir())
+	a.St.BottomBar = false
+	for _, r := range a.Repos {
+		a.RefreshRepo(r, app.WhyManual)
+	}
+	wait("三个仓库的状态", loaded(a))
+	wait("alpha 的历史", func() bool { return tt.HasText("alpha 2") })
+
+	for _, key := range []struct {
+		mods wui.Modifiers
+		key  wui.Key
+	}{{wui.Shift, wui.KeyF10}, {0, wui.KeyContextMenu}} {
+		mustClickRow(t, tt, "alpha 2")
+		tt.Frame()
+		tt.Frame()
+		tt.Key(key.mods, key.key)
+		tt.Frame()
+		tt.Frame()
+		o, ok := a.Menu.Owner.(menuOwner)
+		if !a.Menu.IsOpen() || !ok || o.Kind != "commit" {
+			t.Fatalf("%v：该开选中提交的菜单：open=%v owner=%+v 系统菜单=%q", key, a.Menu.IsOpen(), a.Menu.Owner, tt.Menu())
+		}
+		if h := a.Menu.Levels()[0].Hot; h != 0 {
+			t.Fatalf("第一项该高亮：%d", h)
+		}
+		tt.Key(0, wui.KeyEscape)
+		tt.Frame()
+		tt.Frame()
+		if a.Menu.IsOpen() {
+			t.Fatal("Esc 该关")
+		}
+	}
+}
