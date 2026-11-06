@@ -1,5 +1,7 @@
 # Holt
 
+[![CI](https://github.com/holthq/holt/actions/workflows/ci.yml/badge.svg)](https://github.com/holthq/holt/actions/workflows/ci.yml)
+
 中文 · [English](README.en.md)
 
 Holt 是一个 macOS 多仓库工作台，可以在同一个窗口里浏览文件、编辑代码、查看 Git 改动和提交历史，以及使用终端。
@@ -79,6 +81,12 @@ GOTOOLCHAIN=auto go test ./...
 
 界面测试在内存中渲染，不会打开窗口；涉及写操作的测试只使用临时仓库。修改代码前请先阅读 [AGENTS.md](AGENTS.md)。
 其他文档见 [docs/](docs/)，版本改动见 [CHANGELOG.md](CHANGELOG.md)。
+
+## 贡献
+
+欢迎提 PR，中文英文都行。先看 [CONTRIBUTING.md](CONTRIBUTING.md)（英文为主，中文在末尾）：怎么构建、怎么跑测试、
+界面改动要附无头截图、文案要过 i18n。参与即表示同意 [行为准则](CODE_OF_CONDUCT.md)；安全问题按
+[SECURITY.md](SECURITY.md) 私下报，不要开公开 issue。
 
 ## 致谢
 

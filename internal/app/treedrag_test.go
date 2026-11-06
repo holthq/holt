@@ -5,7 +5,6 @@ import (
 	"path/filepath"
 	"slices"
 	"strings"
-	"syscall"
 	"testing"
 
 	"github.com/holthq/holt/internal/testutil"
@@ -332,8 +331,8 @@ func TestCopyInLinks(t *testing.T) {
 		t.Error("目录里的文件内容不对")
 	}
 	os.MkdirAll(at(src, "p"), 0o755)
-	if err := syscall.Mkfifo(at(src, "p/fifo"), 0o644); err != nil {
-		t.Fatal(err)
+	if err := testutil.MakeFIFO(at(src, "p/fifo"), 0o644); err != nil {
+		t.Skip("建不了命名管道：", err)
 	}
 	if _, err := copyIn(at(src, "p"), at(dst, "p")); err == nil || !strings.Contains(err.Error(), "不是普通文件") {
 		t.Errorf("管道：%v", err)

@@ -5,7 +5,6 @@ import (
 	"os"
 	"path/filepath"
 	"sync"
-	"syscall"
 	"testing"
 	"time"
 
@@ -154,7 +153,7 @@ func TestSlowLoadAfterDelay(t *testing.T) {
 	t.Cleanup(func() { loadingDelay = keep })
 	dir := t.TempDir()
 	fifo := filepath.Join(dir, "slow.txt")
-	if err := syscall.Mkfifo(fifo, 0o644); err != nil {
+	if err := testutil.MakeFIFO(fifo, 0o644); err != nil {
 		t.Skip("建不了命名管道：", err)
 	}
 	a, wait := newTestApp(t, testutil.Workspace(t, dir))

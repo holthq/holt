@@ -5,8 +5,9 @@ import (
 	"os"
 	"path/filepath"
 	"strings"
-	"syscall"
 	"testing"
+
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // TestMigrateDirs：改名 Holt 时状态目录和日志目录从 Grove（更早是 Workbench）搬过来（临时 HOME，不碰真的目录）。
@@ -44,7 +45,7 @@ func TestMigrateDirs(t *testing.T) {
 		if err := os.Symlink("state.json", filepath.Join(d.oldState, "link")); err != nil {
 			t.Fatal(err)
 		}
-		if err := syscall.Mkfifo(filepath.Join(d.oldState, "fifo"), 0o600); err != nil {
+		if err := testutil.MakeFIFO(filepath.Join(d.oldState, "fifo"), 0o600); err != nil && !errors.Is(err, testutil.ErrNoFIFO) {
 			t.Fatal(err)
 		}
 		return d

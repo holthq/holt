@@ -1,0 +1,14 @@
+# 文本文件统一成 LF（CI 在 Linux 上跑，CRLF 会让 gofmt 的 diff 到处是）
+* text=auto eol=lf
+
+# 二进制：不换行、不 merge
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.webp binary
+*.icns binary
+*.ttf binary
+*.otf binary
+*.zip binary
+*.pdf binary

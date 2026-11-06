@@ -4,11 +4,14 @@ Holt 是用纯 Go 在 [mygo](https://github.com/egoist/mygo) 上写的 macOS 原
 Git 审阅 + 终端。工作区可以是一个 `.code-workspace` 文件，也可以是一个普通目录（里面的目录不一定是 Git 仓库）；
 第一次启动是空工作区。
 
-代码注释、界面文案、文档以中文为主；英文界面走 `internal/i18n` 的译文表。
+代码注释、界面文案、文档以中文为主；英文界面走 `internal/i18n` 的译文表。国外贡献者从
+[CONTRIBUTING.md](CONTRIBUTING.md) 开始（英文摘要），PR 用中文、英文都收。
 
 文档：
 
 - [README.md](README.md) / [README.en.md](README.en.md)：给用户的说明
+- [CONTRIBUTING.md](CONTRIBUTING.md)：贡献说明（英文为主，中文在末尾）；国外贡献者看这份
+- [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md) / [SECURITY.md](SECURITY.md)：行为准则、安全问题怎么私下报
 - [docs/architecture.md](docs/architecture.md)：架构，现在实际是什么样
 - [docs/testing.md](docs/testing.md)：测试怎么分工、怎么量
 - [docs/release.md](docs/release.md)：版本号、构建、DMG、签名和公证、CI

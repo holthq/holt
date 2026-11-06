@@ -77,3 +77,34 @@ jobs:
           cache: true
       - name: go test -race
         run: go test -count=1 -race ./internal/...
+
+  cross:
+    # Linux / Windows 先保证能编译（含测试文件）：termd 在 Windows 上还是桩，运行时没有 CI。
+    name: build / vet ${{ matrix.goos }}-${{ matrix.goarch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - goos: linux
+            goarch: amd64
+          - goos: linux
+            goarch: arm64
+          - goos: windows
+            goarch: amd64
+          - goos: windows
+            goarch: arm64
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+
+      - name: go build
+        run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go build ./...
+
+      - name: go vet
+        run: GOOS=${{ matrix.goos }} GOARCH=${{ matrix.goarch }} go vet ./...

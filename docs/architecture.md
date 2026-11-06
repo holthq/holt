@@ -8,7 +8,7 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
    关于两个小窗口、                                           snippets, render, fonts}
    单实例、日志）                                            （不碰界面的逻辑；highlight 挂在 docs 底下）
                     └──────────────┴──► internal/i18n（文案表，各层都用）
-              ──► internal/{version, crash, appicon}（版本号、日志和崩溃日志、代码画的图标）
+              ──► internal/{version, crash, appicon}（版本号、日志和崩溃日志、内嵌位图的应用图标）
 ```
 
 依赖方向从左到右：`ui` 读取 `app` 的状态、调用其方法，`app` 不依赖具体界面。右侧逻辑包之间只有少量依赖（`search` 用 `docs` / `files` / `git` / `globs`，`docs` 用 `git` / `highlight` / `outline` / `snippets`，`files` 用 `fuzzy` / `git`，`watch` 用 `git`），均不依赖 `app` 和 `ui`。`cmd/workbench` 另外直接用 `askpass` 和 `termd`，因为同一个可执行文件也是这两个子命令的入口。
@@ -33,15 +33,16 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 | `internal/graph/` | 提交图的泳道算法，纯算法，不碰 git 和界面 |
 | `internal/outline/` | 大纲：解析 Markdown 标题、Go（`go/parser`），其他语言按行正则或花括号嵌套识别；计算粘性滚动的吸顶行（`sticky.go`） |
 | `internal/history/` | 本地历史存储：每个文件一个目录，包含 `index.json` 和内容文件；记录时机和恢复流程在 `app/localhist.go` |
-| `internal/termd/` | 终端后台进程：帧协议（`proto.go`）、`Server`、会话（pty + shell + 无头终端）、应用端的 `client.go`、自行实现的 pty（`pty_darwin.go`）、`Spawn` |
+| `internal/termd/` | 终端后台进程：帧协议（`proto.go`）、`Server`、会话（pty + shell + 无头终端）、应用端的 `client.go`、自行实现的 pty（`pty_unix.go` 共用，`pty_darwin.go` / `pty_linux.go` 各自打开 pty）、`Spawn`；Windows 上 pty 是桩（`pty_windows.go`，没有后台会话），`spawn` / `lock` 也按平台拆开 |
 | `internal/tasks/` | 读取仓库根目录中的任务定义：package.json 的 scripts、Makefile / justfile 的目标、Cargo.toml / go.mod 的常用命令；仅读取文件 |
 | `internal/snippets/` | 代码片段：内置的（embed）加状态目录里 `snippets/*.json` 的；`Expand` 把 VS Code 片段体展开成文字和跳位，`Session` 管 Tab / ⇧Tab 跳位 |
 | `internal/render/` | Markdown 预览中 Mermaid 图和公式的渲染：`Renderer`（缓存、队列、一个 goroutine）和 `Backend`；`web.go` 使用不可见的 `mygo.WebView` 作为后端 |
 | `internal/fonts/` | 编辑器 / 终端等宽字体的选择和内置字体注册；`app` 渲染 Markdown 时也会使用，因此不放在 `ui` 中 |
 | `internal/i18n/` | 文案表：`T` / `Tf` / `Tn` / `List`，`zh-CN.json`（测试从代码里收）、`en.json`；`Set` / `Lang` / `Locale` |
 | `internal/version/` | 版本号：`App`（`mygo build` 用 ldflags 编进来，`go run` 和测试里是 `dev`）、`Mygo()`、`Go()`、`Platform()`、`String()` |
+| `internal/update/` | 检查更新：`Latest` 查 GitHub 的 `releases/latest`（测试里换成 httptest，不联网），`Newer` 按版本号逐段比；界面侧在 `app/update.go` |
 | `internal/crash/` | 日志目录：`workbench.log`（满 1 MB 轮换）和崩溃日志 |
-| `internal/appicon/` | 用有向距离场绘制应用图标（浅色圆角方块上的钢蓝色 G 形 git 分支）；`-update` 生成 `assets/icon.png`，关于窗口使用同一套绘制代码 |
+| `internal/appicon/` | 应用图标：内嵌的 1024 位图（`icon.png`），`Draw` 按面积平均缩出各个尺寸；`-update` 重新生成 `assets/icon.png`，关于窗口用同一套绘制代码 |
 | `internal/testutil/` | 测试用：临时仓库（`TempRepo` / `NewRepo` / `ThreeRepos` / `SubmoduleRepo`）、后台回调队列 `Queue`、推帧等待、`Budget` / `Race`、`WaitTermReady` |
 | `tools/measure/` | 测量内存和启动用时的脚本，不包含在应用中：`measure.sh`、`report.py`、`longrun.sh`、`seed/`；Go 端仅有 `TestMeasureScripts` |
 

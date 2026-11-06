@@ -3,7 +3,6 @@ package ui
 import (
 	"os"
 	"path/filepath"
-	"syscall"
 	"testing"
 
 	"github.com/holthq/holt/internal/app"
@@ -18,7 +17,7 @@ func TestLoadingOnlyWhenSlow(t *testing.T) {
 	r.Write("a.txt", "hello\n")
 	r.Commit("一")
 	fifo := filepath.Join(r.Root, "slow.txt")
-	if err := syscall.Mkfifo(fifo, 0o644); err != nil {
+	if err := testutil.MakeFIFO(fifo, 0o644); err != nil {
 		t.Skip("建不了命名管道：", err)
 	}
 	a, tt, wait := newUI(t, testutil.Workspace(t, r.Root), "")

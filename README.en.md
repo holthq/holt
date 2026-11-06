@@ -1,5 +1,7 @@
 # Holt
 
+[![CI](https://github.com/holthq/holt/actions/workflows/ci.yml/badge.svg)](https://github.com/holthq/holt/actions/workflows/ci.yml)
+
 [中文](README.md) · English
 
 Holt is a multi-repo workbench for macOS. Browse files, edit code, review Git changes and commit history, and use
@@ -98,6 +100,13 @@ GOTOOLCHAIN=auto go test ./...
 UI tests render in memory without opening a window. Tests that write to repos only use temporary repos.
 Read [AGENTS.md](AGENTS.md) before changing code. Other documentation is in [docs/](docs/) (mostly Chinese), and
 version changes are listed in [CHANGELOG.md](CHANGELOG.md).
+
+## Contributing
+
+Pull requests are welcome in English or Chinese. Start with [CONTRIBUTING.md](CONTRIBUTING.md): build, tests,
+screenshots for UI changes, i18n for new text. By participating you agree to the
+[Code of Conduct](CODE_OF_CONDUCT.md). Report security issues privately as described in [SECURITY.md](SECURITY.md),
+not in a public issue.
 
 ## Thanks
 

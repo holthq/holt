@@ -4,6 +4,10 @@
 
 ## 未发布
 
+- 仓库规范化，方便国外贡献者提 PR：[CONTRIBUTING.md](CONTRIBUTING.md)（英文为主，中文在末尾）、
+  [CODE_OF_CONDUCT.md](CODE_OF_CONDUCT.md)、[SECURITY.md](SECURITY.md)、issue / PR 模板、`.editorconfig`、
+  `.gitattributes`；LICENSE 加上 holthq 的版权行。CI 加了 Linux / Windows 的 `go build` + `go vet` 矩阵（macOS 照旧跑测试和打包），
+  测试里的命名管道换成 `testutil.MakeFIFO`，Windows 上也能编译。
 - 设置窗口改成左侧栏布局：搜索框和 9 个分组（带图标）在左边，右边是这一组的设置；搜索时分组变灰、选项按组列出。
   默认窗口大一点（760×540）。
 - 应用菜单和关于窗口加了「检查更新」：查 GitHub 上 holthq/holt 的最新 release，有新版本问要不要打开发布页；
