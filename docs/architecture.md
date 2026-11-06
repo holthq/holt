@@ -331,7 +331,10 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）、Git 栏段头的右键菜单和分支菜单、标题栏分支胶囊的菜单是 Grove 自己画的（issue #48、#58），不用系统菜单
 右键一行时菜单用 `PopMenu.OpenRow` 开：在指针的横坐标、那一行底下展开，下面放不下翻到那一行上面，不盖住它；比 `MenuRowMax`（64）高的（列表空白处）按指针处开。菜单开着时右键别的登记过的地方也一样。
-文件树以外用 `ctxMenu`（右键）/ `openMenuBelow`（按钮）的：Git 栏段头、分支胶囊和段头的分支、编辑器标签、打开的编辑器、贮藏、历史的提交 / 改动 / 仓库行、本地历史。还是系统菜单（`ContextMenu` / `Menu`）的：工作树、blame、终端标签、搜索结果（它们的建菜单函数用 `do` 把动作推迟到列表建完，Grove 菜单在帧末尾执行选中项，推迟的那一下就丢了，要先改成直接做）、推送按钮、状态栏、⋯ Git 操作、队列、设置。
+文件树以外用 `ctxMenu` / `ctxMenuRow`（右键）/ `menuButton`、`openMenuBelow`（按钮）的：Git 栏段头、分支胶囊和段头的分支、编辑器标签、打开的编辑器、贮藏、历史的提交 / 改动 / 仓库行、本地历史、工作树行和工作树操作、blame、终端标签、搜索结果和摘要行、推送按钮的右键、状态栏的语言 / 缩进 / 换行 / 编码、只读条的“换编码…”、⋯ Git 操作、git 队列、变基每一步的动作。
+按钮的菜单（`openMenuBelow`）按 `OpenRow` 开、按钮当“那一行”：下面放不下翻到按钮上面，不盖住它（状态栏）。
+Grove 菜单选中的项在整棵树建完之后执行，建菜单函数里“等列表建完再做”的 `do`（搜索结果）传 `menuDo`（直接做）；打开那一帧捕获的 `do` 交出去的动作没人执行。
+还是 mygo 画的（`ContextMenu` / `Menu`）：设置窗口里的“更多”（设置、快捷键页；设置是另一个窗口，没有 `gmenuView`）、标题栏的工作区 / 路径菜单、克隆框、底栏的终端配置、Git 栏的几种变更行 / 组头、历史面板标题和提交卡片的“更多”、比较行、搜索编辑器的上下文行数、编辑器的右键菜单。
 `root` 每帧 `c.SetMenuPresentation(wui.PopoverMenus)`：这些还是 `ContextMenu` / `Menu` 的、编辑器的右键菜单（`d.St.ContextMenu`，mygo 编辑器自己开的，Grove 接不过来）、文本框和可选中文字的编辑菜单都由 mygo 画在窗口里（mygo 的 `PopoverMenu` 的样子，不是 Grove 菜单的）。
 （窗口靠下时会折成带滚动箭头的，见 `docs/mygo-pitfalls.md`），也不用 mygo 的 `PopoverMenu`（不能按住右键拖到项上松开、子菜单没有延迟和安全三角、
 灰项说不了原因、点外面那一下会落到底下）：
@@ -345,7 +348,10 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
   （位置、`menuZ` 算的叠放次序、建菜单的函数）登记给 `PopMenu.AddTarget`：开着时在别处右键（`Down` 的 button 1，⌃点当右键），
   按登记的找到那一块（文件树列表的空白处兼作裁剪；文件树以外的 Z 从 `MenuZFree` 起，不受裁剪），关掉旧的、在指针处开新的；左键和别的键只关、吞掉。文件树有键盘时 ⇧F10 / 菜单键由
   列表的 `HandleInput` 接（`openTreeMenuByKey`，用 `TreeSpans` 里光标行的位置），`PopMenu.OpenByKey` 开、第一项高亮；
-  没选就关了，`App.MenuByKey` 让键盘回到文件树。样子：字号 13、项高 24、面板圆角 8、内边距 4、项圆角 5，最小宽 180；勾选位只在这一层有勾选项时留（`MenuLevel.TextL`），没有时字左边留 10；高亮项是字色 8% 的淡填充、字色不变（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
+  没选就关了，`App.MenuByKey` 让键盘回到文件树。文件树以外：`ctxMenu` 的元素有键盘、或 `ctxMenuRow` 的行是有键盘的列表的选中行时，
+  每帧登记成 `App.MenuKeyAt`，`gmenuView` 只在有它时认 ⇧F10 / 菜单键（`c.Shortcut`），在元素左下角下面 `OpenByKey`。
+  接收层第一帧不拿键盘、第二帧才 `Focus()`：mygo 在 Overlay 出现那一帧（建完以后）记下当时有键盘的元素，接收层消失时还回去（`restoreFocus`），
+  所以关了菜单（选了、Esc、点外面）键盘回到打开前的元素。样子：字号 13、项高 24、面板圆角 8、内边距 4、项圆角 5，最小宽 180；勾选位只在这一层有勾选项时留（`MenuLevel.TextL`），没有时字左边留 10；高亮项是字色 8% 的淡填充、字色不变（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
 - 建菜单的函数（`menus.go`）都收 `menu` 接口（`app.MenuSink`），系统菜单（`ContextMenu` / `Menu`）经 `nativeMenu(m)` 适配，所以两边共用；
   灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Grove 画的悬停提示。
 

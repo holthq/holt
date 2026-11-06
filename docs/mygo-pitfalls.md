@@ -530,6 +530,8 @@
   吞掉点外面那一下靠 Overlay 里铺满窗口的接收层（`Absolute` + 窗口大小 + `HandleInput` 接下按下）；它 `Focus()` 每帧拿着焦点接键盘，
   `Element.Focused()` 在窗口失去焦点时报假（mygo 的 `windowFocus`），拿它当"失去焦点就关"。回调里的坐标是相对元素的，换成窗口坐标用建界面时记下的
   `Bounds()`（上一帧的），回调里不能再碰元素。
+  Overlay 关掉时 mygo 把键盘还给它出现那一帧有键盘的元素（`openOverlay` / `restoreFocus`），但记的是 Overlay 的 `fn` 跑完以后的焦点：
+  出现那一帧里面的元素就 `Focus()` 了，记下的就是它自己，关掉以后键盘没了着落。接收层要隔一帧再 `Focus()`。
 - mygo main（`6842ad5e` 起）的 `Tester.Click` / `RightClick` 先校验：标签所在元素（往上数第一个接输入的）要和点下去接输入的是同一个，
   不是就报 `"xxx" is not the input target`。列表的行名（`ListOptions.Label`，打字跳行、读屏用）记在 List 的那一格上，接点击的却是格子里面的行
   （文件树行的 `menuPress`、Git 栏段头、命令面板的结果行、历史行）；历史右栏标题行的名字"历史"在整行上，正中是搜索框。真窗口里点那一格就是点那一行，
