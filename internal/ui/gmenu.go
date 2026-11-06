@@ -1,7 +1,6 @@
 package ui
 
 import (
-	"log"
 	"math"
 	"time"
 
@@ -101,6 +100,7 @@ func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func
 				a.TreeTip.Dismiss()
 				root := c.Root().Bounds()
 				gmenuMeasure(a, c)
+				app.MenuLogf("行右键：el=%+v ev=(%.1f, %.1f) → 窗口 (%.1f, %.1f) 窗口大小 %.0fx%.0f", b, ev.X, ev.Y, x, y, root.W, root.H)
 				m.OpenRow(owner, build, x, y, app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, root.W, root.H, true, ev.Time)
 				held = true
 				return true
@@ -293,12 +293,15 @@ func gmenuView(a *app.App, c *wui.Context, chose bool) {
 		} else {
 			c.Invalidate()
 		}
+		if a.MenuShown <= 4 {
+			app.MenuLogf("overlay 第 %d 帧：windowActive=%v 接收层有键盘=%v", a.MenuShown, c.WindowActive(), catcher.Focused())
+		}
 		if a.MenuShown > 2 && !c.WindowActive() { // 窗口失去焦点（不是窗口里别的东西拿了键盘：列表在按下时自己会拿）
-			log.Printf("右键菜单关掉：窗口不活跃（第 %d 帧）", a.MenuShown)
-			m.Close()
+			m.CloseWhy("窗口不活跃")
 			c.Invalidate()
 		}
 		catcher.HandleInput(func(ev wui.InputEvent) bool {
+			app.MenuLogf("接收层事件 kind=%v button=%d (%.1f, %.1f) key=%v text=%q", ev.Kind, ev.Button, ev.X, ev.Y, ev.Key, ev.Text)
 			switch ev.Kind {
 			case wui.InputPointerDown:
 				b := ev.Button

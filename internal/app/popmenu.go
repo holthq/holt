@@ -2,6 +2,7 @@ package app
 
 import (
 	"log"
+	"os"
 	"strings"
 	"time"
 	"unicode"
@@ -68,6 +69,16 @@ const (
 	MenuHoldMin  = 150 * time.Millisecond // 右键按下后过了这么久（或动过）再松开，才算拖到项上松开选它
 	menuMoveSlop = 4
 )
+
+// menuDebug 是 WORKBENCH_MENU_LOG=1 时把菜单的输入、开关记进日志——临时排查“右键菜单闪一下就消失”用。
+var menuDebug = os.Getenv("WORKBENCH_MENU_LOG") != ""
+
+// MenuLogf 是菜单排查日志，只在 WORKBENCH_MENU_LOG=1 时写。
+func MenuLogf(format string, args ...any) {
+	if menuDebug {
+		log.Printf("[menu] "+format, args...)
+	}
+}
 
 // MenuRect 是窗口里的一块（DIP）。
 type MenuRect struct{ X, Y, W, H float32 }
@@ -214,6 +225,7 @@ func (m *PopMenu) Open(owner any, build func(MenuSink), x, y, winW, winH float32
 	*m = PopMenu{Owner: owner, build: build, open: true, Measure: m.Measure, winW: winW, winH: winH, ax: x, ay: y,
 		held: held, openAt: now, downLvl: -1, downIdx: -1, px: x, py: y, hasPtr: true, hotSince: now,
 		targets: m.targets, nextTargets: m.nextTargets}
+	MenuLogf("Open owner=%v 窗口=%.0fx%.0f (%.1f, %.1f) held=%v", owner, winW, winH, x, y, held)
 	m.Refresh(winW, winH)
 }
 
@@ -225,10 +237,14 @@ const MenuRowMax = 64
 func (m *PopMenu) OpenRow(owner any, build func(MenuSink), x, y float32, row MenuRect, winW, winH float32, held bool, now time.Time) {
 	m.Open(owner, build, x, y, winW, winH, held, now)
 	if !m.open || row.H <= 0 || row.H > MenuRowMax || y < row.Y || y > row.Y+row.H {
+		MenuLogf("OpenRow 没对上：row=%+v y=%.1f → 按指针 (%.1f, %.1f) 开", row, y, x, y)
 		return
 	}
 	m.row = row
 	m.layout()
+	if len(m.levels) > 0 {
+		MenuLogf("OpenRow 锚定 row=%+v，菜单=%+v", row, m.levels[0].Rect)
+	}
 }
 
 // OpenByKey 是键盘（⇧F10、菜单键）打开的：在 (x, y) 打开，第一个能选的项高亮着，↑↓ 回车马上能用。
@@ -246,10 +262,17 @@ func (m *PopMenu) OpenByKey(owner any, build func(MenuSink), x, y, winW, winH fl
 func (m *PopMenu) IsOpen() bool { return m != nil && m.open }
 
 // Close 关掉菜单（不选）。
-func (m *PopMenu) Close() {
-	if m.open {
-		m.reset()
+func (m *PopMenu) Close() { m.CloseWhy("") }
+
+// CloseWhy 同 Close，why 非空时记一行日志（临时排查用）。
+func (m *PopMenu) CloseWhy(why string) {
+	if !m.open {
+		return
 	}
+	if why != "" {
+		MenuLogf("关掉：%s owner=%v", why, m.Owner)
+	}
+	m.reset()
 }
 
 // Levels 是开着的各层（界面照着画）。
@@ -269,8 +292,7 @@ func (m *PopMenu) Refresh(winW, winH float32) {
 	m.root = tidy(s.items)
 	if len(m.root) == 0 {
 		// 建菜单的函数每帧重跑，对着的东西没了（结果变少、行被删）时它什么也不加：关掉，不留一块空面板
-		log.Printf("右键菜单关掉：对着的东西没了（%v）", m.Owner)
-		m.Close()
+		m.CloseWhy("对着的东西没了")
 		return
 	}
 	m.layout()
@@ -573,12 +595,16 @@ func (m *PopMenu) Down(x, y float32, button int, now time.Time) bool {
 		return false
 	}
 	lv, idx := m.hit(x, y)
+	MenuLogf("Down (%.1f, %.1f) button=%d 菜单里=%d,%d owner=%v", x, y, button, lv, idx, m.Owner)
 	if lv < 0 {
 		winW, winH := m.winW, m.winH
-		m.Close()
+		m.CloseWhy("点了菜单外面")
 		if button == 1 {
 			if t, ok := m.TargetAt(x, y); ok {
+				MenuLogf("  外面右键落在目标上：%+v", t.Rect)
 				m.OpenRow(t.Owner, t.Build, x, y, t.Rect, winW, winH, true, now)
+			} else {
+				MenuLogf("  外面右键没有目标：关掉")
 			}
 		}
 		return true
@@ -600,6 +626,7 @@ func (m *PopMenu) Up(x, y float32, button int, now time.Time) {
 		return
 	}
 	lv, idx := m.hit(x, y)
+	MenuLogf("Up (%.1f, %.1f) button=%d 菜单里=%d,%d held=%v moved=%v 间隔=%v", x, y, button, lv, idx, m.held, m.moved, now.Sub(m.openAt))
 	if m.held {
 		m.held = false
 		if now.Sub(m.openAt) < MenuHoldMin && !m.moved {
@@ -637,7 +664,7 @@ func (m *PopMenu) activate(lv, idx int, now time.Time) {
 		return
 	}
 	build := m.build
-	m.Close()
+	m.CloseWhy("选了项")
 	m.choice, m.choiceLbl, m.build = it.seq, it.Label, build // 留给 RunChoice 再跑一遍
 }
 
@@ -661,8 +688,9 @@ func (m *PopMenu) Scroll(x, y, dy float32) {
 		return
 	}
 	lv, _ := m.hit(x, y)
+	MenuLogf("Scroll (%.1f, %.1f) dy=%.2f 菜单里=%d", x, y, dy, lv)
 	if lv < 0 || m.levels[lv].Full <= m.levels[lv].Rect.H {
-		m.Close()
+		m.CloseWhy("在菜单外面滚动")
 		return
 	}
 	l := &m.levels[lv]
