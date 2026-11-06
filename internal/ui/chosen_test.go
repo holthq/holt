@@ -72,7 +72,7 @@ func TestTreeMultiSelect(t *testing.T) {
 		a.Exec("file.closeAll")
 		tt.Frame()
 		tt.Advance(time.Second) // 和上一次点隔开，不算双击
-		if err := tt.ClickWith(mods, name); err != nil {
+		if err := clickRowWith(tt, mods, name); err != nil {
 			t.Fatalf("点 %q: %v", name, err)
 		}
 		tt.Frame()
@@ -81,7 +81,7 @@ func TestTreeMultiSelect(t *testing.T) {
 		t.Helper()
 		a.Exec("file.closeAll")
 		tt.Frame()
-		mustRightClick(t, tt, name, item)
+		mustRightClickRow(t, tt, name, item)
 	}
 	treeKey := func(mods wui.Modifiers, key wui.Key) {
 		a.FocusTree = true
@@ -212,7 +212,7 @@ func TestTreeMultiSelect(t *testing.T) {
 	if len(trashed) != 0 {
 		t.Fatal("没确认就挪了")
 	}
-	mustClick(t, tt, "移到废纸篓")
+	mustClickRow(t, tt, "移到废纸篓")
 	wait("挪走", func() bool {
 		return len(trashed) == 3 && !hasFile(ra, "alpha.txt") && !hasFile(ra, "docs/x.md") && !hasFile(rc, "gamma.md")
 	})

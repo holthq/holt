@@ -56,13 +56,13 @@ func TestOpenToSide(t *testing.T) {
 	}
 
 	// 右键"在侧边打开"：左右两组，新文件在右，键盘在右
-	mustRightClick(t, tt, "a.txt", "在侧边打开")
+	mustRightClickRow(t, tt, "a.txt", "在侧边打开")
 	expect("右键在侧边打开", []string{"README.md"}, []string{"a.txt"})
 	if d := a.CurrentDoc(); d == nil || d.Rel != "a.txt" || !d.Pinned || a.Grp != a.Ed.B.G {
 		t.Fatalf("在侧边打开后当前 %+v", d)
 	}
 	// ⌥点：不预览，固定标签进现有的右组
-	if err := tt.ClickWith(wui.Alt, "b.txt"); err != nil {
+	if err := clickRowWith(tt, wui.Alt, "b.txt"); err != nil {
 		t.Fatalf("⌥点 b.txt: %v", err)
 	}
 	tt.Frame()
@@ -72,13 +72,13 @@ func TestOpenToSide(t *testing.T) {
 		t.Fatalf("⌥点后 b.txt：%+v", d)
 	}
 	// 点左边的编辑器把键盘拿回左组，再⌘点：照旧是多选，不开文件（文件树拿到键盘）
-	mustClick(t, tt, "编辑 README.md")
+	mustClickRow(t, tt, "编辑 README.md")
 	tt.Frame()
 	if a.Grp != a.Ed.A.G {
 		t.Fatalf("点左边的编辑器后键盘不在左组")
 	}
 	for _, n := range []string{"c.txt", "d.txt"} {
-		if err := tt.ClickWith(wui.Cmd, n); err != nil {
+		if err := clickRowWith(tt, wui.Cmd, n); err != nil {
 			t.Fatalf("⌘点 %s: %v", n, err)
 		}
 		tt.Frame()
@@ -101,10 +101,10 @@ func TestOpenToSide(t *testing.T) {
 	tt.Frame()
 
 	// 编辑器右键：d.txt 向右分出去
-	mustRightClick(t, tt, "编辑 d.txt", "拆分", "向右拆分")
+	mustRightClickRow(t, tt, "编辑 d.txt", "拆分", "向右拆分")
 	expect("编辑器右键向右拆分", []string{"README.md"}, []string{"a.txt", "b.txt", "c.txt"}, []string{"d.txt"})
 	// 标签右键："拆分"和"在另一组里再开一份"在"固定标签"上面；这组太窄，向左灰；向下分
-	if err := tt.RightClick("标签 c.txt"); err != nil {
+	if err := rightClickRow(tt, "标签 c.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -120,13 +120,13 @@ func TestOpenToSide(t *testing.T) {
 	tt.Frame()
 	tt.Frame()
 	expect("向下拆分", []string{"README.md"}, []string{"a.txt", "b.txt"}, []string{"c.txt"}, []string{"d.txt"})
-	mustRightClick(t, tt, "标签 b.txt", "拆分", "向上拆分")
+	mustRightClickRow(t, tt, "标签 b.txt", "拆分", "向上拆分")
 	expect("向上拆分", []string{"README.md"}, []string{"b.txt"}, []string{"a.txt"}, []string{"c.txt"}, []string{"d.txt"})
 	if a.CurrentDoc() != doc("b.txt") {
 		t.Fatalf("向上拆分后当前 %v", a.CurrentDoc().Title)
 	}
 	// 组里只有它一个：整项灰
-	if err := tt.RightClick("标签 a.txt"); err != nil {
+	if err := rightClickRow(tt, "标签 a.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -139,7 +139,7 @@ func TestOpenToSide(t *testing.T) {
 	e := a.OpenFile(r, "e.txt", true)
 	wait("e.txt 读好", func() bool { return e.Buf != nil })
 	tt.Frame()
-	mustRightClick(t, tt, "标签 e.txt", "拆分", "向左拆分")
+	mustRightClickRow(t, tt, "标签 e.txt", "拆分", "向左拆分")
 	expect("向左拆分", []string{"e.txt"}, []string{"README.md"}, []string{"b.txt"}, []string{"a.txt"}, []string{"c.txt"}, []string{"d.txt"})
 	if a.CurrentDoc() != e {
 		t.Fatalf("向左拆分后当前 %v", a.CurrentDoc().Title)

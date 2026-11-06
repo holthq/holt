@@ -231,7 +231,7 @@ func TestEnglishUI(t *testing.T) {
 
 	mustRightClick := func(s string) {
 		t.Helper()
-		if err := tt.RightClick(s); err != nil {
+		if err := rightClickRow(tt, s); err != nil { // 文件树的行，见 clickRow
 			t.Fatalf("右键 %q: %v", s, err)
 		}
 		tt.Frame()

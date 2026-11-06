@@ -89,7 +89,7 @@ func TestTreePressFeel(t *testing.T) {
 	tt.Move(x, y)
 	tt.Frame()
 	before := tt.Image()
-	if err := tt.RightClick("a.txt"); err != nil {
+	if err := rightClickRow(tt, "a.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -133,7 +133,7 @@ func TestTreePressFeel(t *testing.T) {
 			tt.Frame()
 			a.Exec("file.closeAll")
 			tt.Frame()
-			if err := tt.RightClick("c.txt"); err != nil {
+			if err := rightClickRow(tt, "c.txt"); err != nil {
 				t.Fatal(err)
 			}
 			tt.Frame()

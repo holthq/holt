@@ -42,7 +42,7 @@ func filesUI(t *testing.T, ws string, want string) (*app.App, *wui.Tester, func(
 // chooseRow 点一下树里的 name 选中它（单击会预览），再把标签都关掉，免得标签上的名字比树里的先被找到。
 func chooseRow(t *testing.T, a *app.App, tt *wui.Tester, name string) {
 	t.Helper()
-	mustClick(t, tt, name)
+	mustClickRow(t, tt, name)
 	a.Exec("file.closeAll")
 	tt.Frame()
 }
@@ -102,7 +102,7 @@ func TestTreeDragMove(t *testing.T) {
 	if !a.ConfirmOpen || a.Confirm.Title != "把 docs 移到 lib？" || !exists(filepath.Join(root, "docs")) {
 		t.Fatalf("拖目录没先问：%+v", a.Confirm)
 	}
-	mustClick(t, tt, "移动")
+	mustClickRow(t, tt, "移动")
 	if a.ConfirmOpen || !exists(filepath.Join(root, "lib", "docs", "n.md")) {
 		t.Fatal("点了移动没移")
 	}
@@ -118,7 +118,7 @@ func TestTreeDragMove(t *testing.T) {
 	if !a.ConfirmOpen || a.Confirm.Title != "把 1 项复制到 lib？" {
 		t.Fatalf("访达拖来的没先问：%+v", a.Confirm)
 	}
-	mustClick(t, tt, "复制")
+	mustClickRow(t, tt, "复制")
 	wait("复制进来", func() bool { return idle(r)() && r.Files.Has("lib/z.txt") })
 	if !exists(filepath.Join(out, "z.txt")) {
 		t.Error("复制把原来的拿走了")
@@ -155,7 +155,7 @@ func TestIgnoredRows(t *testing.T) {
 	if tt.HasText("out.bin") {
 		t.Fatal("被忽略的目录不该一开始就读")
 	}
-	mustClick(t, tt, "展开 build")
+	mustClickRow(t, tt, "展开 build")
 	wait("读一层", func() bool { return tt.HasText("out.bin") && tt.HasText("obj") })
 
 	a.OpenPalette("")
@@ -206,11 +206,11 @@ func TestEncodingBar(t *testing.T) {
 	if !d.St.ReadOnly || !d.Lossy {
 		t.Fatalf("编不回原样的应只读：%v %v", d.St.ReadOnly, d.Lossy)
 	}
-	mustClick(t, tt, "转成 UTF-8…")
+	mustClickRow(t, tt, "转成 UTF-8…")
 	if !a.ConfirmOpen || a.Confirm.Title != "把 lossy.txt 转成 UTF-8 保存？" || !strings.Contains(a.Confirm.Message, "0x80") {
 		t.Fatalf("没先问，或没提醒字节会变：%+v", a.Confirm)
 	}
-	mustClick(t, tt, "转换")
+	mustClickRow(t, tt, "转换")
 	if got, _ := os.ReadFile(filepath.Join(root, "lossy.txt")); string(got) != "中文€\n" || d.Enc != docs.UTF8 || d.St.ReadOnly {
 		t.Fatalf("转完：%q %q", got, d.Enc)
 	}
@@ -228,7 +228,7 @@ func TestEncodingBar(t *testing.T) {
 	if tt.HasText("换编码…") || w.St.ReadOnly || !w.Editable() { // 编得回原样的 Big5 能编辑，没有只读条
 		t.Fatalf("Big5 应能编辑、没有条：只读 %v", w.St.ReadOnly)
 	}
-	mustClick(t, tt, "编码 Big5")
+	mustClickRow(t, tt, "编码 Big5")
 	if m := tt.Menu(); !slices.Contains(m, "用别的编码重新打开") || !slices.Contains(m, "Shift_JIS") || !slices.Contains(m, "转成 UTF-8…") || slices.Contains(m, "自动识别编码重新打开") {
 		t.Fatalf("状态栏编码的菜单：%q", m)
 	}
@@ -241,7 +241,7 @@ func TestEncodingBar(t *testing.T) {
 	if !w.St.ReadOnly || w.Convertible() || tt.HasText("转成 UTF-8…") {
 		t.Error("解不通的应只读、不能转")
 	}
-	mustClick(t, tt, "换编码…")
+	mustClickRow(t, tt, "换编码…")
 	if err := tt.ChooseMenuItem("GB18030"); err != nil {
 		t.Fatal(err)
 	}
@@ -251,7 +251,7 @@ func TestEncodingBar(t *testing.T) {
 	if !w.St.ReadOnly || w.ForcedEnc != docs.GB18030 {
 		t.Errorf("Big5 的“，”（A1 41）这些落在 GB18030 的用户区，应只读：只读 %v，%q", w.St.ReadOnly, w.ForcedEnc)
 	}
-	mustClick(t, tt, "编码 GB18030")
+	mustClickRow(t, tt, "编码 GB18030")
 	if err := tt.ChooseMenuItem("自动识别编码重新打开"); err != nil {
 		t.Fatal(err)
 	}
@@ -291,7 +291,7 @@ func TestOutlinePanel(t *testing.T) {
 		t.Fatalf("大纲的行：%q", rows)
 	}
 
-	mustClick(t, tt, "第二节")
+	mustClickRow(t, tt, "第二节")
 	if p := d.St.CursorPos(); p.Line != 6 || d.OutlineSel != 2 {
 		t.Fatalf("单击没跳过去：行 %d，选中 %d", p.Line+1, d.OutlineSel)
 	}
@@ -341,7 +341,7 @@ func TestTidySave(t *testing.T) {
 	r := a.Repos[0]
 	d := a.OpenFile(r, "t.txt", true)
 	wait("读好", func() bool { return d.Buf != nil })
-	mustClick(t, tt, "编辑 t.txt")
+	mustClickRow(t, tt, "编辑 t.txt")
 	d.St.Select(5, 5) // 第二行的 b 后面
 	tt.Type("!")
 	tt.Frame()

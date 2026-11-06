@@ -70,7 +70,7 @@ func TestReplaceRow(t *testing.T) {
 	mustText(t, tt, "全部替换（0 处）")
 	tt.Type("foo")
 	searched("foo", 4)
-	mustClick(t, tt, "替换为")
+	mustClickRow(t, tt, "替换为")
 	tt.Type("bar")
 	tt.Frame()
 	mustText(t, tt, "全部替换（4 处）")
@@ -81,7 +81,7 @@ func TestReplaceRow(t *testing.T) {
 
 	// 指针在一处上：替换这一处 / 排除
 	hoverOn(t, tt, "结果 demo/a.txt:1:1")
-	mustClick(t, tt, "替换这一处")
+	mustClickRow(t, tt, "替换这一处")
 	if got := mustRead(t, filepath.Join(repo.Root, "a.txt")); got != "bar one\nfoo two\nfoo three\n" {
 		t.Fatalf("替换这一处：%q", got)
 	}
@@ -89,11 +89,11 @@ func TestReplaceRow(t *testing.T) {
 		t.Fatalf("换掉的那处还在，或没有提示；texts=%q", tt.Texts())
 	}
 	hoverOn(t, tt, "结果 demo/a.txt:2:1")
-	mustClick(t, tt, "排除")
+	mustClickRow(t, tt, "排除")
 	mustText(t, tt, "全部替换（2 处）")
 
 	// 键盘：点一处（开了预览标签、焦点在列表上），⌘↩ 换它，开着的标签跟着变；⌫ 排除
-	mustClick(t, tt, "结果 demo/a.txt:3:1")
+	mustClickRow(t, tt, "结果 demo/a.txt:3:1")
 	d := a.CurrentDoc()
 	wait("读 a.txt", func() bool { return d != nil && d.Buf != nil })
 	tt.Frame()
@@ -105,20 +105,20 @@ func TestReplaceRow(t *testing.T) {
 	mustText(t, tt, "全部替换（1 处）")
 
 	// 全部替换：先问，取消不换；点了换完、Git 栏有 M
-	mustClick(t, tt, "全部替换（1 处）")
+	mustClickRow(t, tt, "全部替换（1 处）")
 	if !a.ConfirmOpen || !tt.HasText("把 1 处换成 “bar”？") {
 		t.Fatalf("没先问；texts=%q", tt.Texts())
 	}
-	mustClick(t, tt, "取消")
+	mustClickRow(t, tt, "取消")
 	if mustRead(t, filepath.Join(repo.Root, "docs", "b.md")) != "# foo b\n" {
 		t.Fatal("取消了还换")
 	}
 	tt.Key(0, wui.KeyUp) // 列表还有焦点：选回 b.md 那一处
 	tt.Frame()
-	mustClick(t, tt, "替换为")
+	mustClickRow(t, tt, "替换为")
 	tt.Key(0, wui.KeyEnter) // 替换框里回车也是全部替换（问）
 	tt.Frame()
-	mustClick(t, tt, "全部替换")
+	mustClickRow(t, tt, "全部替换")
 	if got := mustRead(t, filepath.Join(repo.Root, "docs", "b.md")); got != "# bar b\n" {
 		t.Fatalf("全部替换：%q", got)
 	}
@@ -128,11 +128,11 @@ func TestReplaceRow(t *testing.T) {
 	wait("Git 状态", func() bool { return idle(r)() && r.Status.Unstaged == 2 })
 
 	// 收起替换框：结果里只有排除，没有替换
-	mustClick(t, tt, "隐藏替换")
+	mustClickRow(t, tt, "隐藏替换")
 	if s.Replacing {
 		t.Fatal("没收起")
 	}
-	mustClick(t, tt, "搜索文字")
+	mustClickRow(t, tt, "搜索文字")
 	tt.Key(wui.Cmd, wui.KeyA)
 	tt.Type("bar")
 	searched("bar", 3)
@@ -140,13 +140,13 @@ func TestReplaceRow(t *testing.T) {
 	if _, ok := tt.Find("替换这一处"); ok {
 		t.Error("收起替换框了还有替换这一处")
 	}
-	mustClick(t, tt, "排除")
+	mustClickRow(t, tt, "排除")
 	// 文件行：右键排除这个文件；⌫ 在列表上排除选中的
-	mustRightClick(t, tt, "结果文件 demo/docs/b.md", "排除这个文件")
+	mustRightClickRow(t, tt, "结果文件 demo/docs/b.md", "排除这个文件")
 	if tt.HasText("结果文件 demo/docs/b.md") {
 		t.Error("排除的文件还在")
 	}
-	mustClick(t, tt, "结果 demo/a.txt:3:1")
+	mustClickRow(t, tt, "结果 demo/a.txt:3:1")
 	tt.Key(0, wui.KeyBackspace)
 	tt.Frame()
 	if text, _ := a.SearchSummary(); !strings.HasPrefix(text, "0 处，0 个文件（排除了 3 处）") {
@@ -192,7 +192,7 @@ func TestRecentList(t *testing.T) {
 		t.Fatalf("↓ 回到空的：%q", s.Query.Text)
 	}
 
-	mustClick(t, tt, "最近搜索 one")
+	mustClickRow(t, tt, "最近搜索 one")
 	wait("搜 one", func() bool { return s.Done && !s.Running && s.Query.Text == "one" })
 	if a.St.SearchHistory[0].Text != "one" || !tt.Focused("搜索文字") {
 		t.Fatalf("点了一条：%+v", a.St.SearchHistory)
@@ -201,11 +201,11 @@ func TestRecentList(t *testing.T) {
 	tt.Key(0, wui.KeyBackspace)
 	tt.Frame()
 	hoverOn(t, tt, "最近搜索 foo")
-	mustClick(t, tt, "从最近搜索里去掉 foo")
+	mustClickRow(t, tt, "从最近搜索里去掉 foo")
 	if tt.HasText("最近搜索 foo") || len(a.St.SearchHistory) != 2 {
 		t.Fatalf("去掉一条：%+v", a.St.SearchHistory)
 	}
-	mustClick(t, tt, "清除最近搜索")
+	mustClickRow(t, tt, "清除最近搜索")
 	if len(a.St.SearchHistory) != 0 {
 		t.Fatalf("清除：%+v", a.St.SearchHistory)
 	}
@@ -224,7 +224,7 @@ func TestSearchInMenu(t *testing.T) {
 	wait("树里有 docs", func() bool { return !r.Files.Loading && tt.HasText("docs") })
 	s.Query.Text = "foo"
 
-	mustRightClick(t, tt, "docs", "在此搜索")
+	mustRightClickRow(t, tt, "docs", "在此搜索")
 	wait("搜索", func() bool { return s.Done && !s.Running })
 	tt.Frame()
 	// 胶囊上的字：HasText 是包含，结果行的 Label 里也有 demo/docs，所以用 Find 整段比
@@ -235,7 +235,7 @@ func TestSearchInMenu(t *testing.T) {
 		t.Fatalf("范围外的也搜了；texts=%q", tt.Texts())
 	}
 	accessCheck(t, tt, "范围胶囊")
-	mustClick(t, tt, "清除范围")
+	mustClickRow(t, tt, "清除范围")
 	wait("搜全部", func() bool { return s.Done && !s.Running && len(s.Res.Matches) == 4 })
 	tt.Frame()
 	if _, chip := tt.Find("demo/docs"); s.Scope != nil || chip {
@@ -243,7 +243,7 @@ func TestSearchInMenu(t *testing.T) {
 	}
 
 	// 结果文件行右键：只在这个目录里搜
-	mustRightClick(t, tt, "结果文件 demo/docs/b.md", "只在这个目录里搜")
+	mustRightClickRow(t, tt, "结果文件 demo/docs/b.md", "只在这个目录里搜")
 	wait("搜索", func() bool { return s.Done && !s.Running })
 	if s.Scope == nil || s.Scope.Label() != "demo/docs" || len(s.Res.Matches) != 1 {
 		t.Fatalf("只在这个目录里搜：%+v %d", s.Scope, len(s.Res.Matches))
@@ -252,7 +252,7 @@ func TestSearchInMenu(t *testing.T) {
 	// 仓库行右键：在此仓库里搜索
 	a.ShowSidebar(workspace.ModeFiles)
 	tt.Frame()
-	mustRightClick(t, tt, "demo（仓库）", "在此仓库里搜索")
+	mustRightClickRow(t, tt, "demo（仓库）", "在此仓库里搜索")
 	wait("搜索", func() bool { return s.Done && !s.Running && len(s.Res.Matches) == 4 })
 	if s.Scope == nil || s.Scope.Label() != "demo" {
 		t.Fatalf("在此仓库里搜索：%+v", s.Scope)

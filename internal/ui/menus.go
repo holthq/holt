@@ -381,21 +381,22 @@ func remoteItems(a *app.App, m menu, r *app.Repo) {
 
 // repoMenu 是仓库行的右键菜单（文件树、Git 栏、历史）。tree 是文件树里的：多了展开 / 收起那组和粘贴。
 func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
-	refresh := i18n.T("刷新 Git 状态")
-	if r.Plain {
-		refresh = i18n.T("刷新")
-	}
-	if m.Item(refresh).Disabled(r.Loading).Chosen() {
-		a.RefreshRepo(r, app.WhyManual)
-	}
+	// 顶层只放常用的（14 项以内），不常用的收进"更多"。
 	if m.Item(i18n.T("在此打开终端")).Chosen() {
 		a.NewTerminal(r, r.Root)
 	}
 	if m.Item(i18n.T("在此仓库里搜索")).Chosen() {
 		a.SearchIn(r, "")
 	}
-	if m.Item(i18n.T("重新启动终端")).Chosen() {
-		a.RestartTerm(r)
+	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
+		a.InFinder(r.Root)
+	}
+	if m.Item(i18n.T("复制路径")).Chosen() {
+		copyText(r.Root)
+	}
+	if !r.Plain {
+		m.Separator()
+		m.Submenu(i18n.T("分支"), func(m menu) { branchMenu(a, m, r) })
 	}
 	if r.Extra.Head != "" && m.Item(i18n.T("修改上一次提交…")).Checked(r.Amend).Chosen() {
 		a.SetAmend(r, !r.Amend)
@@ -418,6 +419,35 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 		}
 	}
 	m.Separator()
+	newItems(a, m, r, "")
+	if !r.Plain {
+		if m.Item(i18n.T("新建工作树…")).Disabled(!r.Loaded || r.Err != nil).Chosen() {
+			a.NewWorktree(r)
+		}
+	}
+	if tree && shortcut(m.Item(i18n.T("粘贴")), "tree.paste").Disabled(len(a.TreeClip) == 0).Chosen() {
+		a.PasteInto(r, "")
+	}
+	m.Separator()
+	m.Submenu(i18n.T("更多"), func(m menu) { repoMoreItems(a, m, r, tree) })
+	m.Separator()
+	if m.Item(i18n.T("从列表移除")).Chosen() {
+		a.RemoveReq = r
+	}
+}
+
+// repoMoreItems 是仓库菜单的"更多"子菜单：刷新、重启终端、展开 / 收起、上移下移、远程、子模块、被忽略的文件、主仓库、网页。
+func repoMoreItems(a *app.App, m menu, r *app.Repo, tree bool) {
+	refresh := i18n.T("刷新 Git 状态")
+	if r.Plain {
+		refresh = i18n.T("刷新")
+	}
+	if m.Item(refresh).Disabled(r.Loading).Chosen() {
+		a.RefreshRepo(r, app.WhyManual)
+	}
+	if m.Item(i18n.T("重新启动终端")).Chosen() {
+		a.RestartTerm(r)
+	}
 	if tree {
 		if m.Item(i18n.T("展开有改动的目录")).Disabled(!app.HasChanges(r)).Chosen() {
 			a.ExpandChanged(r)
@@ -427,7 +457,8 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 		}
 	}
 	// 和拖仓库行一样（MoveRepo）：只在同一组里挪，到头了灰着。键盘走法：文件树里光标停在仓库行上按 ⇧F10 / 菜单键，
-	// 在那一行下面打开 Grove 画的这份菜单（openTreeMenuByKey，第一项高亮），↑↓ 挪到上移 / 下移、回车
+	// 在那一行下面打开 Grove 画的这份菜单（第一项高亮），↑↓ 挪到"更多"、→ 进去，再挪到上移 / 下移、回车
+	m.Separator()
 	i := slices.Index(a.Repos, r)
 	if m.Item(i18n.T("上移")).Disabled(!a.CanMoveRepo(r, i-1)).Chosen() {
 		a.MoveReq = &app.RepoMove{Repo: r, To: i - 1}
@@ -435,37 +466,19 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 	if m.Item(i18n.T("下移")).Disabled(!a.CanMoveRepo(r, i+1)).Chosen() {
 		a.MoveReq = &app.RepoMove{Repo: r, To: i + 1}
 	}
-	m.Separator()
-	newItems(a, m, r, "")
 	if !r.Plain {
-		if m.Item(i18n.T("新建工作树…")).Disabled(!r.Loaded || r.Err != nil).Chosen() {
-			a.NewWorktree(r)
-		}
-		if r.Linked && m.Item(i18n.T("打开主仓库")).Disabled(r.MainRoot == "").Chosen() {
-			a.OpenMainRepo(r)
-		}
+		m.Separator()
 		m.Submenu(i18n.T("远程"), func(m menu) { remoteItems(a, m, r) })
 		m.Submenu(i18n.T("子模块"), func(m menu) { submoduleItems(a, m, r) })
 		if m.Item(i18n.T("显示被忽略的文件")).Checked(a.St.Settings.ShowIgnored).Chosen() {
 			a.ToggleShowIgnored()
 		}
-	}
-	m.Separator()
-	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
-		a.InFinder(r.Root)
+		if r.Linked && m.Item(i18n.T("打开主仓库")).Disabled(r.MainRoot == "").Chosen() {
+			a.OpenMainRepo(r)
+		}
 	}
 	if w := a.WebOf(r); w.OK() && m.Item(i18n.Tf("在 %s 打开", w.Site())).Chosen() {
 		a.OpenWeb(w.Base)
-	}
-	if m.Item(i18n.T("复制路径")).Chosen() {
-		copyText(r.Root)
-	}
-	if tree && shortcut(m.Item(i18n.T("粘贴")), "tree.paste").Disabled(len(a.TreeClip) == 0).Chosen() {
-		a.PasteInto(r, "")
-	}
-	m.Separator()
-	if m.Item(i18n.T("从列表移除")).Chosen() {
-		a.RemoveReq = r
 	}
 }
 

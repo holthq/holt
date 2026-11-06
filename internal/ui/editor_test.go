@@ -57,7 +57,7 @@ func TestFilesAndEditor(t *testing.T) {
 	mustText(t, tt, "README.md")
 
 	// 点目录展开，← 收起
-	mustClick(t, tt, "docs")
+	mustClickRow(t, tt, "docs")
 	if got := paths(); !slices.Equal(got, []string{"docs", "docs/guide.md", "a.txt", "README.md", "u.txt"}) {
 		t.Fatalf("点 docs 后没展开: %v", got)
 	}
@@ -68,7 +68,7 @@ func TestFilesAndEditor(t *testing.T) {
 	}
 
 	// 单击 u.txt → 主区开预览标签；再单击 README.md 顶掉它
-	mustClick(t, tt, "u.txt")
+	mustClickRow(t, tt, "u.txt")
 	wait("u.txt 打开", func() bool { d := a.CurrentDoc(); return d != nil && d.Rel == "u.txt" && d.Buf != nil })
 	if a.Docs[0].Pinned || a.Docs[0].Buf.String() != "未跟踪\n" {
 		t.Errorf("单击应打开预览标签: pinned=%v", a.Docs[0].Pinned)
@@ -76,7 +76,7 @@ func TestFilesAndEditor(t *testing.T) {
 	if a.Docs[0].Base != nil {
 		t.Error("未跟踪文件不该有 HEAD 版本")
 	}
-	mustClick(t, tt, "README.md")
+	mustClickRow(t, tt, "README.md")
 	wait("README 打开", func() bool { d := a.CurrentDoc(); return d != nil && d.Rel == "README.md" && d.Buf != nil })
 	if len(a.Docs) != 1 {
 		t.Errorf("预览标签应被顶掉，现在有 %d 个", len(a.Docs))
@@ -85,7 +85,7 @@ func TestFilesAndEditor(t *testing.T) {
 	mustText(t, tt, "位置 demo/README.md") // 面包屑
 
 	// 侧栏底部的筛选框：输入后回车固定打开
-	mustClick(t, tt, "筛选文件")
+	mustClickRow(t, tt, "筛选文件")
 	tt.Type("a.tx")
 	tt.Frame()
 	if got := paths(); !slices.Equal(got, []string{"a.txt"}) {
@@ -105,7 +105,7 @@ func TestFilesAndEditor(t *testing.T) {
 	}
 
 	// 编辑并 ⌘S
-	mustClick(t, tt, "编辑 a.txt")
+	mustClickRow(t, tt, "编辑 a.txt")
 	d.St.Select(0, 0)
 	tt.Type("新")
 	tt.Frame()
@@ -132,8 +132,8 @@ func TestFilesAndEditor(t *testing.T) {
 	wait("README 重读", func() bool { return strings.Contains(readme.Buf.String(), "别处改的") })
 
 	// 这里也改了、磁盘又变了 → 冲突条；"保留我的"后 ⌘S 直接覆盖
-	mustClick(t, tt, "标签 README.md")
-	mustClick(t, tt, "编辑 README.md")
+	mustClickRow(t, tt, "标签 README.md")
+	mustClickRow(t, tt, "编辑 README.md")
 	readme.St.Select(0, 0)
 	tt.Type("本地 ")
 	tt.Frame()
@@ -145,7 +145,7 @@ func TestFilesAndEditor(t *testing.T) {
 	if !tt.HasText("保留我的") || strings.Contains(readme.Buf.String(), "又改了") {
 		t.Fatalf("冲突时不该覆盖本地改动: %q", tt.Texts())
 	}
-	mustClick(t, tt, "保留我的")
+	mustClickRow(t, tt, "保留我的")
 	tt.Key(wui.Cmd, wui.KeyS)
 	tt.Frame()
 	data, _ = os.ReadFile(filepath.Join(root, "README.md"))
@@ -154,8 +154,8 @@ func TestFilesAndEditor(t *testing.T) {
 	}
 
 	// 脏标签 ⌘W → 确认框，选不保存
-	mustClick(t, tt, "标签 a.txt")
-	mustClick(t, tt, "编辑 a.txt")
+	mustClickRow(t, tt, "标签 a.txt")
+	mustClickRow(t, tt, "编辑 a.txt")
 	d.St.Select(0, 0)
 	tt.Type("y")
 	tt.Key(wui.Cmd, wui.KeyW)
@@ -163,7 +163,7 @@ func TestFilesAndEditor(t *testing.T) {
 	if !a.CloseOpen || !tt.HasText("保存对 a.txt 的修改？") {
 		t.Fatalf("关脏标签应先问: %q", tt.Texts())
 	}
-	mustClick(t, tt, "不保存")
+	mustClickRow(t, tt, "不保存")
 	data, _ = os.ReadFile(filepath.Join(root, "a.txt"))
 	if len(a.Docs) != 1 || a.Docs[0] != readme || strings.HasPrefix(string(data), "y") {
 		t.Errorf("不保存应关掉标签且不写盘: docs=%d", len(a.Docs))

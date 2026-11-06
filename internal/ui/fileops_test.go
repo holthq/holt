@@ -62,7 +62,7 @@ func TestTreeFileOps(t *testing.T) {
 
 	// 右键 notes → 新建文件夹…
 	wait("树里有 notes", func() bool { return !r.Files.Loading && tt.HasText("notes") })
-	mustRightClick(t, tt, "notes", "新建文件夹…")
+	mustRightClickRow(t, tt, "notes", "新建文件夹…")
 	wait("文件夹输入框", func() bool { return tt.Focused("新文件夹名") })
 	tt.Type("drafts")
 	tt.Key(0, wui.KeyEnter)
@@ -75,7 +75,7 @@ func TestTreeFileOps(t *testing.T) {
 	}
 
 	// 选中 u.txt，F2：输入框里先选中 "u"，打字换掉它
-	mustClick(t, tt, "u.txt")
+	mustClickRow(t, tt, "u.txt")
 	wait("选中 u.txt", func() bool { row, ok := a.TreeRowAt(a.FileSel); return ok && row.Path == "u.txt" })
 	tt.Key(0, wui.KeyF2)
 	wait("重命名输入框", func() bool { return tt.Focused("新名字") })
@@ -96,7 +96,7 @@ func TestTreeFileOps(t *testing.T) {
 	if len(trashed) != 0 {
 		t.Fatal("没确认就挪了")
 	}
-	mustClick(t, tt, "移到废纸篓")
+	mustClickRow(t, tt, "移到废纸篓")
 	wait("挪走", func() bool { return len(trashed) == 1 && !hasFile(r, "v.txt") })
 	if !slices.Contains(trashed, filepath.Join(root, "v.txt")) {
 		t.Fatalf("挪的是 %v", trashed)

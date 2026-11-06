@@ -52,7 +52,7 @@ func TestSubmodules(t *testing.T) {
 	if a.Confirm == nil || !tt.HasText("把子模块 vendor/lib 添加为工作区里的仓库？") {
 		t.Fatalf("回车没问添加：%q", tt.Texts())
 	}
-	mustClick(t, tt, "添加")
+	mustClickRow(t, tt, "添加")
 	wait("加进来", func() bool { return len(a.Repos) == 2 && idle(a.Repos[1])() })
 	if cur := a.Current(); cur == nil || !git.SamePath(cur.Root, subRoot) {
 		t.Fatalf("没跳到子模块：%v", cur)
@@ -69,15 +69,15 @@ func TestSubmodules(t *testing.T) {
 	open := func() {
 		t.Helper()
 		tt.Frame()
-		if err := tt.RightClick(r.Name + "（仓库）"); err != nil {
+		if err := rightClickRow(tt, r.Name+"（仓库）"); err != nil {
 			t.Fatal(err)
 		}
-		if !slices.Contains(shownMenu(t, tt), "子模块") {
+		if !slices.Contains(shownMenu(t, tt), "更多") {
 			t.Fatalf("仓库菜单：%v", shownMenu(t, tt))
 		}
 	}
 	open()
-	if err := chooseMenu(t, tt, "子模块", "vendor/lib 2 · "+git.Short(head)+" · 未初始化"); err != nil {
+	if err := chooseMenu(t, tt, "更多", "子模块", "vendor/lib 2 · "+git.Short(head)+" · 未初始化"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -113,7 +113,7 @@ func TestSubmodules(t *testing.T) {
 	if a.Confirm == nil || !tt.HasText("把子模块 vendor/lib 检出回记录的提交？") {
 		t.Fatalf("丢弃没问：%q", tt.Texts())
 	}
-	mustClick(t, tt, "检出")
+	mustClickRow(t, tt, "检出")
 	wait("检出回来", func() bool { return idle(r)() && r.Status.Count == 0 })
 	if got := m.In(subRoot).Git("rev-parse", "HEAD"); got != head {
 		t.Errorf("子模块的 HEAD 是 %s，要 %s", got, head)
@@ -126,7 +126,7 @@ func TestSubmodules(t *testing.T) {
 	if a.Confirm == nil || !tt.HasText("初始化并更新子模块 vendor/lib 2？") {
 		t.Fatalf("没初始化的回车没问：%q", tt.Texts())
 	}
-	mustClick(t, tt, "初始化并更新")
+	mustClickRow(t, tt, "初始化并更新")
 	wait("初始化", func() bool {
 		s, _ := r.Submodule("vendor/lib 2")
 		return idle(r)() && s.Inited()

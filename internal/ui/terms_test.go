@@ -386,7 +386,7 @@ func TestTermOpenHere(t *testing.T) {
 	if n := a.StartedPanes(); n != 0 {
 		t.Fatalf("底栏关着起了 %d 个 shell", n)
 	}
-	mustRightClick(t, tt, "notes", "在此打开终端")
+	mustRightClickRow(t, tt, "notes", "在此打开终端")
 	if !a.St.BottomBar || len(r.Terms) != 2 || r.TermSel != 1 {
 		t.Fatalf("没开新终端：bar=%v tabs=%d sel=%d", a.St.BottomBar, len(r.Terms), r.TermSel)
 	}

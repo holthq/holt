@@ -47,17 +47,18 @@ type MenuEntry struct {
 	seq      int
 }
 
-// 量菜单的几个尺寸（pt），界面照这些画：外边距 4、项高 24、分隔线占 9、圆角 6（界面里用）。
+// 量菜单的几个尺寸（pt），界面照这些画：外边距 4、项高 24、分隔线占 9（上下各留 4）、圆角 8（界面里用）。
 const (
 	MenuPad      = 4
 	MenuItemH    = 24
 	MenuSepH     = 9
 	MenuMargin   = 6  // 菜单离窗口边至少这么远
-	MenuTextL    = 26 // 字左边留的（勾在里面）
-	MenuTextR    = 12
+	MenuTextL    = 24 // 这一层有勾选项时字左边留的（勾在里面）
+	MenuTextL0   = 10 // 这一层没有勾选项时字左边留的
+	MenuTextR    = 10
 	MenuKeysGap  = 28 // 标签和快捷键之间至少空这么多
 	MenuArrowW   = 14 // 子菜单的箭头占的
-	MenuMinW     = 160
+	MenuMinW     = 180
 	MenuSubDelay = 200 * time.Millisecond // 指针停在有子菜单的项上多久才开
 	MenuTipDelay = 500 * time.Millisecond // 灰着的项停多久出原因
 	MenuHoldMin  = 150 * time.Millisecond // 右键按下后过了这么久（或动过）再松开，才算拖到项上松开选它
@@ -76,6 +77,25 @@ type MenuLevel struct {
 	Scroll float32  // 窗口都放不下时往下滚了多少
 	Full   float32  // 不滚时整份的高
 	Hot    int      // 高亮的项，-1 是没有
+	Check  bool     // 这一层有勾选项：字左边留出勾的位置
+}
+
+// TextL 是这一层的字左边留的：有勾选项时留出勾的位置，没有时靠左。
+func (l *MenuLevel) TextL() float32 {
+	if l.Check {
+		return MenuTextL
+	}
+	return MenuTextL0
+}
+
+// hasCheck 报 items 里有勾选项。
+func hasCheck(items []MenuEntry) bool {
+	for _, it := range items {
+		if it.Checked {
+			return true
+		}
+	}
+	return false
 }
 
 // ItemY 是第 i 项在面板里（不算滚动）的顶。
@@ -94,7 +114,7 @@ func entryH(it MenuEntry) float32 {
 	return MenuItemH
 }
 
-// PopMenu 是 Grove 自己画的右键菜单（现在只有文件树用）。零值是关着的。
+// PopMenu 是 Grove 自己画的菜单（右键菜单和按钮弹出的菜单都是它）。零值是关着的。
 type PopMenu struct {
 	// Owner 是菜单对着的东西（文件树行的 FileKey 之类）：那一行画 1 pt 描边。
 	Owner any
@@ -134,13 +154,17 @@ type PopMenu struct {
 }
 
 // MenuTarget 是窗口里一块能右键开菜单的地方：一行、合并行的一段、钉在顶上的行、列表的空白处。
-// Z 大的盖住小的（空白处 0 < 行 < 段 < 钉住的）；Z 为 0 的那几块（列表）同时是裁剪：别的块只算落在它们里面的部分。
+// Z 大的盖住小的（空白处 0 < 行 < 段 < 钉住的）；Z 为 0 的那几块（文件树的列表）同时是裁剪：Z 在 MenuZFree 以下的块
+// 只算落在它们里面的部分。文件树以外的（Git 栏、标签、历史……）用 MenuZFree 起的 Z，不受裁剪。
 type MenuTarget struct {
 	Rect  MenuRect
 	Z     int
 	Owner any
 	Build func(MenuSink)
 }
+
+// MenuZFree 起的 Z 不受文件树列表的裁剪（文件树以外能右键开菜单的地方）。
+const MenuZFree = 100
 
 // AddTarget 登记一块能右键开菜单的地方（界面建元素时调，r 是它上一帧的位置）。
 func (m *PopMenu) AddTarget(r MenuRect, z int, owner any, build func(MenuSink)) {
@@ -165,7 +189,7 @@ func (m *PopMenu) TargetAt(x, y float32) (MenuTarget, bool) {
 	}
 	best, ok := MenuTarget{}, false
 	for _, t := range m.targets {
-		if !t.Rect.has(x, y) || t.Z > 0 && clipped && !inClip {
+		if !t.Rect.has(x, y) || t.Z > 0 && t.Z < MenuZFree && clipped && !inClip {
 			continue
 		}
 		if !ok || t.Z >= best.Z {
@@ -266,7 +290,11 @@ func (m *PopMenu) width(items []MenuEntry) float32 {
 		}
 		sub = sub || it.HasSub
 	}
-	w := MenuPad*2 + MenuTextL + lab + MenuTextR
+	textL := float32(MenuTextL0)
+	if hasCheck(items) {
+		textL = MenuTextL
+	}
+	w := MenuPad*2 + textL + lab + MenuTextR
 	if keys > 0 {
 		w += MenuKeysGap + keys
 	}
@@ -276,14 +304,14 @@ func (m *PopMenu) width(items []MenuEntry) float32 {
 	return max(w, MenuMinW)
 }
 
-// layout 按 path 摆好各层：根菜单左上角在指针处，下面放不下就往上开，往上也放不下就贴着窗口，窗口本身都放不下才滚
+// layout 按 path 摆好各层：根菜单左上角在指针处（往右下展开，不盖住指针左上的那一截），下面放不下就往上开，往上也放不下就贴着窗口，窗口本身都放不下才滚
 // （issue #6 的规矩）；右边放不下往左开。子菜单的第一项和开它的那项对齐，右边放不下开到左边。
 func (m *PopMenu) layout() {
 	old := m.levels
 	m.levels = m.levels[:0:0]
 	items := m.root
 	for lv := 0; ; lv++ {
-		l := MenuLevel{Items: items, Hot: -1}
+		l := MenuLevel{Items: items, Hot: -1, Check: hasCheck(items)}
 		if lv < len(old) && len(old[lv].Items) == len(items) {
 			l.Hot, l.Scroll = old[lv].Hot, old[lv].Scroll
 		}

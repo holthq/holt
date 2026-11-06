@@ -113,7 +113,7 @@ func TestTreeRowTip(t *testing.T) {
 	if _, ok := shown("b.txt"); !ok {
 		t.Fatal("挪开再回到 b.txt，停了 1.1 s 没出提示")
 	}
-	if err := tt.ClickWith(wui.Cmd, "c.txt"); err != nil {
+	if err := clickRowWith(tt, wui.Cmd, "c.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

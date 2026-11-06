@@ -38,7 +38,7 @@ func TestGitDailyMenus(t *testing.T) {
 	tt.Frame()
 
 	// 分支下拉：两个子菜单在"新建分支…"上面；合并不问
-	mustClick(t, tt, "分支 main")
+	mustClickRow(t, tt, "分支 main")
 	menu := tt.Menu()
 	im, ir, in := slices.Index(menu, "合并到当前分支"), slices.Index(menu, "把当前分支变基到"), slices.Index(menu, "新建分支…")
 	if im < 0 || ir != im+1 || in < ir {
@@ -58,7 +58,7 @@ func TestGitDailyMenus(t *testing.T) {
 		t.Fatalf("应是合并提交：%v", f)
 	}
 	// feature 已经并进来了：变基到它不问、只说一声
-	mustClick(t, tt, "分支 main")
+	mustClickRow(t, tt, "分支 main")
 	if err := tt.ChooseMenuItem("把当前分支变基到", "feature"); err != nil {
 		t.Fatal(err)
 	}
@@ -68,7 +68,7 @@ func TestGitDailyMenus(t *testing.T) {
 	}
 
 	// 推送按钮右键：强制推送（有上游，能用）+ 同步
-	if err := tt.RightClick("推送（git push），领先 3"); err != nil {
+	if err := rightClickRow(tt, "推送（git push），领先 3"); err != nil {
 		t.Fatalf("右键推送按钮: %v；texts=%q", err, tt.Texts())
 	}
 	tt.Frame()
@@ -78,7 +78,7 @@ func TestGitDailyMenus(t *testing.T) {
 	tt.CloseMenu()
 
 	// 状态栏的 ↑3：点了同步（拉取 ff-only 没东西，再推送）
-	mustClick(t, tt, "同步 ↑3")
+	mustClickRow(t, tt, "同步 ↑3")
 	wait("同步", func() bool { return idle(r)() && r.Status.Ahead == 0 })
 	if got, head := testutil.GitOut(t, bare, "rev-parse", "main"), repo.Git("rev-parse", "HEAD"); got != head {
 		t.Fatalf("同步后远程 %s，本地 %s", got, head)
@@ -93,7 +93,7 @@ func TestGitDailyMenus(t *testing.T) {
 	h := &r.Hist
 	wait("历史", func() bool { return h.Loaded && !h.Loading && len(h.Commits) == 5 })
 	tt.Frame()
-	if err := tt.RightClick("Merge branch 'feature'"); err != nil {
+	if err := rightClickRow(tt, "Merge branch 'feature'"); err != nil {
 		t.Fatalf("右键合并提交: %v", err)
 	}
 	tt.Frame()
@@ -107,7 +107,7 @@ func TestGitDailyMenus(t *testing.T) {
 		}
 	}
 	tt.CloseMenu()
-	if err := tt.RightClick("main two"); err != nil {
+	if err := rightClickRow(tt, "main two"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -117,16 +117,16 @@ func TestGitDailyMenus(t *testing.T) {
 	tt.CloseMenu()
 
 	// 还原先问，确认后多一个 Revert 提交
-	mustRightClick(t, tt, "main three", "还原这个提交…")
+	mustRightClickRow(t, tt, "main three", "还原这个提交…")
 	wait("还原的问话", func() bool { return a.ConfirmOpen })
 	if c := a.Confirm; !strings.HasPrefix(c.Title, "还原 ") || c.Button != "还原提交" {
 		t.Fatalf("还原的问话: %+v", c)
 	}
-	mustClick(t, tt, "还原提交")
+	mustClickRow(t, tt, "还原提交")
 	wait("还原", func() bool { return idle(r)() && len(h.Commits) == 6 && h.Commits[0].Subject == `Revert "main three"` })
 
 	// 撤销上次提交（工作区干净时段收着，在段头右键）：没推送，不问；改动回到暂存区、信息回到提交框，框里也有这个按钮
-	mustRightClick(t, tt, "daily（仓库）", "撤销上次提交")
+	mustRightClickRow(t, tt, "daily（仓库）", "撤销上次提交")
 	wait("撤销", func() bool { return idle(r)() && r.Status.Ahead == 0 && r.Status.Staged == 1 })
 	if a.ConfirmOpen || !strings.HasPrefix(r.CommitMsg, `Revert "main three"`) {
 		t.Fatalf("撤销后问了 %v，框里 %q", a.ConfirmOpen, r.CommitMsg)
@@ -137,7 +137,7 @@ func TestGitDailyMenus(t *testing.T) {
 	}
 
 	// 重置三档在子菜单里；硬重置问话里带推送过的提交数和要丢的改动数
-	mustRightClick(t, tt, "main three", "重置到这个提交", "硬（丢掉改动）…")
+	mustRightClickRow(t, tt, "main three", "重置到这个提交", "硬（丢掉改动）…")
 	wait("重置的问话", func() bool { return a.ConfirmOpen })
 	c := a.Confirm
 	for _, want := range []string{"中间的 2 个提交只能从 reflog 找回", "其中 2 个已经推送过", "工作区里 1 处未提交的改动也会丢"} {
@@ -145,7 +145,7 @@ func TestGitDailyMenus(t *testing.T) {
 			t.Errorf("硬重置的问话没有 %q: %q", want, c.Message)
 		}
 	}
-	mustClick(t, tt, "重置并丢弃改动")
+	mustClickRow(t, tt, "重置并丢弃改动")
 	wait("重置", func() bool { return idle(r)() && r.Status.Behind == 2 && r.Status.Staged == 0 })
 	if got := repo.Git("log", "-1", "--format=%s"); got != "main three" {
 		t.Errorf("重置后 HEAD 是 %q", got)

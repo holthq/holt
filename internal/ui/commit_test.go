@@ -52,7 +52,7 @@ func TestCommitAmend(t *testing.T) {
 	}
 
 	// 工作区干净、没暂存也能修改上一次提交（段头右键）：框里换成上一次的信息，改了提交，提交数不变
-	mustRightClick(t, tt, "amend（仓库）", "修改上一次提交…")
+	mustRightClickRow(t, tt, "amend（仓库）", "修改上一次提交…")
 	if !r.Amend {
 		t.Fatal("右键菜单没勾上修改上一次提交")
 	}

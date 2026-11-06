@@ -162,7 +162,7 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 			box.Children(func() {
 				list = sideList(a, c, &a.FileList, len(rows), func(row wui.ListRow) { treeRow(a, row, rows[row.Index], dragOf, g) })
 				cmds, lb := treeCommands(a), list.Bounds()
-				treeMenuPress(a, c, list, treeOwner{Blank: true}, func(m menu) { treeMenu(a, m) }, func(ev wui.InputEvent) bool { // 行下面的空白处
+				menuPress(a, c, list, treeOwner{Blank: true}, func(m menu) { treeMenu(a, m) }, func(ev wui.InputEvent) bool { // 行下面的空白处
 					if isMenuKey(ev) && a.Edit == nil {
 						openTreeMenuByKey(a, c, rows, lb, ev.Time)
 						return true
@@ -284,8 +284,8 @@ type treeOwner struct {
 
 // menuOnRow 报菜单对着列表里 key 那一行（或它的一段）开着：那一行画描边。
 func menuOnRow(a *app.App, key app.FileKey) bool {
-	o, ok := a.TreeMenu.Owner.(treeOwner)
-	return a.TreeMenu.IsOpen() && ok && o.Key == key && !o.Pin && !o.Blank
+	o, ok := a.Menu.Owner.(treeOwner)
+	return a.Menu.IsOpen() && ok && o.Key == key && !o.Pin && !o.Blank
 }
 
 // treeMenu 是文件树空白处的右键菜单。
@@ -428,7 +428,7 @@ func treeRow(a *app.App, row wui.ListRow, tr app.TreeRow, dragOf func(app.TreeRo
 	if pressing || !a.FileChosen.Has(tr.Key()) {
 		press = treePress(a, row.Index, tr, indent)
 	}
-	treeMenuPress(a, c, el, treeOwner{Key: tr.Key()}, treeRowBuild(a, tr), press)
+	menuPress(a, c, el, treeOwner{Key: tr.Key()}, treeRowBuild(a, tr), press)
 	if !filtering && a.FileChosen.Has(tr.Key()) {
 		// 按下归这一行了（列表接不到点击），点击记下来等列表建好再照列表的规矩做（ApplyTreeClick）
 		el.Drag(dragOf(tr))
@@ -613,7 +613,7 @@ func chainName(a *app.App, c *wui.Context, tr app.TreeRow, muted wui.Color, col 
 			seg := tr.Row
 			seg.Path, seg.Name, seg.Chain = p, files.BaseName(p), nil
 			name := wui.Text(c.Key(i), seg.Name).FontSize(sideFont).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)
-			treeMenuPress(a, c, name, treeOwner{Key: tr.Key(), Seg: p, Pin: pin}, func(m menu) { build(m, seg) }, nil)
+			menuPress(a, c, name, treeOwner{Key: tr.Key(), Seg: p, Pin: pin}, func(m menu) { build(m, seg) }, nil)
 			if col != nil && i == len(tr.Chain)-1 {
 				name.TextColor(*col)
 			}
@@ -1097,7 +1097,7 @@ func stickyDir(a *app.App, c *wui.Context, tr app.TreeRow) wui.Element {
 	muted := t.TextMuted
 	el := wui.Row(c).MinHeight(treeRowH).Padding(3, 8, 3, treeIndent(tr.Depth)).Gap(treeGap).AlignItems(wui.Center).
 		Label(i18n.Tf("%s（钉在顶上）", tr.Label()))
-	treeMenuPress(a, c, el, treeOwner{Key: tr.Key(), Pin: true}, func(m menu) { fileMenu(a, m, tr.Repo, tr.Row) }, nil)
+	menuPress(a, c, el, treeOwner{Key: tr.Key(), Pin: true}, func(m menu) { fileMenu(a, m, tr.Repo, tr.Row) }, nil)
 	el.Children(func() {
 		chevron(c, iconTool, true, tr.Label(), muted, func() { a.ToggleDir(tr.Repo, tr.Path) })
 		folderGlyph(a, c, dirsOf(tr.Row), true, tr.Ignored, false)
@@ -1126,7 +1126,7 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering, pin bo
 	owner := treeOwner{Key: tr.Key(), Pin: pin}
 	menuOn := menuOwned(a, owner)
 	el := wui.Row(c).Padding(5, 8, 5, 6).Gap(6).AlignItems(wui.Center)
-	treeMenuPress(a, c, el, owner, build, nil)
+	menuPress(a, c, el, owner, build, nil)
 	menuRing(el, &menuOn)
 	el.Children(func() {
 		if filtering {

@@ -49,7 +49,7 @@ func TestGitOps(t *testing.T) {
 	mustText(t, tt, "历史")
 
 	// Git 栏右键 a.txt → 暂存
-	if err := tt.RightClick("a.txt"); err != nil {
+	if err := rightClickRow(tt, "a.txt"); err != nil {
 		t.Fatal(err)
 	}
 	menu := tt.Menu()
@@ -67,7 +67,7 @@ func TestGitOps(t *testing.T) {
 	}
 
 	// 有已暂存的改动，提交框自己展开：敲信息，⌘↩ 提交
-	mustClick(t, tt, "提交信息")
+	mustClickRow(t, tt, "提交信息")
 	tt.Type("改第 20 行")
 	tt.Frame()
 	if r.CommitMsg != "改第 20 行" {
@@ -89,13 +89,13 @@ func TestGitOps(t *testing.T) {
 		t.Fatalf("历史顺序不对: %+v", h.Commits)
 	}
 	mustText(t, tt, "加 a.txt")
-	mustClick(t, tt, "加 a.txt")
+	mustClickRow(t, tt, "加 a.txt")
 	second := h.Commits[1].Hash
 	wait("提交的文件列表", func() bool { return h.FilesFor == second && !h.FilesLoading })
 	if len(h.Files) != 1 || h.Files[0].Path != "a.txt" || h.Files[0].Code != 'A' {
 		t.Fatalf("提交里的文件不对: %+v", h.Files)
 	}
-	mustClick(t, tt, "a.txt")
+	mustClickRow(t, tt, "a.txt")
 	wait("提交里 a.txt 的 diff", func() bool { return diffDoc(a, second) != nil })
 	d := diffDoc(a, second)
 	// diff 视图把末尾换行后的空行也算一行，所以是 40 或 41
@@ -109,10 +109,10 @@ func TestGitOps(t *testing.T) {
 	mustText(t, tt, "a.txt @ "+git.Short(second)) // 面包屑
 
 	// 最新那个提交只改了一行：局部 diff 折叠大部分，全文展开整个文件；预览标签被顶掉
-	mustClick(t, tt, "改第 20 行")
+	mustClickRow(t, tt, "改第 20 行")
 	first := h.Commits[0].Hash
 	wait("最新提交的文件", func() bool { return h.FilesFor == first && !h.FilesLoading })
-	mustClick(t, tt, "a.txt")
+	mustClickRow(t, tt, "a.txt")
 	wait("最新提交的 diff", func() bool { return diffDoc(a, first) != nil })
 	d = diffDoc(a, first)
 	if len(a.Docs) != 1 {
@@ -124,7 +124,7 @@ func TestGitOps(t *testing.T) {
 	if d.DiffSt.ExpandUnchanged {
 		t.Error("默认应是局部 diff")
 	}
-	mustClick(t, tt, app.Tip(i18n.T("只看改动附近"), "diff.full")) // 关掉就是全文
+	mustClickRow(t, tt, app.Tip(i18n.T("只看改动附近"), "diff.full")) // 关掉就是全文
 	if !a.St.FullDiff || !d.DiffSt.ExpandUnchanged {
 		t.Errorf("点全文后 full=%v expand=%v", a.St.FullDiff, d.DiffSt.ExpandUnchanged)
 	}
@@ -135,7 +135,7 @@ func TestGitOps(t *testing.T) {
 	}
 
 	// 标题栏的分支胶囊：列出 main（当前）和 feature，切到 feature
-	mustClick(t, tt, "分支 main")
+	mustClickRow(t, tt, "分支 main")
 	menu = tt.Menu()
 	if !slices.Contains(menu, "main") || !slices.Contains(menu, "feature") || !slices.Contains(menu, "新建分支…") {
 		t.Fatalf("分支菜单: %v", menu)
@@ -155,7 +155,7 @@ func TestGitOps(t *testing.T) {
 	}
 
 	// "Git 操作"菜单 → 新建分支… → 对话框里敲名字回车
-	mustClick(t, tt, "Git 操作")
+	mustClickRow(t, tt, "Git 操作")
 	menu = tt.Menu()
 	for _, want := range []string{"抓取（fetch --prune）（没有远程）", "推送并设置上游（没有上游，也没有 origin）", "暂存全部",
 		"贮藏改动（stash）（没有可贮藏的改动）", "新建分支…", "运行 git 命令…"} {
@@ -220,13 +220,13 @@ func TestGitOps(t *testing.T) {
 	if n < 2 || a.Output[n-2].Title != "$ git branch --show-current" || !a.Output[n-1].Failed {
 		t.Errorf("输出里没记下两条命令: %+v", a.Output)
 	}
-	mustClick(t, tt, "输出 "+itoa(n))
+	mustClickRow(t, tt, "输出 "+itoa(n))
 	if a.BottomTab != app.BottomOutput || !tt.HasText("$ git no-such-subcommand") {
 		t.Errorf("底栏的输出标签没显示命令: tab=%d", a.BottomTab)
 	}
 
 	// Git 栏右键 u.txt → 删除文件… → 先取消，再确认
-	if err := tt.RightClick("u.txt"); err != nil {
+	if err := rightClickRow(tt, "u.txt"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("删除文件…"); err != nil {
@@ -236,15 +236,15 @@ func TestGitOps(t *testing.T) {
 	if a.Confirm == nil || !tt.HasText("删除未跟踪的 u.txt？") {
 		t.Fatalf("没弹确认: confirm=%v texts=%q", a.Confirm, tt.Texts())
 	}
-	mustClick(t, tt, "取消")
+	mustClickRow(t, tt, "取消")
 	if a.Confirm != nil || a.ConfirmOpen {
 		t.Error("取消后确认框还在")
 	}
 	if _, err := os.Stat(filepath.Join(root, "u.txt")); err != nil {
 		t.Fatal("取消后文件不该被删")
 	}
-	mustRightClick(t, tt, "u.txt", "删除文件…")
-	mustClick(t, tt, "删除")
+	mustRightClickRow(t, tt, "u.txt", "删除文件…")
+	mustClickRow(t, tt, "删除")
 	wait("文件删掉", func() bool { return idle(r)() && r.Status.Count == 0 })
 	if _, err := os.Stat(filepath.Join(root, "u.txt")); !os.IsNotExist(err) {
 		t.Errorf("u.txt 还在: %v", err)
@@ -265,11 +265,11 @@ func TestGitOps(t *testing.T) {
 	if a.St.BottomBar || tt.HasText("终端 · demo") {
 		t.Error("⌘J 没关掉底栏")
 	}
-	mustClick(t, tt, app.Tip("关闭右栏", "view.right"))
+	mustClickRow(t, tt, app.Tip("关闭右栏", "view.right"))
 	if a.St.RightBar || tt.HasText("加 a.txt") {
 		t.Error("× 没关掉右栏")
 	}
-	mustClick(t, tt, app.Tip("右栏（历史）", "view.right"))
+	mustClickRow(t, tt, app.Tip("右栏（历史）", "view.right"))
 	if !a.St.RightBar || !tt.HasText("加 a.txt") {
 		t.Error("标题栏按钮没打开右栏")
 	}
@@ -304,7 +304,7 @@ func TestHistoryPaging(t *testing.T) {
 		t.Fatalf("第一页 %d 条 done=%v", len(h.Commits), h.Done)
 	}
 	mustText(t, tt, i18n.Tf("已显示 %d 条", 200))
-	mustClick(t, tt, "再读 200 条")
+	mustClickRow(t, tt, "再读 200 条")
 	wait("第二页", func() bool { return !h.Loading && h.Done })
 	if len(h.Commits) != 200 || h.Commits[199].Subject != "初始提交" {
 		t.Errorf("读完应是 200 条，最后是初始提交: %d %q", len(h.Commits), h.Commits[len(h.Commits)-1].Subject)

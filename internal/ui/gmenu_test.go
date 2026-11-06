@@ -26,7 +26,7 @@ func TestTreeGroveMenu(t *testing.T) {
 	open := func(name string) {
 		t.Helper()
 		closeMenu(t, tt)
-		if err := tt.RightClick(name); err != nil {
+		if err := rightClickRow(tt, name); err != nil {
 			t.Fatal(err)
 		}
 		tt.Frame()
@@ -53,7 +53,7 @@ func TestTreeGroveMenu(t *testing.T) {
 	before := a.FileSel
 	open("menu.txt")
 	if !menuOnRow(a, rowKey(t, k, "menu.txt")) {
-		t.Fatalf("菜单该对着 menu.txt：%+v", a.TreeMenu.Owner)
+		t.Fatalf("菜单该对着 menu.txt：%+v", a.Menu.Owner)
 	}
 	if a.FileSel != before {
 		t.Fatal("右键不该改选中")
@@ -99,7 +99,7 @@ func TestTreeGroveMenu(t *testing.T) {
 	tt.ClickAt(x, y)
 	tt.Frame()
 	tt.Frame()
-	if a.TreeMenu.IsOpen() || len(popMenus(t, tt)) != 0 {
+	if a.Menu.IsOpen() || len(popMenus(t, tt)) != 0 {
 		t.Fatal("点外面该关菜单")
 	}
 	if a.FileSel != before || a.Repos[0].Expanded != open1 || len(a.Docs) != 0 {
@@ -108,7 +108,7 @@ func TestTreeGroveMenu(t *testing.T) {
 
 	// 子菜单：停一会儿才开
 	open("gamma")
-	r := item(0, "远程")
+	r := item(0, "更多")
 	tt.Move(float32(r.X+r.W/2), float32(r.Y+r.H/2))
 	tt.Frame()
 	if len(popMenus(t, tt)) != 1 {
@@ -131,7 +131,7 @@ func TestTreeGroveMenu(t *testing.T) {
 	open("menu.txt")
 	tt.Key(0, wui.KeyEscape)
 	tt.Frame()
-	if a.TreeMenu.IsOpen() {
+	if a.Menu.IsOpen() {
 		t.Fatal("Esc 该关")
 	}
 	// 失去焦点
@@ -141,7 +141,7 @@ func TestTreeGroveMenu(t *testing.T) {
 	tt.SetFocused(false)
 	tt.Frame()
 	tt.Frame()
-	if a.TreeMenu.IsOpen() {
+	if a.Menu.IsOpen() {
 		t.Fatal("窗口失去焦点该关")
 	}
 	tt.SetFocused(true)
@@ -150,7 +150,7 @@ func TestTreeGroveMenu(t *testing.T) {
 	open("menu.txt")
 	tt.Scroll(x, y, 0, 30)
 	tt.Frame()
-	if a.TreeMenu.IsOpen() {
+	if a.Menu.IsOpen() {
 		t.Fatal("滚文件树该关")
 	}
 	// 键盘：↓ 回车选第一项（打开）
@@ -184,8 +184,8 @@ func TestTreeGroveMenuByKey(t *testing.T) {
 		}
 		tt.Key(key.mods, key.key)
 		tt.Frame()
-		if !a.TreeMenu.IsOpen() || !menuOnRow(a, rowKey(t, k, "beta.go")) {
-			t.Fatalf("%v：该开 beta.go 的菜单：open=%v owner=%+v", key, a.TreeMenu.IsOpen(), a.TreeMenu.Owner)
+		if !a.Menu.IsOpen() || !menuOnRow(a, rowKey(t, k, "beta.go")) {
+			t.Fatalf("%v：该开 beta.go 的菜单：open=%v owner=%+v", key, a.Menu.IsOpen(), a.Menu.Owner)
 		}
 		row := a.TreeSpans[a.FileSel]
 		ms := popMenus(t, tt)
@@ -196,13 +196,13 @@ func TestTreeGroveMenuByKey(t *testing.T) {
 		if abs(p.X-float64(max(row.X, app.MenuMargin))) > 1 || abs(p.Y-float64(row.Y+row.H)) > 1 { // 离窗口边至少 MenuMargin
 			t.Fatalf("菜单该在那一行左边、紧挨着下面：面板 (%.0f, %.0f)，行 %+v", p.X, p.Y, row)
 		}
-		if h := a.TreeMenu.Levels()[0].Hot; h != 0 {
+		if h := a.Menu.Levels()[0].Hot; h != 0 {
 			t.Fatalf("第一项该高亮：%d", h)
 		}
 		tt.Key(0, wui.KeyEscape)
 		tt.Frame()
 		tt.Frame()
-		if a.TreeMenu.IsOpen() {
+		if a.Menu.IsOpen() {
 			t.Fatal("Esc 该关")
 		}
 		if !a.TreeFocused {
@@ -230,9 +230,9 @@ func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
 	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
 	tt, a := k.tt, k.a
 
-	tt.Click("alpha.txt")
+	clickRow(tt, "alpha.txt")
 	tt.Frame()
-	if err := tt.ClickWith(wui.Cmd, "notes.md"); err != nil {
+	if err := clickRowWith(tt, wui.Cmd, "notes.md"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -240,12 +240,12 @@ func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
 		t.Fatalf("该选着两行：%d", a.FileChosen.Len())
 	}
 	sel := a.FileSel
-	if err := tt.RightClick("notes.md"); err != nil {
+	if err := rightClickRow(tt, "notes.md"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	if !menuOnRow(a, rowKey(t, k, "notes.md")) {
-		t.Fatalf("菜单该对着 notes.md：%+v", a.TreeMenu.Owner)
+		t.Fatalf("菜单该对着 notes.md：%+v", a.Menu.Owner)
 	}
 
 	// 右键选中外面的 beta.go：菜单换成它的，开在指针处
@@ -259,8 +259,8 @@ func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
 	}
 	tt.RightClickAt(x, y)
 	tt.Frame()
-	if !a.TreeMenu.IsOpen() || !menuOnRow(a, rowKey(t, k, "beta.go")) {
-		t.Fatalf("右键别的行该开它的菜单：open=%v owner=%+v", a.TreeMenu.IsOpen(), a.TreeMenu.Owner)
+	if !a.Menu.IsOpen() || !menuOnRow(a, rowKey(t, k, "beta.go")) {
+		t.Fatalf("右键别的行该开它的菜单：open=%v owner=%+v", a.Menu.IsOpen(), a.Menu.Owner)
 	}
 	ms := popMenus(t, tt)
 	if len(ms) != 1 {
@@ -282,8 +282,8 @@ func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
 	by := max(float64(last.Y+last.H+30), p.Y+p.H+20) // 别落在开着的菜单上
 	tt.RightClickAt(last.X+20, float32(by))
 	tt.Frame()
-	if o, ok := a.TreeMenu.Owner.(treeOwner); !a.TreeMenu.IsOpen() || !ok || !o.Blank {
-		t.Fatalf("右键空白处该开空白处的菜单：open=%v owner=%+v", a.TreeMenu.IsOpen(), a.TreeMenu.Owner)
+	if o, ok := a.Menu.Owner.(treeOwner); !a.Menu.IsOpen() || !ok || !o.Blank {
+		t.Fatalf("右键空白处该开空白处的菜单：open=%v owner=%+v", a.Menu.IsOpen(), a.Menu.Owner)
 	}
 	if !slices.Contains(shownMenu(t, tt), "显示被忽略的文件") {
 		t.Fatalf("空白处的菜单：%q", shownMenu(t, tt))

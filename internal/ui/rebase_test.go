@@ -50,7 +50,7 @@ func TestRebaseTab(t *testing.T) {
 		t.Fatalf("选着 c1 时命令不能用（行 %d）", h.Sel)
 	}
 
-	mustRightClick(t, tt, "c1", "从这里开始交互式变基…")
+	mustRightClickRow(t, tt, "c1", "从这里开始交互式变基…")
 	d := a.CurrentDoc()
 	if d == nil || d.Kind != docs.Rebase {
 		t.Fatalf("没开向导：%+v", d)

@@ -57,9 +57,9 @@ func TestHistoryFilter(t *testing.T) {
 	search := func(q string) {
 		t.Helper()
 		if !tt.HasText("搜索提交") {
-			mustClick(t, tt, "搜索历史") // 点放大镜展开搜索框
+			mustClickRow(t, tt, "搜索历史") // 点放大镜展开搜索框
 		}
-		mustClick(t, tt, "搜索提交")
+		mustClickRow(t, tt, "搜索提交")
 		tt.Key(wui.Cmd, wui.KeyA)
 		tt.Key(0, wui.KeyBackspace)
 		if q != "" {
@@ -81,7 +81,7 @@ func TestHistoryFilter(t *testing.T) {
 	waitHist("清空搜索", all...)
 
 	// 所有分支：多出分支上的提交，记进 state.json
-	mustClick(t, tt, "所有分支")
+	mustClickRow(t, tt, "所有分支")
 	waitHist("所有分支", append([]string{"分支上的提交"}, all...)...)
 	if !a.St.HistBranches {
 		t.Fatal("所有分支没记下来")
@@ -94,40 +94,40 @@ func TestHistoryFilter(t *testing.T) {
 		t.Error("state.json 里没有所有分支")
 	}
 	b.Close()
-	mustClick(t, tt, "所有分支")
+	mustClickRow(t, tt, "所有分支")
 	waitHist("只当前分支", all...)
 
 	// 文件树右键：目录历史只看动过 docs 的提交；文件历史跟着重命名往前找到 a.txt 的提交
 	a.ShowSidebar(workspace.ModeFiles)
 	a.EnsureFiles(r)
 	wait("文件树", func() bool { return r.Files.Loaded && tt.HasText("docs") })
-	mustRightClick(t, tt, "docs", "查看目录历史")
+	mustRightClickRow(t, tt, "docs", "查看目录历史")
 	waitHist("目录历史", "挪 a")
 	mustText(t, tt, "文件历史：docs")
 	a.ToggleDir(r, "docs")
 	wait("展开 docs", func() bool { return tt.HasText("a.txt") })
-	mustRightClick(t, tt, "a.txt", "查看文件历史")
+	mustRightClickRow(t, tt, "a.txt", "查看文件历史")
 	waitHist("文件历史", "挪 a", "改 a", "初始提交")
 	mustText(t, tt, "文件历史：docs/a.txt")
 	search("改")
 	waitHist("文件历史里再搜", "改 a")
 	search("")
 	waitHist("文件历史", "挪 a", "改 a", "初始提交")
-	mustClick(t, tt, "不再只看这个文件")
+	mustClickRow(t, tt, "不再只看这个文件")
 	waitHist("去掉文件筛选", all...)
 	if tt.HasText("文件历史：") {
 		t.Error("胶囊没去掉")
 	}
 
 	// 展开的提交：卡片上是短哈希和作者；完整哈希、邮箱、父提交在"更多"菜单里
-	mustClick(t, tt, "修复登录")
+	mustClickRow(t, tt, "修复登录")
 	wait("展开", func() bool { return r.Hist.Expanded != "" && !r.Hist.FilesLoading })
 	mustText(t, tt, "张三")
 	mustText(t, tt, repo.Git("rev-parse", "--short=7", "HEAD~2"))
 	if _, ok := tt.Find("复制提交哈希"); !ok {
 		t.Error("短哈希胶囊没有标签")
 	}
-	mustClick(t, tt, "更多")
+	mustClickRow(t, tt, "更多")
 	tt.Frame()
 	menu := shownMenu(t, tt)
 	for _, want := range []string{repo.Git("rev-parse", "HEAD~2"), "张三 <z@example.com>", "父提交 " + repo.Git("rev-parse", "--short=7", "HEAD~3")} {
@@ -174,15 +174,15 @@ func TestHistoryAgentFilter(t *testing.T) {
 		t.Errorf("修登录的 agent 是 %q", got)
 	}
 
-	mustClick(t, tt, "只看 agent 写的")
+	mustClickRow(t, tt, "只看 agent 写的")
 	waitHist("只看 agent", "改样式", "修登录")
 	if !a.HistFiltered(r) || a.HistGraph(r) {
 		t.Errorf("只看 agent 时 HistFiltered=%v HistGraph=%v", a.HistFiltered(r), a.HistGraph(r))
 	}
 
 	// 和搜索叠加
-	mustClick(t, tt, "搜索历史")
-	mustClick(t, tt, "搜索提交")
+	mustClickRow(t, tt, "搜索历史")
+	mustClickRow(t, tt, "搜索提交")
 	tt.Type("登录")
 	tt.Frame()
 	waitHist("只看 agent + 搜索", "修登录")
@@ -204,7 +204,7 @@ func TestHistoryAgentFilter(t *testing.T) {
 	a.SetHistAll(false)
 	tt.Frame()
 
-	mustClick(t, tt, "只看 agent 写的")
+	mustClickRow(t, tt, "只看 agent 写的")
 	waitHist("关掉只看 agent", all...)
 	if !a.HistGraph(r) {
 		t.Error("关掉只看 agent 后提交图没回来")

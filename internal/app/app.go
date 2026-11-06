@@ -261,7 +261,7 @@ type App struct {
 	TreeClip     []string             // 文件树里 ⌘C 复制的文件 / 目录（绝对路径），⌘V 粘贴它们；应用里记着，不读系统剪贴板
 	rowTips      map[FileKey]rowTip   // 文件树行的悬停提示，仓库刷新之后重算（RowTip）
 	TreeTip      TreeTip              // 文件树行的悬停提示停了多久（treetip.go；界面写）
-	TreeMenu     PopMenu              // 文件树的右键菜单（Grove 自己画的，popmenu.go；界面喂事件）
+	Menu     PopMenu              // 文件树的右键菜单（Grove 自己画的，popmenu.go；界面喂事件）
 	MenuShown    int                  // 菜单开着画了几帧（界面用：画过两帧后接收层没了焦点就是窗口失去了焦点）
 	MenuByKey    bool                 // 菜单是 ⇧F10 / 菜单键开的：没选就关了时键盘回到文件树
 	dirInfos     map[FileKey]*dirInfo // 目录行悬停提示的大小、最近改动（dirtip.go）

@@ -87,7 +87,7 @@ func TestTreeTypeToFind(t *testing.T) {
 	}
 
 	// 筛选框有键盘时字进筛选框，不找字
-	mustClick(t, tt, "筛选文件")
+	mustClickRow(t, tt, "筛选文件")
 	tt.Type("bra")
 	tt.Frame()
 	if a.Filter != "bra" {
@@ -182,7 +182,7 @@ func TestTreeDragDwell(t *testing.T) {
 	if !a.ConfirmOpen || a.Confirm.Title != "把 u.txt 复制到 other？" || !strings.Contains(a.Confirm.Message, "proj 里原来的不动") {
 		t.Fatalf("跨仓库松手没先问复制：%+v", a.Confirm)
 	}
-	mustClick(t, tt, "复制")
+	mustClickRow(t, tt, "复制")
 	k.wait("复制到 other", func() bool { return idle(or)() && or.Files.Has("u.txt") })
 	if _, err := os.Stat(filepath.Join(proj.Root, "u.txt")); err != nil {
 		t.Fatal("跨仓库复制把原来的拿走了")
@@ -278,11 +278,11 @@ func TestTreeRepoReorder(t *testing.T) {
 		}
 		return strings.Join(s, " ")
 	}
-	if err := tt.RightClick("proj（仓库）"); err != nil {
+	if err := rightClickRow(tt, "proj（仓库）"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := chooseMenu(t, tt, "上移"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "更多", "上移"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Fatalf("最上面的仓库的上移没灰着：%v；菜单=%q", err, shownMenu(t, tt))
 	}
 	closeMenu(t, tt)
@@ -355,7 +355,7 @@ func TestTreeRepoReorder(t *testing.T) {
 		t.Errorf("光标没跟着 third：%+v", row)
 	}
 
-	mustRightClick(t, tt, "proj（仓库）", "下移")
+	mustRightClickRow(t, tt, "proj（仓库）", "更多", "下移")
 	if names() != "third other proj" || saved() != "third other proj" {
 		t.Fatalf("proj 下移：Repos %s，工作区文件 %s", names(), saved())
 	}

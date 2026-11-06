@@ -69,18 +69,18 @@ func TestGitBarAllRepos(t *testing.T) {
 	}
 
 	// 点段头：收起 / 展开这一段，当前仓库切到它
-	mustClick(t, tt, "alpha（仓库）")
+	mustClickRow(t, tt, "alpha（仓库）")
 	if a.Current() != alpha || alpha.GitOpen() || tt.HasText("alpha.txt") {
 		t.Errorf("点 alpha 段头后当前 %s，展开=%v", a.Current().Name, alpha.GitOpen())
 	}
-	mustClick(t, tt, "alpha（仓库）")
+	mustClickRow(t, tt, "alpha（仓库）")
 	mustText(t, tt, "alpha.txt")
 	// 工具条的"收起所有仓库" / "展开所有仓库"
-	mustClick(t, tt, "收起所有仓库")
+	mustClickRow(t, tt, "收起所有仓库")
 	if tt.HasText("alpha.txt") || tt.HasText("beta.go") {
 		t.Errorf("全部收起后还有行: %q", tt.Texts())
 	}
-	mustClick(t, tt, "展开所有仓库")
+	mustClickRow(t, tt, "展开所有仓库")
 	for _, s := range []string{"alpha.txt", "beta.go"} {
 		mustText(t, tt, s)
 	}
@@ -90,26 +90,26 @@ func TestGitBarAllRepos(t *testing.T) {
 	if tt.HasText("未跟踪") {
 		t.Errorf("未跟踪不该再单独一组: %q", tt.Texts())
 	}
-	mustClick(t, tt, "收起 未暂存")
+	mustClickRow(t, tt, "收起 未暂存")
 	if tt.HasText("notes.md") || tt.HasText("alpha.txt") || !tt.HasText("展开 未暂存") || alpha.GroupOpen(app.GroupUnstaged) {
 		t.Fatalf("收起未暂存后: %q", tt.Texts())
 	}
-	mustClick(t, tt, "展开 未暂存")
+	mustClickRow(t, tt, "展开 未暂存")
 	mustText(t, tt, "notes.md")
 	if !alpha.GroupOpen(app.GroupUnstaged) {
 		t.Fatal("点标题没展开")
 	}
 
 	// 点 beta 的文件：当前仓库切到 beta，预览 Diff 标签是 beta 的
-	mustClick(t, tt, "gamma（仓库）") // 收起 gamma，当前仓库先在 gamma
-	mustClick(t, tt, "beta.go")
+	mustClickRow(t, tt, "gamma（仓库）") // 收起 gamma，当前仓库先在 gamma
+	mustClickRow(t, tt, "beta.go")
 	wait("beta.go 的 diff", func() bool { return diffDoc(a, "") != nil })
 	if d := diffDoc(a, ""); a.Current() != beta || d.Root != beta.Root || d.Rel != "beta.go" {
 		t.Errorf("点 beta.go 后当前 %s，标签 %s", a.Current().Name, d.Rel)
 	}
 
 	// alpha 段底的"提交…"：点开就聚焦信息框、当前仓库切到 alpha；空着按 Esc 收回去
-	mustClick(t, tt, i18n.Tf("提交 %s 的改动…", "alpha"))
+	mustClickRow(t, tt, i18n.Tf("提交 %s 的改动…", "alpha"))
 	tt.Frame()
 	if !alpha.CommitOpen || !tt.Focused("提交信息") || a.Current() != alpha {
 		t.Fatalf("点开 alpha 的提交框: open=%v 当前 %s", alpha.CommitOpen, a.Current().Name)
@@ -119,10 +119,10 @@ func TestGitBarAllRepos(t *testing.T) {
 
 	// 第二段：右键 beta.go 暂存，它的提交框自己展开；⌘↩ 提交只动 beta
 	alphaHead := ra.Git("rev-parse", "HEAD")
-	mustRightClick(t, tt, "beta.go", "暂存")
+	mustRightClickRow(t, tt, "beta.go", "暂存")
 	wait("暂存 beta.go", func() bool { return idle(beta)() && beta.Status.Staged == 1 })
 	mustText(t, tt, i18n.Tf("提交 %s 个文件", "1"))
-	mustClick(t, tt, "提交信息")
+	mustClickRow(t, tt, "提交信息")
 	tt.Type("beta 3")
 	tt.Key(wui.Cmd, wui.KeyEnter)
 	wait("beta 提交完", func() bool { return idle(beta)() && beta.Status.Count == 0 })
@@ -163,7 +163,7 @@ func TestHistoryAllRepos(t *testing.T) {
 		t.Fatal("默认右栏只有当前仓库的历史")
 	}
 
-	mustClick(t, tt, "所有仓库")
+	mustClickRow(t, tt, "所有仓库")
 	wait("所有仓库的历史", func() bool { return a.AllHistDone() && !a.AllHistLoading() && tt.HasText("beta beta 2") })
 	if !a.St.HistAll {
 		t.Error("没切到所有仓库")
@@ -192,7 +192,7 @@ func TestHistoryAllRepos(t *testing.T) {
 		t.Fatalf("当前 %s", a.Current().Name)
 	}
 	b2 := rb.Git("rev-parse", "--short", "HEAD")
-	mustRightClick(t, tt, "beta beta 2", "从这里新建分支…")
+	mustRightClickRow(t, tt, "beta beta 2", "从这里新建分支…")
 	if a.Current() != beta || !a.Branch.Open {
 		t.Fatalf("右键 beta 的提交后当前 %s，对话框 %v", a.Current().Name, a.Branch.Open)
 	}
@@ -205,13 +205,13 @@ func TestHistoryAllRepos(t *testing.T) {
 	}
 
 	// 选中 alpha 2：展开它的文件，当前仓库切回 alpha；点文件开提交里的 Diff 标签
-	mustClick(t, tt, "alpha alpha 2")
+	mustClickRow(t, tt, "alpha alpha 2")
 	wait("alpha 2 的文件", func() bool { return alpha.Hist.FilesFor != "" && !alpha.Hist.FilesLoading })
 	if a.Current() != alpha {
 		t.Errorf("选 alpha 2 后当前 %s", a.Current().Name)
 	}
 	a2 := alpha.Hist.Expanded
-	mustClick(t, tt, "alpha.txt")
+	mustClickRow(t, tt, "alpha.txt")
 	wait("alpha 2 里 alpha.txt 的 diff", func() bool { return diffDoc(a, a2) != nil })
 	if d := diffDoc(a, a2); d.Root != alpha.Root || d.Change.Kind != git.InCommit {
 		t.Errorf("Diff 标签: root=%s kind=%v", d.Root, d.Change.Kind)
@@ -220,14 +220,14 @@ func TestHistoryAllRepos(t *testing.T) {
 	// 有改动的仓库那行：侧栏切到 Git 栏，当前仓库切过去
 	a.Exec("view.files")
 	tt.Frame()
-	mustClick(t, tt, "beta 未提交的改动")
+	mustClickRow(t, tt, "beta 未提交的改动")
 	if a.St.SidebarMode != workspace.ModeGit || a.Current() != beta {
 		t.Errorf("点 beta 的未提交改动后 mode=%q 当前 %s", a.St.SidebarMode, a.Current().Name)
 	}
 	mustText(t, tt, "beta（仓库）")
 
 	// 再点"所有仓库"关掉：只剩 beta 自己的
-	mustClick(t, tt, "所有仓库")
+	mustClickRow(t, tt, "所有仓库")
 	wait("beta 的历史", func() bool { return tt.HasText("beta 2") && !tt.HasText("alpha 3") })
 	if st, _ := workspace.LoadState(stateDir); st.HistAll {
 		t.Error("state.json 没记下切回当前仓库")

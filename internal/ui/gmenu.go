@@ -10,13 +10,13 @@ import (
 	"github.com/lemoeade/grove/internal/i18n"
 )
 
-// 文件树的右键菜单是 Grove 自己画的（issue #48），状态机是 app.PopMenu（App.TreeMenu），这里只管喂事件和画：
+// 文件树的右键菜单是 Grove 自己画的（issue #48），状态机是 app.PopMenu（App.Menu），这里只管喂事件和画：
 //
 //   - 文件树的行（文件 / 目录行、仓库行、钉在顶上的行、压缩目录的每一段）和列表的空白处在右键按下时打开它
-//     （treeMenuPress）；按下归了那一行，按着拖的移动和松开都还送到那一行，转给菜单（按住拖到项上松开选它）。
+//     （menuPress）；按下归了那一行，按着拖的移动和松开都还送到那一行，转给菜单（按住拖到项上松开选它）。
 //   - 开着时窗口上盖一层透明的接收层（gmenuView）：点外面关掉菜单、这一下被吞掉（不落到底下的行上），
 //     在外面滚动（滚文件树）、Esc、窗口失去焦点都关；键盘的 ↑↓→←、回车、打字跳项也是它接。
-//   - 开着时在文件树别处右键（或 ⌃点）：关掉这份、在那里开一份新的（treeMenuPress 每帧把能开菜单的地方登记给
+//   - 开着时在文件树别处右键（或 ⌃点）：关掉这份、在那里开一份新的（menuPress 每帧把能开菜单的地方登记给
 //     PopMenu.AddTarget）；左键和别的键点外面只关、被吞掉。
 //   - 文件树有键盘时 ⇧F10 / 菜单键在光标那一行下面打开它（openTreeMenuByKey），第一项高亮着。
 //   - 建菜单的函数和系统菜单共用（menus.go 用 menu / menuItem 接口），别处的 ContextMenu 不变。
@@ -81,16 +81,16 @@ const (
 	gmenuItemRad = 4
 )
 
-// treeMenuPress 给文件树里的元素装上右键菜单：右键按下打开 build 建的菜单（owner 是它对着的东西，那一行画描边），
+// menuPress 给文件树里的元素装上右键菜单：右键按下打开 build 建的菜单（owner 是它对着的东西，那一行画描边），
 // 按着时的移动和松开转给菜单。el 是装它的元素（建的时候取它上一帧的位置，事件里换算成窗口坐标）；other 是这个元素原来的 HandleInput（可以为空），
 // 不是右键的事件照旧交给它。
-func treeMenuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func(menu), other func(wui.InputEvent) bool) {
+func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func(menu), other func(wui.InputEvent) bool) {
 	held := false    // 这次右键按下是这个元素接的
 	b := el.Bounds() // 上一帧的位置（事件里不能再用元素）
 	// 登记成能开菜单的地方：菜单开着时右键这里，关掉那份、在这里开新的（接收层盖着，事件到不了这个元素）
-	a.TreeMenu.AddTarget(app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, menuZ(owner), owner, build)
+	a.Menu.AddTarget(app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, menuZ(owner), owner, build)
 	el.HandleInput(func(ev wui.InputEvent) bool {
-		m := &a.TreeMenu
+		m := &a.Menu
 		x, y := b.X+ev.X, b.Y+ev.Y
 		switch ev.Kind {
 		case wui.InputPointerDown:
@@ -158,13 +158,13 @@ func openTreeMenuByKey(a *app.App, c *wui.Context, rows []app.TreeRow, list wui.
 			x, y = r.X, min(r.Y+r.H, list.Y+list.H)
 		}
 	}
-	a.TreeMenu.OpenByKey(owner, build, x, y, root.W, root.H, now)
+	a.Menu.OpenByKey(owner, build, x, y, root.W, root.H, now)
 	a.MenuByKey = true
 }
 
 // gmenuMeasure 设好量字的函数（按菜单的字号）。
 func gmenuMeasure(a *app.App, c *wui.Context) {
-	a.TreeMenu.Measure = func(s string) float32 {
+	a.Menu.Measure = func(s string) float32 {
 		w, _ := c.MeasureText(0, wui.Span{Text: s, Size: sideFont})
 		return w
 	}
@@ -172,12 +172,12 @@ func gmenuMeasure(a *app.App, c *wui.Context) {
 
 // menuOwned 报文件树里对着 owner 的菜单开着（那一行画描边）。
 func menuOwned(a *app.App, owner any) bool {
-	return a.TreeMenu.IsOpen() && a.TreeMenu.Owner == owner
+	return a.Menu.IsOpen() && a.Menu.Owner == owner
 }
 
 // gmenuView 画开着的菜单（在 root 里，所有东西之后）；刚选了一项的话先执行它。
 func gmenuView(a *app.App, c *wui.Context) {
-	m := &a.TreeMenu
+	m := &a.Menu
 	m.EndFrame() // 这一帧的树已经建完，能开菜单的地方都登记了
 	chose := m.Chosen()
 	if chose {

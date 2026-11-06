@@ -175,9 +175,9 @@ func TestHistoryGraph(t *testing.T) {
 	search := func(q string) {
 		t.Helper()
 		if !tt.HasText("搜索提交") {
-			mustClick(t, tt, "搜索历史")
+			mustClickRow(t, tt, "搜索历史")
 		}
-		mustClick(t, tt, "搜索提交")
+		mustClickRow(t, tt, "搜索提交")
 		tt.Key(wui.Cmd, wui.KeyA)
 		tt.Key(0, wui.KeyBackspace)
 		if q != "" {
@@ -213,7 +213,7 @@ func TestHistoryGraph(t *testing.T) {
 
 	// 选中的行图是 AccentText（实心的选中行；默认的淡底时图不换色）；点一下还展开，文件行上泳道 0、2 穿过去，泳道 1 是这个提交连下去的
 	a.St.Settings.SolidSelection = true
-	mustClick(t, tt, "登录校验")
+	mustClickRow(t, tt, "登录校验")
 	wait("展开登录校验", func() bool {
 		return r.Hist.Expanded != "" && r.Hist.FilesFor == r.Hist.Expanded && tt.HasText("login.txt")
 	})
@@ -250,7 +250,7 @@ func TestHistoryGraph(t *testing.T) {
 	}
 
 	// 开关在头部的右键菜单里：关了图格没了，记进 state.json，新开的 App 也是关的
-	mustRightClick(t, tt, "历史", "提交图")
+	mustRightClickRow(t, tt, "历史", "提交图")
 	if !a.St.HistNoGraph || a.HistGraph(r) || histGraphW(a, r) != 0 {
 		t.Fatal("点了提交图开关没关掉")
 	}
@@ -262,7 +262,7 @@ func TestHistoryGraph(t *testing.T) {
 		t.Error("state.json 里没记下关了提交图")
 	}
 	b.Close()
-	mustRightClick(t, tt, "历史", "提交图")
+	mustRightClickRow(t, tt, "历史", "提交图")
 	if a.St.HistNoGraph || histGraphW(a, r) != graphWidth(3) {
 		t.Error("再点一下提交图没回来")
 	}

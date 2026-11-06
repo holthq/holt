@@ -74,7 +74,7 @@ func (k *treeKit) click(mods wui.Modifiers, name string) {
 	k.a.Exec("file.closeAll")
 	k.tt.Frame()
 	k.tt.Advance(time.Second)
-	if err := k.tt.ClickWith(mods, name); err != nil {
+	if err := clickRowWith(k.tt, mods, name); err != nil {
 		k.t.Fatalf("点 %q: %v", name, err)
 	}
 	k.tt.Frame()
@@ -101,7 +101,7 @@ func (k *treeKit) menu(name string, item ...string) {
 	k.t.Helper()
 	k.a.Exec("file.closeAll")
 	k.tt.Frame()
-	mustRightClick(k.t, k.tt, name, item...)
+	mustRightClickRow(k.t, k.tt, name, item...)
 }
 
 // blank 是文件树最后一行下面的空白处的一点（last 是最后一行的文字）。
@@ -198,7 +198,7 @@ func TestTreeClicks(t *testing.T) {
 	a.Exec("file.closeAll")
 	tt.Frame()
 	was := k.sel()
-	if err := tt.RightClick("d.md"); err != nil {
+	if err := rightClickRow(tt, "d.md"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -210,7 +210,7 @@ func TestTreeClicks(t *testing.T) {
 	k.click(wui.Cmd, "b.txt")
 	a.Exec("file.closeAll")
 	tt.Frame()
-	if err := tt.RightClick("a.txt"); err != nil {
+	if err := rightClickRow(tt, "a.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -270,7 +270,7 @@ func TestTreeContextMenus(t *testing.T) {
 	wait("docs 算好", func() bool { return strings.HasPrefix(tip("docs"), "1 个文件 · 共 ") })
 
 	// 菜单的分组：打开 | 新建 | Git | 访达 | 路径 | 复制粘贴 | 重命名、废纸篓；没跟踪的没有"删除文件…"
-	if err := tt.RightClick("new.txt"); err != nil {
+	if err := rightClickRow(tt, "new.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -316,7 +316,7 @@ func TestTreeContextMenus(t *testing.T) {
 	wait("显示被忽略的", func() bool { return tt.HasText("new.txt") })
 	a.Exec("file.closeAll")
 	tt.Frame()
-	if err := tt.RightClick("new.txt"); err != nil {
+	if err := rightClickRow(tt, "new.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -374,7 +374,7 @@ func TestTreeContextMenus(t *testing.T) {
 	wait("o 副本.txt", func() bool { return idle(ro)() && exists(filepath.Join(ro.Root, "o 副本.txt")) })
 
 	// 仓库菜单：收起其他仓库；展开有改动的目录
-	k.menu("proj（仓库）", "收起其他仓库")
+	k.menu("proj（仓库）", "更多", "收起其他仓库")
 	if !rp.Expanded || ro.Expanded {
 		t.Fatalf("收起其他仓库：proj %v，other %v", rp.Expanded, ro.Expanded)
 	}
@@ -385,7 +385,7 @@ func TestTreeContextMenus(t *testing.T) {
 	})
 	a.CollapseAll()
 	tt.Frame()
-	k.menu("proj（仓库）", "展开有改动的目录")
+	k.menu("proj（仓库）", "更多", "展开有改动的目录")
 	if !rp.Files.Open["docs"] {
 		t.Fatal("展开有改动的目录：docs 没展开")
 	}

@@ -73,7 +73,7 @@ func TestPalette(t *testing.T) {
 	}
 	tt.Type("readme")
 	tt.Frame()
-	mustClick(t, tt, "打开 demo/README.md")
+	mustClickRow(t, tt, "打开 demo/README.md")
 	tt.Frame()
 	if c := a.CurrentDoc(); p.Open || c == nil || c.Rel != "README.md" {
 		t.Fatalf("点一项没打开 README.md：open=%v", p.Open)

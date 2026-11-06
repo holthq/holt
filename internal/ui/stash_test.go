@@ -45,7 +45,7 @@ func TestStashAndWeb(t *testing.T) {
 	if tt.HasText("第二个") || !shows(tt, "贮藏") {
 		t.Fatalf("贮藏组应默认收着、标题上有条数: %q", tt.Texts())
 	}
-	mustClick(t, tt, "展开 贮藏")
+	mustClickRow(t, tt, "展开 贮藏")
 	mustText(t, tt, "第二个")
 	mustText(t, tt, "第一个")
 	read := func() string { b, _ := os.ReadFile(filepath.Join(repo.Root, "a.txt")); return string(b) }
@@ -61,7 +61,7 @@ func TestStashAndWeb(t *testing.T) {
 
 	// 悬停的"应用"：改动放回工作区，贮藏还在
 	hover("第一个")
-	mustClick(t, tt, "应用改动")
+	mustClickRow(t, tt, "应用改动")
 	wait("应用贮藏", func() bool { return idle(r)() && r.Status.Count == 1 })
 	if read() != "一\n" || len(r.Extra.Stashes) != 2 {
 		t.Fatalf("应用后 a.txt=%q，贮藏 %d 条", read(), len(r.Extra.Stashes))
@@ -74,7 +74,7 @@ func TestStashAndWeb(t *testing.T) {
 	// 右键"弹出贮藏"：放回后这条贮藏没了
 	a.RefreshRepo(r, app.WhyManual)
 	wait("干净", func() bool { return idle(r)() && r.Status.Count == 0 })
-	mustRightClick(t, tt, "第二个", "弹出贮藏")
+	mustRightClickRow(t, tt, "第二个", "弹出贮藏")
 	wait("弹出贮藏", func() bool { return idle(r)() && len(r.Extra.Stashes) == 1 })
 	if read() != "二\n" || r.Extra.Stashes[0].Message != "On main: 第一个" {
 		t.Fatalf("弹出后 a.txt=%q，贮藏 %+v", read(), r.Extra.Stashes)
@@ -85,9 +85,9 @@ func TestStashAndWeb(t *testing.T) {
 
 	// 丢弃先问，取消不动；问完 stash@{0} 已经不是它了就不丢
 	hover("第一个")
-	mustClick(t, tt, "丢弃这条贮藏…")
+	mustClickRow(t, tt, "丢弃这条贮藏…")
 	mustText(t, tt, "丢弃贮藏 stash@{0}？")
-	mustClick(t, tt, "取消")
+	mustClickRow(t, tt, "取消")
 	if n := len(strings.Fields(repo.Git("stash", "list", "--format=%H"))); n != 1 {
 		t.Fatalf("取消后应还有 1 条贮藏，有 %d 条", n)
 	}
@@ -95,16 +95,16 @@ func TestStashAndWeb(t *testing.T) {
 	moved.Hash = strings.Repeat("0", 40)
 	a.StashDrop(r, moved)
 	tt.Frame()
-	mustClick(t, tt, "丢弃")
+	mustClickRow(t, tt, "丢弃")
 	wait("核对", func() bool {
 		return idle(r)() && a.AlertOpen && a.AlertMsg == "贮藏列表刚变过，看一眼再丢"
 	})
-	mustClick(t, tt, "好")
+	mustClickRow(t, tt, "好")
 	if n := len(strings.Fields(repo.Git("stash", "list", "--format=%H"))); n != 1 {
 		t.Fatalf("序号对不上时不该丢，还剩 %d 条", n)
 	}
-	mustRightClick(t, tt, "第一个", "丢弃贮藏…")
-	mustClick(t, tt, "丢弃")
+	mustRightClickRow(t, tt, "第一个", "丢弃贮藏…")
+	mustClickRow(t, tt, "丢弃")
 	wait("丢弃贮藏", func() bool { return idle(r)() && len(r.Extra.Stashes) == 0 })
 	if out := repo.Git("stash", "list"); out != "" {
 		t.Errorf("丢弃后还有贮藏: %s", out)
@@ -114,13 +114,13 @@ func TestStashAndWeb(t *testing.T) {
 	}
 
 	// 在 GitHub 打开：仓库；HEAD 还没推送时文件看默认分支上的、提交不能开；"推送"后钉在 HEAD 上
-	mustRightClick(t, tt, "stash（仓库）", "在 GitHub 打开")
+	mustRightClickRow(t, tt, "stash（仓库）", "更多", "在 GitHub 打开")
 	head := repo.Git("rev-parse", "HEAD")
 	if !a.St.RightBar {
 		a.Exec("view.right")
 	}
 	wait("历史", func() bool { return r.Hist.Loaded && !r.Hist.Loading && len(r.Hist.Commits) == 1 })
-	if err := tt.RightClick("初始提交"); err != nil {
+	if err := rightClickRow(tt, "初始提交"); err != nil {
 		t.Fatal(err)
 	}
 	if err := tt.ChooseMenuItem("在 GitHub 打开"); err == nil || !strings.Contains(err.Error(), "disabled") {
@@ -133,10 +133,10 @@ func TestStashAndWeb(t *testing.T) {
 	a.ShowSidebar(workspace.ModeFiles)
 	a.EnsureFiles(r)
 	wait("文件树", func() bool { return r.Files.Loaded && tt.HasText("a.txt") })
-	mustRightClick(t, tt, "a.txt", "在 GitHub 打开")
-	mustClick(t, tt, "初始提交")
+	mustRightClickRow(t, tt, "a.txt", "在 GitHub 打开")
+	mustClickRow(t, tt, "初始提交")
 	wait("展开", func() bool { return r.Hist.Expanded != "" && !r.Hist.FilesLoading })
-	mustClick(t, tt, "在 GitHub 打开")
+	mustClickRow(t, tt, "在 GitHub 打开")
 	want := []string{"https://github.com/me/stash-demo", "https://github.com/me/stash-demo/blob/" + head + "/a.txt",
 		"https://github.com/me/stash-demo/commit/" + head}
 	if !slices.Equal(opened, want) {

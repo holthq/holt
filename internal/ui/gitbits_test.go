@@ -33,7 +33,7 @@ func TestHistNumstat(t *testing.T) {
 		a.Exec("view.right")
 	}
 	wait("历史", func() bool { return r.Hist.Loaded && !r.Hist.Loading && len(r.Hist.Commits) == 2 })
-	mustClick(t, tt, "改三个文件")
+	mustClickRow(t, tt, "改三个文件")
 	wait("展开", func() bool { return r.Hist.FilesFor != "" && !r.Hist.FilesLoading })
 	tt.Frame()
 	mustText(t, tt, "3 个文件 · +5 −1")
@@ -65,10 +65,10 @@ func TestStashFileRows(t *testing.T) {
 	wait("git status", idle(r))
 	a.ToggleGitRepo(r)
 	tt.Frame()
-	mustClick(t, tt, "展开 贮藏")
+	mustClickRow(t, tt, "展开 贮藏")
 	mustText(t, tt, "改了两个")
 
-	mustClick(t, tt, "改了两个")
+	mustClickRow(t, tt, "改了两个")
 	wait("读贮藏的文件", func() bool { return r.StashFilesFor != "" })
 	tt.Frame()
 	for _, s := range []string{"a.txt", "新文件.txt", "+2", "−1", "收起 stash@{0}"} {
@@ -82,7 +82,7 @@ func TestStashFileRows(t *testing.T) {
 	}
 	accessCheck(t, tt, "展开的贮藏")
 
-	mustClick(t, tt, "新文件.txt")
+	mustClickRow(t, tt, "新文件.txt")
 	tt.Frame()
 	d := a.CurrentDoc()
 	if d == nil || d.Kind != docs.Diff || d.Change.Kind != git.InCommit || d.Change.Path != "新文件.txt" {
@@ -97,29 +97,29 @@ func TestStashFileRows(t *testing.T) {
 	}
 
 	// 再点贮藏这一行：收起，选中回到它上面；它已经选中了再点也是展开 / 收起
-	mustClick(t, tt, "改了两个")
+	mustClickRow(t, tt, "改了两个")
 	if r.StashOpen != "" || shows(tt, "新文件.txt") {
 		t.Fatalf("再点应收起: %q", r.StashOpen)
 	}
 	if rows := a.GitRows(); a.GitSel < 0 || rows[a.GitSel].Kind != app.RowStash {
 		t.Errorf("收起后选中应在贮藏上: %d", a.GitSel)
 	}
-	mustClick(t, tt, "改了两个")
+	mustClickRow(t, tt, "改了两个")
 	wait("读贮藏的文件", func() bool { return r.StashFilesFor != "" })
-	mustClick(t, tt, "改了两个")
+	mustClickRow(t, tt, "改了两个")
 	if r.StashOpen != "" {
 		t.Fatalf("选中的贮藏再点应收起: %q", r.StashOpen)
 	}
 	// 箭头、右键
-	mustClick(t, tt, "展开 stash@{0}")
+	mustClickRow(t, tt, "展开 stash@{0}")
 	if r.StashOpen == "" {
 		t.Fatal("点箭头应展开")
 	}
-	mustRightClick(t, tt, "改了两个", "收起")
+	mustRightClickRow(t, tt, "改了两个", "收起")
 	if r.StashOpen != "" {
 		t.Fatal("右键收起没收")
 	}
-	mustRightClick(t, tt, "改了两个", "查看改动")
+	mustRightClickRow(t, tt, "改了两个", "查看改动")
 	if r.StashOpen == "" {
 		t.Fatal("右键查看改动没展开")
 	}
@@ -154,11 +154,11 @@ func TestCompareRows(t *testing.T) {
 	}
 	cC, cA := h.Commits[0], h.Commits[2]
 
-	mustRightClick(t, tt, "提交丙", "标记为比较起点")
+	mustRightClickRow(t, tt, "提交丙", "标记为比较起点")
 	if h.CompareFrom == nil || h.CompareFrom.Hash != cC.Hash {
 		t.Fatalf("起点 %+v", h.CompareFrom)
 	}
-	if err := tt.RightClick("提交甲"); err != nil {
+	if err := rightClickRow(tt, "提交甲"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -174,7 +174,7 @@ func TestCompareRows(t *testing.T) {
 	mustText(t, tt, "c.txt")
 	accessCheck(t, tt, "比较两个提交（有提交图）")
 
-	mustClick(t, tt, "c.txt")
+	mustClickRow(t, tt, "c.txt")
 	d := a.CurrentDoc()
 	if d == nil || d.Kind != docs.Diff || !d.Change.Range || d.Change.Path != "c.txt" {
 		t.Fatalf("点比较里的文件应开它的 Diff: %+v", d)
@@ -184,12 +184,12 @@ func TestCompareRows(t *testing.T) {
 	mustText(t, tt, cA.Short+" ↔ "+cC.Short)
 
 	tt.Advance(time.Second)
-	mustClick(t, tt, title)
+	mustClickRow(t, tt, title)
 	if h.Compare.Open || shows(tt, "c.txt") {
 		t.Fatalf("点标题应收起: open %v", h.Compare.Open)
 	}
 	tt.Advance(time.Second)
-	mustClick(t, tt, title)
+	mustClickRow(t, tt, title)
 	if !h.Compare.Open || !shows(tt, "c.txt") {
 		t.Fatal("再点标题应展开")
 	}
@@ -199,7 +199,7 @@ func TestCompareRows(t *testing.T) {
 	mustText(t, tt, title)
 	accessCheck(t, tt, "比较两个提交（没有提交图）")
 
-	mustClick(t, tt, "不再比较这两个提交")
+	mustClickRow(t, tt, "不再比较这两个提交")
 	if h.Compare != nil || shows(tt, title) {
 		t.Error("× 应清掉比较")
 	}
@@ -230,7 +230,7 @@ func TestGitMultiSelect(t *testing.T) {
 	}
 	click := func(mods wui.Modifiers, name string) {
 		t.Helper()
-		if err := tt.ClickWith(mods, name); err != nil {
+		if err := clickRowWith(tt, mods, name); err != nil {
 			t.Fatalf("点 %q: %v", name, err)
 		}
 		tt.Frame()
@@ -252,7 +252,7 @@ func TestGitMultiSelect(t *testing.T) {
 	accessCheck(t, tt, "Git 栏多选")
 
 	// 右键没选中的一行：它自己的菜单，选中不变
-	if err := tt.RightClick("beta.go"); err != nil {
+	if err := rightClickRow(tt, "beta.go"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -264,7 +264,7 @@ func TestGitMultiSelect(t *testing.T) {
 	if got := chosen(); len(got) != 2 {
 		t.Fatalf("右键没选中的那行改了选中: %q", got)
 	}
-	mustRightClick(t, tt, "alpha.txt", "复制 2 个仓库内路径")
+	mustRightClickRow(t, tt, "alpha.txt", "复制 2 个仓库内路径")
 	if copied != "alpha.txt\nnotes.md" {
 		t.Errorf("复制 %q", copied)
 	}
@@ -283,7 +283,7 @@ func TestGitMultiSelect(t *testing.T) {
 	}
 
 	// 右键选中的一行"暂存 2 项"：两个都暂存
-	mustRightClick(t, tt, "alpha.txt", "暂存 2 项")
+	mustRightClickRow(t, tt, "alpha.txt", "暂存 2 项")
 	wait("暂存", func() bool { return idle(alpha)() && alpha.Status.Staged == 2 })
 	if alpha.Status.Unstaged+alpha.Status.Untracked != 0 || beta.Status.Staged != 0 {
 		t.Errorf("暂存后 alpha %+v beta %+v", alpha.Status, beta.Status)
@@ -320,7 +320,7 @@ func TestTagsMenu(t *testing.T) {
 	loaded := func() bool { return h.Loaded && !h.Loading }
 	tt.Frame()
 
-	mustClick(t, tt, "分支 main")
+	mustClickRow(t, tt, "分支 main")
 	if m := shownMenu(t, tt); !slices.Contains(m, "标签") || slices.Index(m, "标签") > slices.Index(m, "新建分支…") {
 		t.Fatalf("分支菜单：%v", m)
 	}
@@ -339,7 +339,7 @@ func TestTagsMenu(t *testing.T) {
 	}
 	accessCheck(t, tt, "看标签的历史")
 
-	mustClick(t, tt, "回到这个仓库自己的历史")
+	mustClickRow(t, tt, "回到这个仓库自己的历史")
 	wait("回到自己的历史", func() bool { return loaded() && h.RefKind == app.RefNone && len(h.Commits) == 2 })
 	tt.Frame()
 	if shows(tt, "标签：v1") {
@@ -349,7 +349,7 @@ func TestTagsMenu(t *testing.T) {
 	repo.Git("tag", "-d", "v1")
 	a.RefreshRepo(r, app.WhyManual)
 	wait("标签删了", func() bool { return idle(r)() && len(r.Tags) == 0 })
-	mustClick(t, tt, "分支 main")
+	mustClickRow(t, tt, "分支 main")
 	if err := chooseMenu(t, tt, "标签", "没有标签"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("没有标签时：%v", err)
 	}
@@ -378,28 +378,28 @@ func TestRemotesMenu(t *testing.T) {
 	row := r.Name + "（仓库）"
 	open := func() {
 		t.Helper()
-		if err := tt.RightClick(row); err != nil {
+		if err := rightClickRow(tt, row); err != nil {
 			t.Fatal(err)
 		}
-		if !slices.Contains(shownMenu(t, tt), "远程") {
+		if !slices.Contains(shownMenu(t, tt), "更多") {
 			t.Fatalf("仓库菜单：%v", shownMenu(t, tt))
 		}
 	}
 
 	open()
-	if err := chooseMenu(t, tt, "远程", "origin  "+up.Root); err != nil {
+	if err := chooseMenu(t, tt, "更多", "远程", "origin  "+up.Root); err != nil {
 		t.Fatal(err)
 	}
 	if copied != up.Root || a.Toast != "已复制 origin 的地址" && !tt.HasText("已复制 origin 的地址") {
 		t.Errorf("复制地址：%q，提示 %q", copied, a.Toast)
 	}
 	open()
-	if err := chooseMenu(t, tt, "远程", "推送："+up.Root); err == nil || !strings.Contains(err.Error(), "no item") {
+	if err := chooseMenu(t, tt, "更多", "远程", "推送："+up.Root); err == nil || !strings.Contains(err.Error(), "no item") {
 		t.Errorf("推送地址一样时不该有那一行：%v", err)
 	}
 	closeMenu(t, tt)
 	open()
-	if err := chooseMenu(t, tt, "远程", "抓取 origin"); err != nil {
+	if err := chooseMenu(t, tt, "更多", "远程", "抓取 origin"); err != nil {
 		t.Fatal(err)
 	}
 	wait("抓取", func() bool {
@@ -414,7 +414,7 @@ func TestRemotesMenu(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("推送地址", func() bool { return idle(r)() && len(r.Extra.Remotes) == 1 && r.Extra.Remotes[0].Push == push })
 	open()
-	if err := chooseMenu(t, tt, "远程", "推送："+push); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "更多", "远程", "推送："+push); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("推送地址：%v", err)
 	}
 	closeMenu(t, tt)
@@ -423,7 +423,7 @@ func TestRemotesMenu(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("没有远程", func() bool { return idle(r)() && len(r.Extra.Remotes) == 0 })
 	open()
-	if err := chooseMenu(t, tt, "远程", "没有远程"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "更多", "远程", "没有远程"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("没有远程：%v", err)
 	}
 	closeMenu(t, tt)
