@@ -156,7 +156,7 @@ func TestGitOps(t *testing.T) {
 
 	// "Git 操作"菜单 → 新建分支… → 对话框里敲名字回车
 	mustClickRow(t, tt, "Git 操作")
-	menu = shownMenu(t, tt)
+	menu = menuWithWhy(t, tt, a)
 	for _, want := range []string{"抓取（fetch --prune）（没有远程）", "推送并设置上游（没有上游，也没有 origin）", "暂存全部",
 		"贮藏改动（stash）（没有可贮藏的改动）", "新建分支…", "运行 git 命令…"} {
 		if !slices.Contains(menu, want) {

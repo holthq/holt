@@ -28,17 +28,17 @@ func TestGitWhyMenus(t *testing.T) {
 	wait("状态", idle(r))
 	tt.Frame()
 
-	mustClick(t, tt, "Git 操作")
-	menu := tt.Menu()
+	mustClickRow(t, tt, "Git 操作")
+	menu := menuWithWhy(t, tt, a)
 	for _, want := range []string{"推送（和 origin 一致）", "同步（拉取再推送）（和 origin 一致）", "暂存全部（没有要暂存的改动）"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("菜单里没有 %q: %q", want, menu)
 		}
 	}
-	if err := tt.ChooseMenuItem("推送（和 origin 一致）"); err == nil {
+	if err := chooseMenu(t, tt, "推送"); err == nil {
 		t.Error("和 origin 一致时推送应灰着")
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	// 领先 1：推送能用
 	repo.Write("b.txt", "b\n")
@@ -46,8 +46,8 @@ func TestGitWhyMenus(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("领先", func() bool { return idle(r)() && r.Status.Ahead == 1 })
 	tt.Frame()
-	mustClick(t, tt, "Git 操作")
-	if menu := tt.Menu(); !slices.Contains(menu, "推送") {
+	mustClickRow(t, tt, "Git 操作")
+	if menu := menuWithWhy(t, tt, a); !slices.Contains(menu, "推送") {
 		t.Fatalf("领先时推送应能用: %q", menu)
 	}
 	// 菜单开着时别人（另一个 agent）推了：刷新成和 origin 一致
@@ -57,10 +57,10 @@ func TestGitWhyMenus(t *testing.T) {
 	a.Toast = ""
 	// 菜单画在窗口里（SetMenuPresentation），每帧重建：推送跟着状态变灰、标签里写原因，选不了
 	tt.Frame()
-	if m := shownMenu(t, tt); !slices.Contains(m, "推送（和 origin 一致）") {
+	if m := menuWithWhy(t, tt, a); !slices.Contains(m, "推送（和 origin 一致）") {
 		t.Fatalf("状态变了以后菜单里的推送该灰着说原因: %q", m)
 	}
-	if err := chooseMenu(t, tt, "推送（和 origin 一致）"); err == nil {
+	if err := chooseMenu(t, tt, "推送"); err == nil {
 		t.Fatal("状态变了以后推送还能选")
 	}
 	closeMenu(t, tt)

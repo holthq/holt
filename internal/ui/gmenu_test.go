@@ -508,3 +508,23 @@ func TestGroveMenuShots(t *testing.T) {
 	both("gmenu-branch")
 	closeMenu(t, tt)
 }
+
+// menuWithWhy 是现在显示的菜单的项，灰着的照系统菜单那样把原因括在标签后面（withWhy）：Grove 菜单的原因是悬停提示，
+// 测试里拼回标签好和原来的断言比。没有分隔线。
+func menuWithWhy(t *testing.T, tt *wui.Tester, a *app.App) []string {
+	t.Helper()
+	if m := tt.Menu(); m != nil {
+		return m
+	}
+	ls := a.Menu.Levels()
+	if !a.Menu.IsOpen() || len(ls) == 0 {
+		return nil
+	}
+	out := []string{}
+	for _, it := range ls[len(ls)-1].Items {
+		if !it.Sep {
+			out = append(out, withWhy(it.Label, it.Why))
+		}
+	}
+	return out
+}
