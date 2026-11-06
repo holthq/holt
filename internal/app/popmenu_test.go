@@ -498,3 +498,15 @@ func TestPopMenuOpenRow(t *testing.T) {
 		t.Fatalf("右键别的行：新菜单该在它底下（324）：%+v", r)
 	}
 }
+
+// 右键就开在指针处（没对上一行，比如空白处）：按住不动过 150 ms 再松开，菜单留着，不算拖到项上选它。
+func TestPopMenuPointerHoldStill(t *testing.T) {
+	k := newPopKit(t)
+	k.open(true) // 指针 (100, 100) 正好在第一项上
+	k.now = k.now.Add(300 * time.Millisecond)
+	k.m.Up(100, 100, 1, k.now)
+	k.run()
+	if len(k.chosen) != 0 || !k.m.IsOpen() {
+		t.Fatalf("按住不动松开：选了 %q，开着 %v", k.chosen, k.m.IsOpen())
+	}
+}

@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"log"
 	"math"
 	"time"
 
@@ -293,6 +294,7 @@ func gmenuView(a *app.App, c *wui.Context, chose bool) {
 			c.Invalidate()
 		}
 		if a.MenuShown > 2 && !c.WindowActive() { // 窗口失去焦点（不是窗口里别的东西拿了键盘：列表在按下时自己会拿）
+			log.Printf("右键菜单关掉：窗口不活跃（第 %d 帧）", a.MenuShown)
 			m.Close()
 			c.Invalidate()
 		}

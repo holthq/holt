@@ -1,6 +1,7 @@
 package app
 
 import (
+	"log"
 	"strings"
 	"time"
 	"unicode"
@@ -268,6 +269,7 @@ func (m *PopMenu) Refresh(winW, winH float32) {
 	m.root = tidy(s.items)
 	if len(m.root) == 0 {
 		// 建菜单的函数每帧重跑，对着的东西没了（结果变少、行被删）时它什么也不加：关掉，不留一块空面板
+		log.Printf("右键菜单关掉：对着的东西没了（%v）", m.Owner)
 		m.Close()
 		return
 	}
@@ -602,6 +604,9 @@ func (m *PopMenu) Up(x, y float32, button int, now time.Time) {
 		m.held = false
 		if now.Sub(m.openAt) < MenuHoldMin && !m.moved {
 			return
+		}
+		if m.row.H == 0 && !m.moved {
+			return // 菜单就开在指针处（没对上一行）：按住不动再松开不算拖到项上，菜单留着
 		}
 		m.activate(lv, idx, now)
 		return
