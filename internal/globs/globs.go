@@ -9,7 +9,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // Glob 是一条规则。

@@ -14,10 +14,10 @@ import (
 	"golang.org/x/text/encoding/simplifiedchinese"
 	"golang.org/x/text/encoding/traditionalchinese"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 文件与编辑器的小功能：树里拖动、访达拖入、被忽略的行、编码条、大纲、保存整理。都在临时仓库里。

@@ -10,10 +10,10 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是命令注册表：每个动作只在这里定义一次（id、中文名、分组、快捷键、上下文、
@@ -359,11 +359,12 @@ func buildCommands() []*Command {
 			Enabled: func(a *App) bool { return len(a.St.Hidden) > 0 }, Run: (*App).ShowAllRepos},
 
 		// 应用菜单（菜单栏最左边那个）
-		&Command{ID: "app.about", Title: "关于 Grove", Group: AppGroup, Run: func(a *App) {
+		&Command{ID: "app.about", Title: "关于 Holt", Group: AppGroup, Run: func(a *App) {
 			if a.OpenAbout != nil {
 				a.OpenAbout()
 			}
 		}},
+		&Command{ID: "app.checkUpdate", Title: "检查更新…", Group: AppGroup, Run: (*App).CheckUpdates},
 		&Command{ID: "app.settings", Title: "设置…", Group: AppGroup, Sep: true, Mods: cmd, Key: ui.KeyComma, Run: func(a *App) {
 			if a.OpenSettings != nil {
 				a.OpenSettings()
@@ -842,7 +843,7 @@ func ShortcutDoc() string {
 		MaxWholeTextBytes>>20, strings.Join(rows, "\n"))
 	b.WriteString("\n## 自定义\n\n" +
 		"上面是默认键，可以改：设置 → 快捷键里选中一条命令点“改…”按新键（⌫ 是不要快捷键，Esc 不改），" +
-		"或者直接编辑 `<状态目录>/keybindings.json`（平时是 `~/Library/Application Support/Grove/keybindings.json`，" +
+		"或者直接编辑 `<状态目录>/keybindings.json`（平时是 `~/Library/Application Support/Holt/keybindings.json`，" +
 		"快捷键页右上 ⋯ → 打开 keybindings.json）。文件是一个数组，一条管一个命令：\n\n```json\n" +
 		`[
   {"command": "palette.commands", "key": "cmd+k"},

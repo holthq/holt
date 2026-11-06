@@ -1,7 +1,7 @@
-// Package termd 是终端的后台进程：shell 跑在它的伪终端里，关窗口、退出 Grove 都不断，
+// Package termd 是终端的后台进程：shell 跑在它的伪终端里，关窗口、退出 Holt 都不断，
 // 再打开同一个工作区时窗口接回去（设置"关掉窗口后终端继续在后台运行"）。
 //
-// 它就是 Grove 这个可执行文件带 termd 参数（`Grove termd <sock> <log>`）：main 第一行就分出来，
+// 它就是 Holt 这个可执行文件带 termd 参数（`Holt termd <sock> <log>`）：main 第一行就分出来，
 // 不起 mygo.App。每个会话一个没有界面的 terminal.Terminal，shell 的输出喂给它；窗口的终端
 // （Options.Conn = Conn，ResizeByConn）看它的镜像帧，屏幕和回滚一格一格和它一样。
 //
@@ -82,7 +82,7 @@ func (s *Server) Listen() error {
 		return err
 	}
 	for i := 0; ; i++ {
-		err = syscall.Flock(int(lf.Fd()), syscall.LOCK_EX|syscall.LOCK_NB)
+		err = lockFile(lf)
 		if err == nil {
 			break
 		}
@@ -377,10 +377,10 @@ func (s *Server) stream(c net.Conn, r *bufio.Reader, se *session, cols, rows, ce
 	}
 }
 
-// Main 是 `Grove termd <sock> <log>`：返回退出码。
+// Main 是 `Holt termd <sock> <log>`：返回退出码。
 func Main(args []string) int {
 	if len(args) < 1 {
-		fmt.Fprintln(os.Stderr, "用法：Grove termd <套接字> [日志]")
+		fmt.Fprintln(os.Stderr, "用法：Holt termd <套接字> [日志]")
 		return 2
 	}
 	sock := args[0]
@@ -396,6 +396,11 @@ func Main(args []string) int {
 		if lg != nil {
 			lg.Printf(format, a...)
 		}
+	}
+	if err := daemonSupported(); err != nil {
+		logf("%v", err)
+		fmt.Fprintln(os.Stderr, err)
+		return 1
 	}
 	if err := terminal.Load(); err != nil {
 		logf("终端库：%v", err)

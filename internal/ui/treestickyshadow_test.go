@@ -7,8 +7,8 @@ import (
 	"testing"
 
 	wui "github.com/egoist/mygo/ui"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 文件树的吸顶栈底下和编辑器的粘性滚动一样投柔和的阴影、不画硬边线（#18）：树滚到 internal / ui 的文件中间、往下再滚半行，

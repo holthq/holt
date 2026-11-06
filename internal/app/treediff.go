@@ -8,10 +8,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/globs"
-	"github.com/lemoeade/grove/internal/watch"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/globs"
+	"github.com/holthq/holt/internal/watch"
 )
 
 // 这个文件是文件树的增量刷新：只有工作区里的文件变了（监听报的目录、保存的文件）时不整棵 git ls-files，

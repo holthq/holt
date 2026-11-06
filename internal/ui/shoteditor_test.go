@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // TestScreenshotEditorExtras 是编辑器小功能的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一套（-light / -dark），临时仓库 shop、tools：

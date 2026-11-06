@@ -5,8 +5,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是右栏历史的筛选：搜索框（提交信息、作者、哈希，查询语法见 histquery.go）、"所有分支"和"提交图"开关（记进 state.json）、

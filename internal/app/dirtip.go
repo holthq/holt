@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 文件树目录行悬停的大小、最近改动：只 Lstat 树里列着的文件，不另外走磁盘；第一次悬停到那一行时后台算。

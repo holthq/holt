@@ -8,8 +8,8 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 行级暂存的配对规则在临时仓库里走一遍：旧的十行里 3、4 改成 3x、4x、4y（前两行配对，4y 没配对），8 删了。

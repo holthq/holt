@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是进行到一半的合并 / 变基 / 拣选 / 还原：Git 栏仓库段头下面的横幅（ui 的 ongoingRow）、

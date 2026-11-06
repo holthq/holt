@@ -3,9 +3,9 @@ package app
 import (
 	"slices"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是侧栏 Git 模式的变更列表：工作区里所有仓库同时列出，一个仓库一段（段头贴在顶上），

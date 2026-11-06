@@ -8,10 +8,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 交互式变基向导：右键历史里的提交开，推送过的有胶囊、底下说要强制推送；列表有键盘时 ↓ 选行、S / D / E 设动作、⌥↓ 挪行，

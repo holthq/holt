@@ -6,10 +6,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // mergeUI 在合并到一半、c.txt 有冲突的临时仓库上开界面，侧栏是 Git 栏，状态读好。

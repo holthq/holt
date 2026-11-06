@@ -8,7 +8,7 @@ import (
 	"unicode"
 	"unicode/utf8"
 
-	"github.com/lemoeade/grove/internal/git"
+	"github.com/holthq/holt/internal/git"
 )
 
 // 这个文件是历史搜索框的查询语法：还是那一个框，裸词照旧是"提交信息或作者里有、或哈希开头"，

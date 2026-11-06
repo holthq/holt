@@ -11,10 +11,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // pngBytes 是 w×h、一种颜色的 PNG。

@@ -8,9 +8,9 @@ import (
 	"github.com/egoist/mygo/plugins/terminal"
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 终端：工作目录是仓库根，中文回显正常，vim 进得去也退得出。只在用户的仓库里跑 pwd / echo / vim :q!。

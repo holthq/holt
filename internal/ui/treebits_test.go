@@ -12,9 +12,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 键盘找字：文件树有键盘时打字母跳到名字以它开头的行（mygo 列表的 Label，大小写不分）：

@@ -7,10 +7,10 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 第一次用（空 state、没给工作区）是空工作区：标题栏、侧栏三页和右栏都写"没有打开的工作区"，侧栏两个按钮走系统的

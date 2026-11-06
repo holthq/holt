@@ -6,8 +6,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 彩色底块：glyphOf 在浅色、深色主题，13 和 16 两档下的底块大小、圆角、淡色和图形——

@@ -8,11 +8,11 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // searchView 是侧栏的搜索页：搜索框和三个开关（区分大小写、全字匹配、正则），可展开的包含 / 排除，
@@ -649,7 +649,7 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 	})
 }
 
-// searchRowLive 报打开菜单时的那一行（want 是当时 sr.Match 上的那一处）还在：Grove 菜单每帧用打开时的 sr 重建，
+// searchRowLive 报打开菜单时的那一行（want 是当时 sr.Match 上的那一处）还在：Holt 菜单每帧用打开时的 sr 重建，
 // 菜单开着时结果变了（替换、撤销替换、排除、重搜）下标就可能越界或指到别处。不在了建菜单的函数什么也不加，
 // 菜单关掉（PopMenu.Refresh），选中的项也不执行。文件行只比文件，一处还要比行列。
 func searchRowLive(s *app.SearchState, sr app.SearchRow, want search.Match, file bool) bool {
@@ -663,7 +663,7 @@ func searchRowLive(s *app.SearchState, sr app.SearchRow, want search.Match, file
 	return file || got.Line == want.Line && got.Col == want.Col && got.Len == want.Len
 }
 
-// searchMatchMenu 是结果里一处的右键菜单；改结果的动作经 do 等列表建完再做（Grove 菜单传 menuDo）。
+// searchMatchMenu 是结果里一处的右键菜单；改结果的动作经 do 等列表建完再做（Holt 菜单传 menuDo）。
 func searchMatchMenu(a *app.App, m menu, sr app.SearchRow, do func(func())) {
 	s := &a.Search
 	mt := s.Res.Matches[sr.Match]
@@ -693,7 +693,7 @@ func searchMatchMenu(a *app.App, m menu, sr app.SearchRow, do func(func())) {
 	}
 }
 
-// searchFileMenu 是结果里文件行的右键菜单；改结果的动作经 do 等列表建完再做（Grove 菜单传 menuDo）。
+// searchFileMenu 是结果里文件行的右键菜单；改结果的动作经 do 等列表建完再做（Holt 菜单传 menuDo）。
 func searchFileMenu(a *app.App, m menu, sr app.SearchRow, do func(func())) {
 	s := &a.Search
 	mt := s.Res.Matches[sr.Match]

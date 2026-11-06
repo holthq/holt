@@ -12,10 +12,10 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/version"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/version"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是设置（二）：界面缩放（⌘= / ⌘- / ⌘0）、编辑器区的 settings.json 文档、导出 / 导入 / 恢复默认。

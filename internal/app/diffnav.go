@@ -1,6 +1,6 @@
 package app
 
-import "github.com/lemoeade/grove/internal/docs"
+import "github.com/holthq/holt/internal/docs"
 
 // HunkPos 是 Diff 标签（和替换预览、比较）里光标所在（inside）或光标之前的那处改动、一共几处：标签条的上 / 下一处、底栏的"第 i / n 处改动"。
 // cur 照 mygo 的 CurrentHunk（按光标，不是按视口顶：mygo 没给视口的位置），在第一处之前是 -1；不是 Diff、还没建好或没有改动时 n = 0。

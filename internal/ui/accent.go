@@ -3,8 +3,8 @@ package ui
 import (
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是设置里的强调色和"选中行用淡底"。mygo 的主题跟着系统的强调色；选了别的强调色时，每帧开头

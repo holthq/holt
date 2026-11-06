@@ -19,8 +19,8 @@ import (
 	"golang.org/x/text/encoding/traditionalchinese"
 	"golang.org/x/text/encoding/unicode"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 不是 UTF-8 的文件按编辑器认的编码解成文字再搜：位置是解码后的 UTF-8 字节，预览是合法的 UTF-8。

@@ -8,10 +8,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 设置窗口（⌘,）：点分组、下拉、开关、输入框改设置，主窗口下一帧就跟上（外观和材质交给窗口、编辑器的缩进和软换行、
@@ -36,7 +36,7 @@ func TestSettingsWindow(t *testing.T) {
 	if opened != 1 {
 		t.Fatalf("⌘, 没打开设置窗口（%d）", opened)
 	}
-	st := wui.NewTester(SettingsView(a), 600, 480)
+	st := wui.NewTester(SettingsView(a), 760, 540)
 	st.SetLocale(i18n.Locale())
 	st.Frame()
 	pick := func(current, want string) {

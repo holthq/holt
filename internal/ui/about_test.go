@@ -9,11 +9,11 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/version"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/version"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // TestOpenArgs：外面交进来的路径（命令行、第二个实例、open -a、拖到 Dock）——文件开标签，
@@ -143,7 +143,7 @@ func TestGreet(t *testing.T) {
 	stateDir := termState(t, false)
 	a, tt, _ := newUI(t, ws, stateDir)
 	a.Greet("0.1.0")
-	welcome := i18n.Tf("欢迎使用 Grove %s", "0.1.0")
+	welcome := i18n.Tf("欢迎使用 Holt %s", "0.1.0")
 	if a.Toast != welcome {
 		t.Errorf("第一次：%q", a.Toast)
 	}
@@ -160,7 +160,7 @@ func TestGreet(t *testing.T) {
 		t.Errorf("同一版本也说了：%q", a.Toast)
 	}
 	a.Greet("0.2.0")
-	if a.Toast != i18n.Tf("已更新到 Grove %s", "0.2.0") {
+	if a.Toast != i18n.Tf("已更新到 Holt %s", "0.2.0") {
 		t.Errorf("换版本：%q", a.Toast)
 	}
 	a.LastCrash = "/x/crash-20261029-120000.log"
@@ -187,7 +187,7 @@ func TestAboutView(t *testing.T) {
 
 	tt := wui.NewTester(AboutView(a, licenses), 460, 640)
 	tt.SetLocale(i18n.Locale())
-	for _, s := range []string{"Grove", i18n.Tf("版本 %s", version.App), version.Mygo(), a.LogDir, "mygo", "purego", "SIL OFL 1.1"} {
+	for _, s := range []string{"Holt", i18n.Tf("版本 %s", version.App), version.Mygo(), a.LogDir, "mygo", "purego", "SIL OFL 1.1"} {
 		if !tt.HasText(s) {
 			t.Errorf("关于窗口里没有 %q：%q", s, tt.Texts())
 		}
@@ -217,7 +217,7 @@ func TestAboutView(t *testing.T) {
 	}
 
 	if dir := os.Getenv("WORKBENCH_SHOT"); dir != "" {
-		a.LogDir = "/Users/me/Library/Logs/Grove"
+		a.LogDir = "/Users/me/Library/Logs/Holt"
 		tt.SetScale(2)
 		writeShot(t, tt, dir, "about.png")
 	}

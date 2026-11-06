@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // bigGo 是至少 n 字节、像 Go 代码的文字。

@@ -9,8 +9,8 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // wsFile 在新的临时目录里写一个叫 name.code-workspace 的工作区文件。

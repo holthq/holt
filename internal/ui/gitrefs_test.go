@@ -8,9 +8,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 分支和标签的 Git 日常操作在界面上的入口（临时仓库 + 临时裸远程）：分支下拉底下的改名 / 发布 / 删除分支 / 删除远程分支、

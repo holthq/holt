@@ -7,9 +7,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是编辑器装订线上改动块的就地卡：点改动条（或改动块里的行号）、命令 diff.peekHunk，在这一块下面弹一张卡，

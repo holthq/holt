@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // dailyApp 在仓库上开应用、读好状态。

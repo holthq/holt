@@ -6,9 +6,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 子模块走一遍：文件树里两行（右边灰的"子模块" / "未初始化"），回车初始化了的那行问添加为仓库、确认后加进来跳过去，

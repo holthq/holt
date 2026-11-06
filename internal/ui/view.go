@@ -5,8 +5,8 @@ import (
 
 	_ "github.com/egoist/mygo/locales/zh-Hans" // mygo 自己的文案（编辑器的查找条、跳行条，系统菜单）的简体中文
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // View 是窗口的内容：每帧从 App 的状态画出整个界面。
@@ -25,10 +25,10 @@ func root(a *app.App, c *wui.Context) {
 	t := c.Theme()
 	applyAccent(a, t)
 	c.SetZoom(a.ZoomFactor()) // 界面缩放（⌘= ⌘- ⌘0）：按窗口的，每个窗口自己设
-	// mygo 自己建的菜单（编辑器的右键菜单、文本框和可选中文字的编辑菜单）和还没换成 Grove 菜单的 ContextMenu / Menu
-	// 画在窗口里（issue #58），不和 Grove 画的菜单混着出系统菜单；菜单栏、程序坞菜单还是系统的
+	// mygo 自己建的菜单（编辑器的右键菜单、文本框和可选中文字的编辑菜单）和还没换成 Holt 菜单的 ContextMenu / Menu
+	// 画在窗口里（issue #58），不和 Holt 画的菜单混着出系统菜单；菜单栏、程序坞菜单还是系统的
 	c.SetMenuPresentation(wui.PopoverMenus)
-	// Grove 菜单上一帧之后选了的项在建树之前执行（和系统菜单在下一帧建到那个元素时执行差不多）：换工作区、重搜这类
+	// Holt 菜单上一帧之后选了的项在建树之前执行（和系统菜单在下一帧建到那个元素时执行差不多）：换工作区、重搜这类
 	// 换掉列表状态的动作要是在树建完以后做，这一帧的布局还拿着旧的列表
 	chose := gmenuRunChoice(a, c)
 	a.BindShortcuts(c)
@@ -50,7 +50,7 @@ func root(a *app.App, c *wui.Context) {
 		})
 		statusBar(a, c.Key("status"))
 	})
-	gmenuView(a, c, chose) // Grove 画的菜单（右键、按钮的）
+	gmenuView(a, c, chose) // Holt 画的菜单（右键、按钮的）
 	dialogs(a, c)
 	pending(a, c)
 	if a.Toast != "" {

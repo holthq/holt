@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // rebaseApp 在仓库上开应用、读好状态和当前分支的历史。

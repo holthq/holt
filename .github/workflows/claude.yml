@@ -2,7 +2,7 @@
 # 只有仓库的 owner、成员、协作者写的才启动（下面的 if；陌生人的评论连机器都不开）。
 # 用 Claude Agent SDK（.github/claude/agent.mjs），不用 claude-code-action：后者算 Claude Code 用量，console 里的赠送额度不管它。
 # 密钥在仓库的 Secret ANTHROPIC_API_KEY，只给 agent 那一步；GitHub 的 token 只给准备和收尾两步，Claude 碰不到。
-# 跑在 macOS 上：Grove 只能在 macOS 上编译和测试，Claude 改完可以自己 go vet / go test。
+# 跑在 macOS 上：Holt 只能在 macOS 上编译和测试，Claude 改完可以自己 go vet / go test。
 # 这类事件只认默认分支上的这份文件（和 .github/claude/），改了要合进 main 才生效。
 name: Claude
 

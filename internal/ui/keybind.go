@@ -6,8 +6,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是快捷键自定义（app/keybind.go）在界面这边的部分：右键菜单和列表的键从注册表读，

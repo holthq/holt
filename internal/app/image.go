@@ -1,8 +1,8 @@
 package app
 
 import (
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 图片（二）和十六进制视图：以十六进制查看的开关、用默认应用打开。缩放、拖动、棋盘格在 ui/image.go。

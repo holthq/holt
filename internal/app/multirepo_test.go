@@ -8,9 +8,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // threeApp 读 testutil.ThreeRepos 的工作区，等三个仓库的状态都读完。

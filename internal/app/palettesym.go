@@ -5,10 +5,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/fuzzy"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/outline"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/fuzzy"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/outline"
 )
 
 // 这个文件是快速打开里的"名字@符号"：文件按名字打分取第一名（Sublime 的做法），第一行是那个文件，

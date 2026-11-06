@@ -8,9 +8,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // TestScreenshotProblems 是检查与问题面板的截图（WORKBENCH_SHOT=目录 时才跑），临时仓库 shop（Go、shell）和 web（TypeScript）；
@@ -85,7 +85,7 @@ func TestScreenshotProblems(t *testing.T) {
 
 	s.LintOnSave = true
 	s.Linters = map[string]string{"TypeScript": "npx tsc --noEmit --pretty false", "Rust": "-"} // 一条改过的、一条关掉的，别的灰字默认
-	sv := wui.NewTester(SettingsView(a), 720, 640)
+	sv := wui.NewTester(SettingsView(a), 760, 640)
 	sv.SetScale(2)
 	sv.SetLocale(i18n.Locale())
 	mustClick(t, sv, "格式化")

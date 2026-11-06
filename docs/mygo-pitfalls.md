@@ -1,6 +1,6 @@
 # 踩过的坑
 
-本文记录开发 Grove 时遇到的问题和处理约定。大部分与 mygo 的行为有关（以 go.mod 锁定的版本为准），也涉及 git、macOS 和 Go 标准库。
+本文记录开发 Holt 时遇到的问题和处理约定。大部分与 mygo 的行为有关（以 go.mod 锁定的版本为准），也涉及 git、macOS 和 Go 标准库。
 每条先说明现象或约定，再介绍处理方法。升级 mygo 后，部分条目可能不再适用，修改代码前需在新版本上确认。
 
 新问题记入对应小节；已有同类记录时，直接更新原条目，避免重复。
@@ -80,9 +80,9 @@
 - 输入回调里 `Context.Now()` 不是事件的时间，用 `InputEvent.Time`。
 - `SetMenuPresentation(PopoverMenus)` 下 `ContextMenu` / `Menu` 的菜单每帧重建（系统菜单是打开时的快照）：开着时状态变了，项跟着变灰；
   测试里"选了打开时还能用、现在不能用的项"这种场景不再有，`Tester.Menu` / `ChooseMenuItem` 照样能用。
-  Grove 画的菜单（`app.PopMenu`）也每帧重建：建菜单时按打开那一帧的下标取切片（搜索结果的 `s.Res.Matches[sr.Match]`），
+  Holt 画的菜单（`app.PopMenu`）也每帧重建：建菜单时按打开那一帧的下标取切片（搜索结果的 `s.Res.Matches[sr.Match]`），
   菜单开着时结果变少就越界。先核对还在、还是那一个，不在了什么也不加（菜单关掉）。
-- 在树建完以后（`root` 的末尾）换掉列表的状态（换工作区）会让这一帧的布局在 `layoutList` 里空指针：动作要在建树之前做（Grove 菜单的选中项在 `root` 开头执行）。
+- 在树建完以后（`root` 的末尾）换掉列表的状态（换工作区）会让这一帧的布局在 `layoutList` 里空指针：动作要在建树之前做（Holt 菜单的选中项在 `root` 开头执行）。
 - 行装了 `menuPress`（`HandleInput`）以后接输入的是行，不是列表的格子：`tt.Click(名字)` 报"不是输入目标"，用 `clickRow`。
 - 双击：List 的行用 `RowDoubleClicked`，普通元素用 `DoubleClicked`。
 - 行里的子元素一旦 `Clicked()` / `Pressed()` / `Drag`，会消耗该事件，列表无法再收到。不要为了获取修饰键而给行添加 `Clicked()`。
@@ -131,7 +131,7 @@
   - 编辑器和终端的 `DataDrop` 也接 `FileList`，包含文件时按文件处理（`OpenArgs` / `ShellFiles`）。
   - 值（`Drop[T]`）和格式（`DropData`）是两个字段，同一个元素两样都能登记。
   - `transfer.Drop` 没有落点，编辑器只能插在光标处（`ui/editor` 的 `offsetAt` 没导出）。
-- mygo 的 `terminal.View` 自己登记了 `DroppedFiles`，按反斜杠转义、末尾不加空格贴进去。Grove 在格子外框登记格式目标（`DataDrop`，含 `FileList`）先接住，
+- mygo 的 `terminal.View` 自己登记了 `DroppedFiles`，按反斜杠转义、末尾不加空格贴进去。Holt 在格子外框登记格式目标（`DataDrop`，含 `FileList`）先接住，
   `ShellFiles` 贴单引号版，和从文件树拖行（`app.PastePaths`）一个写法。shell 已退出的分屏登记只接文件的 `ExitedDrop`（按窗口的规则打开），
   不登记的话访达的文件会落到视图自己的 `DroppedFiles`，写入没有 shell 的终端，无法显示结果。
 - 拖动悬停触发展开时，需等所有行绘制完成：`DwellTree` 在行的落点里只记到点了没有，`EndTreeDrop`（列表建完之后）才 `SetOpen` / `ToggleRepo`、请求下一帧。
@@ -199,7 +199,7 @@
   所以每帧照现在的块重设，没有块就置 nil；块本身按 `Buf.Version()` 缓存（`Doc.ConflictBlocks`），每帧重设不会增加大量计算。别的地方要按内容染色也照这个来，别只在打开时设一次。
 - `editor.Buffer.Modified()` 只要当前文本和存盘文本不是同一棵 rope（改过，哪怕又撤回到一样），就把两份都拼成整串再比较，大文件一次几 MB 分配。
   每帧要问的地方（标签圆点、状态栏、菜单）一律走 `Doc.Modified`，它按缓冲区指针、`Version()`、存盘次数缓存。`Buffer.MarkSaved()` 不动 `Version()`，
-  所以 Grove 里只经 `Doc.markSaved` 调它（顺带让缓存失效），别直接 `d.Buf.MarkSaved()`。
+  所以 Holt 里只经 `Doc.markSaved` 调它（顺带让缓存失效），别直接 `d.Buf.MarkSaved()`。
 - `GutterMarks` 归冲突块，诊断只走 `SetDiagnostics`（`app/lint.go`）：`conflictMarks` 每帧整个重设 `GutterMarks`，别的东西往里放下一帧就没了。
   检查报的问题交给 mygo 编辑器自带的诊断（`st.SetDiagnostics`：波浪线、悬停、滚动条标记），装订线不画点。
 - `SetDiagnostics(version, ds)` 的 version 是 ds 按哪一版文字算的，编辑器沿那一版之后的编辑历史把位置挪到现在。缓冲区未保留那段历史（重读过、版本对不上）时什么都不设，也不报错。
@@ -241,7 +241,7 @@
 
 ## 终端和 termd
 
-- `cmd/workbench` 的 `main` 第一行派发 termd：`Grove termd <sock> <log>` 是终端后台进程，`if len(os.Args) > 1 && os.Args[1] == "termd"`
+- `cmd/workbench` 的 `main` 第一行派发 termd：`Holt termd <sock> <log>` 是终端后台进程，`if len(os.Args) > 1 && os.Args[1] == "termd"`
   要在解析参数、单实例锁、载字体、开窗口之前。别在它前面加东西：后台进程不能开窗口，也不能抢单实例锁。
 - 终端的 `Options.OpenLink` 在主线程、终端锁外面调，里面可以调 `Terminal.Dir()`；返回 false 时网址交给系统浏览器，路径什么都不做。
 - 终端的光标闪烁（`terminal.Options.NoBlink`）只在 `terminal.New` 时定，运行中改不了（只有字体、主题、选中即复制、最低对比度能改），所以设置里的"光标闪烁"仅对新终端生效。
@@ -255,14 +255,18 @@
 - 镜像帧不带 OSC 7：`terminal.Mirror` 的帧只有屏幕和回滚，shell 报的目录 termd 单独发（`OnDir`），窗口里的 `Term.Dir()` 在后台格里是空的。
   要目录用 `shellDir()`（先 `Term.Dir()`、再 termd 发来的 `rdir`），没报过的 termd 按进程号读 cwd。
 - 后台格里别在本地 `ClearScreen`：⌘K 交给 termd 清（`conn.Clear`，`OnClear` 也接到它），本地清了下一个镜像帧又把内容画回来。全屏程序里 termd 回 `N`（不清屏）。
-- 设了 `WORKBENCH_STATE` 的实例有自己的 termd：套接字跟着状态目录（`termd.SockPath(StateDir)`），不会接到日常开着的那个 Grove 的会话。
-  用完只 `kill -TERM` 自己这个 termd（`pgrep -f '<自己的 .app>/Contents/MacOS/Grove termd'`），别杀别的。
+- 设了 `WORKBENCH_STATE` 的实例有自己的 termd：套接字跟着状态目录（`termd.SockPath(StateDir)`），不会接到日常开着的那个 Holt 的会话。
+  用完只 `kill -TERM` 自己这个 termd（`pgrep -f '<自己的 .app>/Contents/MacOS/Holt termd'`），别杀别的。
   套接字 0600、协议不认证，能连接套接字的进程就能向 shell 发送输入，别把它放到别人能读的目录里。
 - 恢复上次输出必须早于 shell 的首次输出（`app/termhist.go`）：`Terminal.History()` 的序列最后让光标停在它下面一行，`startLocal` 建好终端马上 `Feed`。
   晚了（shell 读完 rc、提示符已经出来）就会盖在提示符上或者夹在两行之间。连接 termd 的分屏不恢复这份输出，因为镜像帧自带回滚；连接失败并退回本地时仍需恢复。
 - termd 里退出了的会话由两端分别管理：termd 这边，shell 退出了、没有窗口接着的会话过 `Server.Linger` 拿掉（接回去过就作废，`session.linger` 代数对不上）；
   窗口这边，关窗口 / 换工作区时退出了的格直接 `Kill`（被别的窗口接走的 `lost` 只断开），`sessionTerms` 只记没退出的会话号。
   改其中一边要看另一边：仅依赖 termd，下次打开窗口可能先连到即将清除的会话；仅依赖窗口，窗口崩溃后留下的会话无法清理。
+- termd 的平台相关部分按文件拆：`pty_unix.go` 是两边一样的 `proc` / `startProc`（Setsid + Setctty，伪终端当控制终端），
+  `pty_darwin.go` 用 grantpt / unlockpt / ptsname 三个 ioctl，`pty_linux.go` 用 `TIOCSPTLCK`（传 0 解锁）、`TIOCGPTN`（读从端编号）再开 `/dev/pts/N`；
+  `<sock>.lock` 在 unix 用 `flock`、Windows 用 `LockFileEx`。Windows 上还没有 ConPTY：`startProc` 直接返回 `ErrNoPTY`、`Spawn` 不起 daemon，
+  应用退回窗口里的本地终端。加平台时 `session.go` 用的 `proc` 字段要照样有。
 
 ## 窗口、标签和生命周期
 
@@ -312,8 +316,8 @@
   `Windows.Later` 是这个钩子，测试里换成记下来手动跑的桩。
 - `mygo.App.SetWindowStateStore` 必须在 Run 之前：mygo 在建第一个带 `StateKey` 的窗口时读一次窗口位置（只读这一次），之后再换只改了往哪写。
   所以 main 在 `WhenReady` 之前就定 `stateDir`（`WORKBENCH_STATE` 或 PathUserData）并设好 `app.WindowStates`；`App.Path` 在 Run 之前就能用。
-- `mygo.App.Path` 第一次调就会建出空的目录，所以 `migrateDirs`（`cmd/workbench/migrate.go`，把旧名字 Workbench 的状态和日志目录改名成 Grove）必须在它之前。
-  可执行文件名不是 Grove（`go run`）或设了 `WORKBENCH_STATE` / `WORKBENCH_LOGS` 时不搬。迁移只在测试的临时 HOME 里试（`TestMigrateDirs` 设 `HOME`），
+- `mygo.App.Path` 第一次调就会建出空的目录，所以 `migrateDirs`（`cmd/workbench/migrate.go`，把旧名字 Workbench 的状态和日志目录改名成 Holt）必须在它之前。
+  可执行文件名不是 Holt（`go run`）或设了 `WORKBENCH_STATE` / `WORKBENCH_LOGS` 时不搬。迁移只在测试的临时 HOME 里试（`TestMigrateDirs` 设 `HOME`），
   绝不对真的 `~/Library/Application Support/` 试。为什么 `cmd/workbench` 不改名见 `AGENTS.md`。
 
 ## Git
@@ -519,14 +523,14 @@
 - 原生菜单（右键、按钮的 `Menu`）不在 `tt.Image()` / `WORKBENCH_CAPTURE` 里，测试用 `tt.Menu()`、`tt.ChooseMenuItem(…)`、`tt.CloseMenu()`。
   `WORKBENCH_CAPTURE` 的图里也没有红绿灯。
 - 系统右键菜单（`ContextMenu`）在窗口靠下的地方会折起来（issue #6）：mygo 的 darwin 后端用 `popUpMenuPositioningItem:nil atLocation:inView:` 弹（v0.7.4 到 main `6121009b` 都是，`internal/darwin/menu.go` 第一个参数还是 0），
-  左上角钉在点的地方，下面（到屏幕底 / Dock）放不下时 AppKit 不往上翻，而是把菜单截短、底下出滚动箭头。Grove 碰不到这个调用（位置也改不了），
-  所以文件树的右键菜单（`treeMenu`、`rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）画在窗口里（先是 `PopoverMenu`，issue #48 起是 Grove 自己画的
+  左上角钉在点的地方，下面（到屏幕底 / Dock）放不下时 AppKit 不往上翻，而是把菜单截短、底下出滚动箭头。Holt 碰不到这个调用（位置也改不了），
+  所以文件树的右键菜单（`treeMenu`、`rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）画在窗口里（先是 `PopoverMenu`，issue #48 起是 Holt 自己画的
   `ui/gmenu.go`），下面放不下就往上开，窗口本身都放不下才滚。代价是样子跟着主题、不是系统菜单的毛玻璃。别处的右键菜单还是系统的。
   画出来的菜单 Tester 的 `Menu()` / `ChooseMenuItem` 看不见：测试统一用 `popmenu_test.go` 的 `shownMenu` / `chooseMenu` / `closeMenu`
   （两种都认，画出来的从无障碍树里找 RoleMenu / RoleMenuItem，所以 `gmenu.go` 的面板和项要设 `Role`、`Label`、灰项 `Disabled`），`mustRightClick` 已经换成它们了。
 - `PopoverMenu`（v0.7.4；main `6121009b` 的 `SetMenuPresentation(PopoverMenus)` 也是它，这几条照旧）在 macOS 上右键按下就开（`menuPress`），开的时候没有元素被"按着"，所以按住右键移动时项的悬停高亮跟着走；
   但松开右键不会选中指针下的项（项只认左键的 `Clicked`），子菜单悬停立刻开、没有安全三角，灰掉的项没有提示，点外面关掉的那一下照样落到下面的元素上。
-  这些要自己画菜单才做得到（issue #46），所以文件树换成了 Grove 自己画的（issue #48，`app/popmenu.go` + `ui/gmenu.go`）。
+  这些要自己画菜单才做得到（issue #46），所以文件树换成了 Holt 自己画的（issue #48，`app/popmenu.go` + `ui/gmenu.go`）。
   Tester 只有左键的 `Press` / `Release`，右键只有 `RightClickAt`（按下松开一起），按住右键拖测不了：菜单的状态机放在 `app.PopMenu` 里直接喂事件测。
 - 自己画菜单时的几处（issue #48）：右键按下由行的 `HandleInput` 接，接了以后按着的移动和松开都送到这一行（不管指针在哪），所以按住拖松开不用别的；
   一个元素只有一个 `HandleInput`，原来挂着的（`treePress`、列表的 `treeCommands`）要包进去，不是右键的照旧转给它。`HandleInput` 让出去的按下
@@ -541,7 +545,7 @@
   （文件树行的 `menuPress`、Git 栏段头、命令面板的结果行、历史行）；历史右栏标题行的名字"历史"在整行上，正中是搜索框。真窗口里点那一格就是点那一行，
   不是回归。测试里点这种行用 `clickrow_test.go` 的 `clickRow` / `rightClickRow` / `mustClickRow` / `mustRightClickRow`（按名字找到那一格、点正中），
   别的照旧用 `Click`，保留它的校验。
-- 同一版起所有按键都进 `HandleInput`（`d3288030`）：Grove 的几个回调（`treeCommands` 只认 `InputCommand`、菜单接收层放过 ⌘ / ⌃、看图只认不带修饰的 = - 0、
+- 同一版起所有按键都进 `HandleInput`（`d3288030`）：Holt 的几个回调（`treeCommands` 只认 `InputCommand`、菜单接收层放过 ⌘ / ⌃、看图只认不带修饰的 = - 0、
   录键卡片本来就要全接）都按种类和键筛过，不多接也不吞键。
   接收层的回调返回 false 也不会把按下让给它底下的元素（`hitChain` 只往这一层的祖先走，到不了 Overlay 外面），所以"开着时右键别处开新菜单"
   得自己按登记的位置找（`PopMenu.AddTarget` / `TargetAt`）；文件树以外的地方右键只关菜单。
@@ -586,7 +590,7 @@
   一个小的 Swift `NSDraggingSource` 窗口当拖动源（文字 / file URL / file URL + 文件名文字，后一种模仿访达），CGEvent 按下 → 拖 → 松开。这类脚本不在仓库里。
   别用 AppleScript 控制访达：会超时（-1712），还可能弹授权框。
 - 有未保存的标签时，TERM 无法直接退出应用：应用在问"保存吗"，进程还在，下一次真实窗口测试可能把参数交给该实例。自己起的实例先确认 `WORKBENCH_STATE` 是临时目录，再 `kill -9` 它自己的 pid；
-  不要按进程名终止，以免影响日常使用的 Grove。
+  不要按进程名终止，以免影响日常使用的 Holt。
 - ad hoc 签名的新构建读可移除的卷会卡住：macOS 对每个新签名的应用，第一次读可移除的卷（外接盘之类）都要过一次授权，无人确认授权时会阻塞在 `open()` 中（`sample` 看得到），
   窗口也不出来。量内存、跑临时构建时工作区对着内置盘上的一份克隆，别对着外接卷上的仓库。
 

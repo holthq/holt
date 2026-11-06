@@ -11,11 +11,11 @@ import (
 	"github.com/egoist/mygo/ui/markdown"
 	"github.com/egoist/mygo/ui/markdown/parser"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // mainArea 是主区：一组编辑器，或分屏的几组（左右 / 上下、可以嵌套），组之间一条 4 pt 能拖的缝。

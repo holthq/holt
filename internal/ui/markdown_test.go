@@ -13,10 +13,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 临时仓库里的 Markdown：⇧⌘V 切到预览，表格和本地图片显示出来；点链接——网址交给系统浏览器（测试里换掉）、

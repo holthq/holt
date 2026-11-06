@@ -8,10 +8,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // blameRepo 是一个文件三段历史：Alice 写了 6 行，Bob 改了第 3、4 行，Alice 又改了第 6 行；工作区里第 5 行改了没提交。

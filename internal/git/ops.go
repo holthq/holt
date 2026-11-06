@@ -13,10 +13,9 @@ import (
 	"strconv"
 	"strings"
 	"sync/atomic"
-	"syscall"
 	"time"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是会改仓库的 git 操作和历史 / 分支的读取。
@@ -97,18 +96,18 @@ func newOp(ctx context.Context, dir string, env, args []string) (cmd *exec.Cmd, 
 	cmd.Env = append(os.Environ(), "LC_ALL=C", "GIT_TERMINAL_PROMPT=0", "GIT_EDITOR=true",
 		"GIT_SEQUENCE_EDITOR=true", "GIT_PAGER=cat", "PAGER=cat", "GIT_ASKPASS=true")
 	cmd.Env = append(cmd.Env, env...)
-	cmd.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
+	setProcGroup(cmd)
 	var kill *time.Timer
 	cmd.Cancel = func() error {
 		pid := cmd.Process.Pid
-		kill = time.AfterFunc(killAfter, func() { _ = syscall.Kill(-pid, syscall.SIGKILL) })
-		return syscall.Kill(-pid, syscall.SIGTERM)
+		kill = time.AfterFunc(killAfter, func() { _ = killGroup(pid) })
+		return termGroup(pid)
 	}
 	cmd.WaitDelay = killAfter + time.Second
 	return cmd, func() {
 		if kill != nil {
 			kill.Stop()
-			_ = syscall.Kill(-cmd.Process.Pid, syscall.SIGKILL)
+			_ = killGroup(cmd.Process.Pid)
 		}
 	}
 }

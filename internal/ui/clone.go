@@ -6,8 +6,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // cloneWidth 是克隆对话框的宽：比新建分支那种表单宽一档，地址和路径放得下。

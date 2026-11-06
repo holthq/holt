@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // selPath 是文件树光标那行的仓库和路径（没有为 nil, ""）。

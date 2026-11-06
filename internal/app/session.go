@@ -6,9 +6,9 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件按工作区记住上次的样子：打开的文件标签（固定没有、光标、滚到哪）、当前仓库、

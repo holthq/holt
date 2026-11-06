@@ -3,8 +3,8 @@ package docs
 import (
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是交互式变基向导标签里排的计划（只是数据；算信息、写 todo、跑命令在 app/rebase.go）。

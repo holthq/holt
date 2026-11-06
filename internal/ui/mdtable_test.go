@@ -6,7 +6,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 预览里拿表格并排放的图片（GitHub README 的常见写法）：显示成图，不是 [说明]；两列等宽并排、铺满一栏；

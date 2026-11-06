@@ -7,7 +7,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
+	"github.com/holthq/holt/internal/app"
 )
 
 // 文件类型图标：文件树、编辑器标签、快速打开、搜索结果、面包屑都用 fileGlyph。默认是彩色底块：

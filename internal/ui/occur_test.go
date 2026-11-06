@@ -9,8 +9,8 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 选中里画出来的空白符号（制表符的箭头）比 mygo 默认的淡，浅色、深色都是。
@@ -27,7 +27,7 @@ func TestWhitespaceFaint(t *testing.T) {
 		tt.Frame()
 		tt.Frame()
 		if d.St.Theme == nil {
-			t.Fatalf("dark=%v 没套 Grove 的代码颜色", dark)
+			t.Fatalf("dark=%v 没套 Holt 的代码颜色", dark)
 		}
 		// mygo 默认是 TextMuted 的 0.45（不透明的 TextMuted 时 A≈115），这里要淡到 0.3 以下
 		got := d.St.Theme.Whitespace

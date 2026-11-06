@@ -12,10 +12,10 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/outline"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/outline"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // paletteRepos 建两个临时仓库：one 里 a.go（10 行）、x/util.go、internal/app/app.go；two 里 y/util.go、app.go。

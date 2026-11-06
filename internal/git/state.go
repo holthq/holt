@@ -8,7 +8,7 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是状态以外 Git 栏和历史要的几样，都是只读的：进行到一半的合并 / 变基、HEAD、还没推送的提交、

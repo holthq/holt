@@ -4,8 +4,8 @@ import (
 	"errors"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Git 日常操作：分支下拉的"合并到当前分支 / 把当前分支变基到"，历史右键的拣选 / 还原 / 重置，

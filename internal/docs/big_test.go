@@ -10,9 +10,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/highlight"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/highlight"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // bigText 是至少 n 字节、像 Go 代码的文字，里面有冲突标记（大文件不该去扫）。

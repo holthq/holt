@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 目录行悬停的大小、最近改动和大仓库一层层找空目录，都在临时仓库上测。

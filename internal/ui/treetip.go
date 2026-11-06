@@ -5,7 +5,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
+	"github.com/holthq/holt/internal/app"
 )
 
 // treeTipGap 是树行提示离行底边多远。

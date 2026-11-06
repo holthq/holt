@@ -6,8 +6,8 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 问题：检查命令（app/lint.go）报的问题。底栏第三页列所有仓库的，按 仓库 → 文件 → 行 排；

@@ -7,9 +7,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 界面测试用 Tester 不开窗口画整个界面：后台回调排进队列，由 wait 推帧时在测试 goroutine 上跑掉。

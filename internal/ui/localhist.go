@@ -6,9 +6,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	lhist "github.com/lemoeade/grove/internal/history" // ui 里已经有 history（右栏）
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	lhist "github.com/holthq/holt/internal/history" // ui 里已经有 history（右栏）
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是右栏里的本地历史（app/localhist.go）：文件历史里和提交混排的本地行，和仓库外、未跟踪的文件

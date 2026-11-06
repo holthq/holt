@@ -6,8 +6,8 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 快速打开 / 命令面板：⌘P 敲名字回车固定打开、焦点给编辑器；:行号 跳行；点标题栏的按钮和列表里的一项；

@@ -8,16 +8,16 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
-// issue #48：文件树的右键菜单是 Grove 自己画的。按住拖、延迟、三角这些在 app/popmenu_test.go 里直接喂事件测；
+// issue #48：文件树的右键菜单是 Holt 自己画的。按住拖、延迟、三角这些在 app/popmenu_test.go 里直接喂事件测；
 // 这里在真界面上（三个仓库）测接线：右键开、描边、点外面关掉且不落到底下的行、灰项悬停出原因、子菜单停一会儿才开、
 // Esc / 失去焦点 / 滚动文件树关掉。设了 WORKBENCH_SHOT 时顺便截图（浅色、深色）。
-func TestTreeGroveMenu(t *testing.T) {
+func TestTreeHoltMenu(t *testing.T) {
 	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
 	gamma.Write("menu.txt", "m\n")
 	gamma.Commit("加 menu.txt")
@@ -168,7 +168,7 @@ func TestTreeGroveMenu(t *testing.T) {
 
 // ⇧F10 / 菜单键：文件树有键盘时在光标那一行左边、紧挨着它下面打开它的菜单，第一项高亮，↓ 回车马上能用；
 // Esc 关了键盘回到文件树。
-func TestTreeGroveMenuByKey(t *testing.T) {
+func TestTreeHoltMenuByKey(t *testing.T) {
 	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
 	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
 	tt, a := k.tt, k.a
@@ -226,8 +226,8 @@ func TestTreeGroveMenuByKey(t *testing.T) {
 }
 
 // 菜单开着时在文件树别处右键：关掉这份、在右键的那一行（或空白处）、指针处开一份新的；右键多选外面的一行照旧：
-// 那一行描边、选中不清。左键点外面只关、被吞掉（TestTreeGroveMenu 测了）。
-func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
+// 那一行描边、选中不清。左键点外面只关、被吞掉（TestTreeHoltMenu 测了）。
+func TestTreeHoltMenuRightClickElsewhere(t *testing.T) {
 	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
 	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
 	tt, a := k.tt, k.a
@@ -307,7 +307,7 @@ func abs(f float64) float64 {
 }
 
 // 高亮项是淡填充（字色的 8%–10%，不超过 12%）、字色不变；叠在面板底上之后字和底至少 4.5:1，浅色深色都量。
-func TestGroveMenuHotContrast(t *testing.T) {
+func TestHoltMenuHotContrast(t *testing.T) {
 	for _, dark := range []bool{false, true} {
 		th := wui.LightTheme()
 		if dark {
@@ -329,8 +329,8 @@ func TestGroveMenuHotContrast(t *testing.T) {
 	}
 }
 
-// Grove 菜单关掉以后键盘回到打开它之前有键盘的元素：Esc、点外面、选了一项都一样（右键标签时文件树有键盘）。
-func TestGroveMenuGivesFocusBack(t *testing.T) {
+// Holt 菜单关掉以后键盘回到打开它之前有键盘的元素：Esc、点外面、选了一项都一样（右键标签时文件树有键盘）。
+func TestHoltMenuGivesFocusBack(t *testing.T) {
 	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
 	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
 	tt, a := k.tt, k.a
@@ -392,7 +392,7 @@ func TestGroveMenuGivesFocusBack(t *testing.T) {
 	}
 }
 
-// ⇧F10 / 菜单键：键盘在历史列表上时开选中那个提交的 Grove 菜单，在那一行左下角，第一项高亮；Esc 关掉。
+// ⇧F10 / 菜单键：键盘在历史列表上时开选中那个提交的 Holt 菜单，在那一行左下角，第一项高亮；Esc 关掉。
 func TestCtxMenuByKey(t *testing.T) {
 	_, _, _, ws := testutil.ThreeRepos(t)
 	a, tt, wait := newUI(t, ws, t.TempDir())
@@ -429,9 +429,9 @@ func TestCtxMenuByKey(t *testing.T) {
 	}
 }
 
-// Grove 菜单的截图（设了 WORKBENCH_SHOT 才跑）：仓库菜单、它的“分支”子菜单（当前分支打勾）、状态栏语言菜单（带勾）、
+// Holt 菜单的截图（设了 WORKBENCH_SHOT 才跑）：仓库菜单、它的“分支”子菜单（当前分支打勾）、状态栏语言菜单（带勾）、
 // 段头分支按钮的菜单，浅色深色各一张。
-func TestGroveMenuShots(t *testing.T) {
+func TestHoltMenuShots(t *testing.T) {
 	shot := os.Getenv("WORKBENCH_SHOT")
 	if shot == "" {
 		t.Skip("WORKBENCH_SHOT 没设")
@@ -509,7 +509,7 @@ func TestGroveMenuShots(t *testing.T) {
 	closeMenu(t, tt)
 }
 
-// menuWithWhy 是现在显示的菜单的项，灰着的照系统菜单那样把原因括在标签后面（withWhy）：Grove 菜单的原因是悬停提示，
+// menuWithWhy 是现在显示的菜单的项，灰着的照系统菜单那样把原因括在标签后面（withWhy）：Holt 菜单的原因是悬停提示，
 // 测试里拼回标签好和原来的断言比。没有分隔线。
 func menuWithWhy(t *testing.T, tt *wui.Tester, a *app.App) []string {
 	t.Helper()

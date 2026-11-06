@@ -9,13 +9,13 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/fonts"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/snippets"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/fonts"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/snippets"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 设置窗口里每一项可选的值（state.json 里存的）对应的名字；显示时过 i18n.T。
@@ -35,8 +35,39 @@ var (
 	webKindNames    = map[string]string{"github": "GitHub", "gitlab": "GitLab", "bitbucket": "Bitbucket", "gitea": "Gitea / Forgejo", "generic": "通用（GitHub 的路径）"}
 )
 
-// settingsPages 是设置窗口顶上的分组。
+// settingsPages 是设置窗口左侧栏的分组。
 var settingsPages = []string{"外观", "编辑器", "格式化", "文件树", "终端", "Git", "片段", "语言", "快捷键"}
+
+// settingsSideW 是设置窗口左侧栏的宽度。
+const settingsSideW = 176
+
+// settingsIcons 是左侧栏每个分组前面的图标，和 settingsPages 一一对应。
+var settingsIcons = []*wui.SVG{
+	icon("palette"), icon("code"), icon("text-align-left"), icon("tree-view"), icon("terminal"),
+	icon("git-branch"), icon("brackets-curly"), icon("text-aa"), icon("sliders-horizontal"),
+}
+
+// settingsNav 是设置窗口左侧栏的一项：图标 + 分组名；当前分组是强调色淡淡一层，悬停一层灰底。
+func settingsNav(c *wui.Context, i int, label string, active bool) wui.Element {
+	t := c.Theme()
+	b := wui.ButtonBase(c).Width(settingsSideW-22).Height(28).Padding(0, 8).Gap(8).Radius(6).AlignItems(wui.Center).Shrink(0).
+		Cursor(wui.CursorPointer).Justify(wui.Start)
+	switch {
+	case active:
+		b.Background(t.Accent.Alpha(0.16))
+	case b.Hovered():
+		b.Background(toolFill(t, 0.06))
+	}
+	fg := t.TextMuted
+	if active {
+		fg = t.Text
+	}
+	b.Children(func() {
+		wui.Icon(c, settingsIcons[i]).FontSize(iconRow).TextColor(fg)
+		wui.Text(c, label).FontSize(12.5).FontWeight(500).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0)
+	})
+	return b
+}
 
 // SettingsView 是设置窗口（⌘,）的内容：顶上分组和搜索框（⌘F 到框里，Esc 清空），下面这一组的设置；搜着的时候是
 // 所有组里对得上的几项，按组分开。改了马上生效（主窗口、开着的终端跟着变），并存进 state.json。
@@ -294,67 +325,82 @@ func SettingsView(a *app.App) func(c *wui.Context) {
 		q := strings.ToLower(strings.TrimSpace(query))
 		c.OnShortcut(wui.Cmd, wui.KeyF, func() { box.Focus(c) })
 		wui.Column(c).Fill().Children(func() {
-			wui.Row(c).Padding(14, 20, 12).Gap(10).Shrink(0).AlignItems(wui.Center).BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-				wui.Segmented(c, &page, pages...).Label(i18n.T("设置分组")).Disabled(q != "").Shrink(0)
-				wui.Box(c).Grow(1)
-				wui.Row(c).Width(200).Shrink(1).MinWidth(120).Children(func() {
-					filterBox(c, &query, &box, i18n.T("搜索设置"), i18n.T("搜索设置"), nil).Tooltip(i18n.T("在所有分组里找设置，名字、说明都算，中英文都行（⌘F）"))
-				})
-				iconButton(c, iconMore, i18n.T("更多"), func() {}).Menu(func(m *wui.Menu) {
-					if m.Item(i18n.T("编辑 JSON…")).Chosen() {
-						a.Update(a.OpenSettingsDoc)
-						toMain()
-					}
-					m.Separator()
-					if m.Item(i18n.T("导出…")).Chosen() {
-						a.ExportSettings(a.SettingsWin)
-					}
-					if m.Item(i18n.T("导入…")).Chosen() {
-						a.ImportSettings(a.SettingsWin)
-					}
-					m.Separator()
-					if m.Item(i18n.T("恢复默认…")).Chosen() {
-						toMain()
-						a.Update(a.ResetSettings)
-					}
-				})
-			})
-			if page == keysPage && q == "" {
-				shortcutsPage(a, c, &keys, toMain)
-				return
-			}
-			wui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
-				wui.Column(c).Padding(20, 28, 28).Gap(14).Children(func() {
-					if q != "" {
-						found := settingsResults(c, rows, q)
-						if keyResults(a, c, q, &keys.rec, func() { page, keys.query, query = keysPage, query, "" }) {
-							found = true
+			wui.Row(c).Grow(1).AlignItems(wui.Stretch).Children(func() {
+				// 左侧栏：搜索框、分组；右边是这一组的设置。
+				wui.Column(c).Width(settingsSideW).Padding(12, 10, 10).Gap(2).Shrink(0).
+					BorderWidth(0, 1, 0, 0).BorderColor(t.Border).Children(func() {
+					wui.Row(c).Shrink(0).Children(func() {
+						filterBox(c, &query, &box, i18n.T("搜索设置"), i18n.T("搜索设置"), nil).Tooltip(i18n.T("在所有分组里找设置，名字、说明都算，中英文都行（⌘F）"))
+					})
+					wui.Box(c).Height(6).Shrink(0)
+					for i, p := range pages {
+						nav := settingsNav(c, i, p, q == "" && page == i)
+						if q == "" && nav.Clicked() {
+							page = i
 						}
-						if !found {
-							wui.Text(c, i18n.T("没有匹配的设置")).FontSize(12.5).TextColor(t.TextMuted).AlignSelf(wui.Center).Margin(24, 0, 0, 0)
-						}
-						return
 					}
-					form := func(after bool) {
-						wui.Form(c, func() {
-							for i, r := range rows {
-								if r.Page == page && afterFoot[r.Label] == after {
-									r.Draw(c.Key(i), i18n.T(r.Label), i18n.T(r.Desc))
-								}
+					wui.Box(c).Grow(1)
+					wui.Row(c).Shrink(0).Children(func() {
+						iconButton(c, iconMore, i18n.T("更多"), func() {}).Menu(func(m *wui.Menu) {
+							if m.Item(i18n.T("编辑 JSON…")).Chosen() {
+								a.Update(a.OpenSettingsDoc)
+								toMain()
+							}
+							m.Separator()
+							if m.Item(i18n.T("导出…")).Chosen() {
+								a.ExportSettings(a.SettingsWin)
+							}
+							if m.Item(i18n.T("导入…")).Chosen() {
+								a.ImportSettings(a.SettingsWin)
+							}
+							m.Separator()
+							if m.Item(i18n.T("恢复默认…")).Chosen() {
+								toMain()
+								a.Update(a.ResetSettings)
 							}
 						})
+					})
+				})
+				// 右边这一页
+				wui.Column(c).Grow(1).MinWidth(0).Children(func() {
+					if page == keysPage && q == "" {
+						shortcutsPage(a, c, &keys, toMain)
+						return
 					}
-					form(false)
-					switch page {
-					case 2:
-						wui.Text(c, formatterFootText()).FontSize(11.5).TextColor(t.TextMuted)
-						form(true)
-						wui.Text(c, lintFootText()).FontSize(11.5).TextColor(t.TextMuted)
-					case 4:
-						wui.Text(c, i18n.T("Shell、回滚大小、光标闪烁、⌥ 作为 Meta 键和后台运行新开的终端才用（开着的按“重新启动终端”）；字体、配色和选中即复制马上换。")).FontSize(11.5).TextColor(t.TextMuted)
-					case 6:
-						snippetTables(a, c)
-					}
+					wui.Scroll(c).Grow(1).MinHeight(0).Children(func() {
+						wui.Column(c).Padding(20, 28, 28).Gap(14).Children(func() {
+							if q != "" {
+								found := settingsResults(c, rows, q)
+								if keyResults(a, c, q, &keys.rec, func() { page, keys.query, query = keysPage, query, "" }) {
+									found = true
+								}
+								if !found {
+									wui.Text(c, i18n.T("没有匹配的设置")).FontSize(12.5).TextColor(t.TextMuted).AlignSelf(wui.Center).Margin(24, 0, 0, 0)
+								}
+								return
+							}
+							form := func(after bool) {
+								wui.Form(c, func() {
+									for i, r := range rows {
+										if r.Page == page && afterFoot[r.Label] == after {
+											r.Draw(c.Key(i), i18n.T(r.Label), i18n.T(r.Desc))
+										}
+									}
+								})
+							}
+							form(false)
+							switch page {
+							case 2:
+								wui.Text(c, formatterFootText()).FontSize(11.5).TextColor(t.TextMuted)
+								form(true)
+								wui.Text(c, lintFootText()).FontSize(11.5).TextColor(t.TextMuted)
+							case 4:
+								wui.Text(c, i18n.T("Shell、回滚大小、光标闪烁、⌥ 作为 Meta 键和后台运行新开的终端才用（开着的按“重新启动终端”）；字体、配色和选中即复制马上换。")).FontSize(11.5).TextColor(t.TextMuted)
+							case 6:
+								snippetTables(a, c)
+							}
+						})
+					})
 				})
 			})
 		})
@@ -408,7 +454,7 @@ func lintFootText() string {
 const (
 	lintFoot         = "命令读磁盘上存好的文件，用 login shell 在仓库根目录（仓库外的文件：文件所在的目录）跑，60 秒超时；输出（标准输出、标准错误都看）里认 路径:行:列: 信息 和 tsc 的 路径(行,列): error TS…: 信息 两种行，error / warning / note 这些级别词认得，没写算错误。{file} 换成文件的完整路径（只换掉这个文件的问题），{dir} 换成文件所在的目录（仓库里的路径，根目录是 .；换掉这个目录的），都不带时换掉这个仓库这种语言的全部。空着用内置默认（灰字），写 - 就不检查这种语言。"
 	formatterFoot    = "命令从标准输入读文件内容、把格式化好的写到标准输出，用 login shell 在仓库根目录（仓库外的文件：文件所在的目录）跑，10 秒超时；{file} 换成文件的完整路径。空着用内置默认（灰字），写 - 就不格式化这种语言。"
-	termdDesc        = "shell 跑在一个独立的后台进程里，关窗口、退出 Grove 都不断；再打开同一个工作区接回去。多一个常驻进程（约 %d MB）。新开的终端生效"
+	termdDesc        = "shell 跑在一个独立的后台进程里，关窗口、退出 Holt 都不断；再打开同一个工作区接回去。多一个常驻进程（约 %d MB）。新开的终端生效"
 	webHostsDesc     = "“在网页打开”的地址怎么拼：github.com、bitbucket.org，主机名里带 gitlab、gitea、forgejo、codeberg 的自己认得；自建的主机名不带这些字时在这里指定，别的按 GitHub 的路径拼"
 	snippetDirDesc   = "一种语言一个 JSON（go.json、python.json…；global.json 所有语言都有），VS Code 的片段格式：认 $1、${1:默认}、$0，不认变量和选择项。文件里的同名片段覆盖内置的；改了自动重读。敲前缀时补全里有，Tab 插入后 Tab / ⇧Tab 在跳位之间走；命令面板“插入片段…”"
 	termProfilesDesc = "别的 shell、带参数、加环境变量开终端，最多 %d 个：底栏「+」右键或 ⌥点、终端菜单、“用配置新建终端…”里挑。新开的终端生效"

@@ -7,8 +7,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Git 栏里的未跟踪目录：git status 不带 -uall 时把整个未跟踪的目录折叠成一项（"harness/"，

@@ -10,11 +10,11 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/watch"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/watch"
 )
 
 // excludeWs 写一个带 settings["files.exclude"] 的工作区文件。

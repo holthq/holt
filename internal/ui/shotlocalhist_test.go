@@ -8,11 +8,11 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	lhist "github.com/lemoeade/grove/internal/history" // ui 里已经有 history（右栏）
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	lhist "github.com/holthq/holt/internal/history" // ui 里已经有 history（右栏）
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // TestScreenshotLocalHistory 是本地历史 + 快捷键的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一套，临时仓库 shop：
@@ -101,7 +101,7 @@ func TestScreenshotLocalHistory(t *testing.T) {
 	wait("drafts/plan.md 的 diff", func() bool { d := a.CurrentDoc(); return d != nil && !d.Loading && d.Change.Path == "drafts/plan.md" })
 	shots(tt, "gitbar-untracked-dir")
 
-	sv := wui.NewTester(SettingsView(a), 720, 560)
+	sv := wui.NewTester(SettingsView(a), 760, 560)
 	sv.SetScale(2)
 	sv.SetLocale(i18n.Locale())
 	sv.Frame()

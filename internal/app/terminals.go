@@ -15,10 +15,10 @@ import (
 	"github.com/egoist/mygo/plugins/terminal"
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/termd"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/termd"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是底栏的终端：每个仓库一排终端标签，每个标签一格或分屏的几格，每格一个 shell。

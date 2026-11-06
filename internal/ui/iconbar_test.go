@@ -4,9 +4,9 @@ import (
 	"testing"
 
 	wui "github.com/egoist/mygo/ui"
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 段头只有名字、分支、拉取和推送：改动数只在收起时出现（展开时分组标题上有），没有"全部暂存"。

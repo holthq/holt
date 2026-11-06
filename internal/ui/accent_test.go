@@ -7,9 +7,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 强调色：跟随系统时主题不动，默认（存成 ""）是钢蓝；选了的那个浅色、深色主题各换一套，悬停 / 按下往黑（深色往白）调，

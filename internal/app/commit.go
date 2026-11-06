@@ -7,9 +7,9 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是提交框的几样：修改上一次提交（amend）、↑ / ↓ 翻以前写过的提交信息，和中止进行到一半的

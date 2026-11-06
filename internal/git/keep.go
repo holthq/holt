@@ -11,7 +11,7 @@ import (
 	"sync/atomic"
 	"time"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // Keep 是一条写命令的超时钟：默认 opTimeout 到点就结束命令（和以前一样）；

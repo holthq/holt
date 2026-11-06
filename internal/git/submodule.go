@@ -7,7 +7,7 @@ import (
 	"path/filepath"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是子模块（只读）：.gitmodules 里登记了哪些、父仓库记的是哪次提交、初始化了没有。子模块是另一个仓库，

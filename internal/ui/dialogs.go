@@ -5,8 +5,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // dialogs 画窗口里的对话框：确认、出错、新建分支、工作树、快速打开 / 命令面板、关标签和退出时的"没保存"、凭据。

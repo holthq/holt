@@ -3,7 +3,7 @@ package ui
 import (
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // dlgKind 是对话框头上的图标块：问的、提示是强调色，警告、危险、出错是红色；dlgPlain 不画（表单）。

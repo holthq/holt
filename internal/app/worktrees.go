@@ -11,9 +11,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Git 工作树（git worktree）：工作树归主仓库管，Git 栏里主仓库段下一个可折叠的"工作树"块列出它链接的

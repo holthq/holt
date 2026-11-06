@@ -8,10 +8,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这里的测试都在 t.TempDir() 的临时仓库上跑，不开窗口：后台回调排进队列，由 wait 在测试 goroutine 上跑掉。

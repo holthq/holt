@@ -3,8 +3,8 @@ package app
 import (
 	"slices"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 同一个文件在两组里开（镜像标签）：view.openInOtherGroup（⇧⌘\）在另一组里再开一份，和正本共用缓冲区、

@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 比较两个文件：文件行右键"选择以进行比较"记下一个，再在别的文件上"与 a.go 比较"，

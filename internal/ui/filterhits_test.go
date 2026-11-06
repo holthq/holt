@@ -4,7 +4,7 @@ import (
 	"image/color"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 筛选的行标出命中的字：名字里命中的（notes/docs.txt 的 docs）和后面淡字目录里命中的（docs/api.md 的 docs）

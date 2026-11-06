@@ -1,8 +1,8 @@
 package ui
 
 import (
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 
 	wui "github.com/egoist/mygo/ui"
 )

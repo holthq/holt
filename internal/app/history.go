@@ -6,11 +6,11 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/graph"
-	"github.com/lemoeade/grove/internal/history"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/graph"
+	"github.com/holthq/holt/internal/history"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是右栏历史的状态：分页读 git log，展开一个提交看它改的文件，

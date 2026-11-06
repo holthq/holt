@@ -14,8 +14,8 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是克隆仓库（gaps 2.9）：对话框填地址、放到哪、目录名，git clone --progress 在父目录里跑（git.RunStream，

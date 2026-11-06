@@ -4,9 +4,9 @@ import (
 	"slices"
 	"strconv"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 状态栏里能点的语言、换行、缩进：都只管这一个标签。语言、缩进记进会话（Tab.Lang / Tab.Indent），

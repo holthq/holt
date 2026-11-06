@@ -11,12 +11,12 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/termd"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/termd"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 终端后台进程（termd）的测试不起第二个进程：app.TermdStart 换成在测试进程里起一个 termd.Server，
@@ -484,7 +484,7 @@ func TestSettingsTerminalDaemon(t *testing.T) {
 	a, tt, wait := termUI(t, ws, state)
 	wait("git status", idle(a.Repos[0]))
 	readyPane(t, a, tt)
-	st := wui.NewTester(SettingsView(a), 600, 1000)
+	st := wui.NewTester(SettingsView(a), 760, 1000)
 	st.SetLocale(i18n.Locale())
 	st.Frame()
 	mustClick(t, st, "终端")

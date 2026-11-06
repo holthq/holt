@@ -165,7 +165,7 @@ func lookPath(name string, env []string) string {
 	return name
 }
 
-// shellEnv 是给 shell 的环境：应用的，加上终端插件设的那几个和 TERM_PROGRAM=Grove。
+// shellEnv 是给 shell 的环境：应用的，加上终端插件设的那几个和 TERM_PROGRAM=Holt。
 func shellEnv(base []string) []string {
 	env := append([]string(nil), base...)
 	set := func(kv string) {
@@ -188,7 +188,7 @@ func shellEnv(base []string) []string {
 	}
 	set("TERM=xterm-256color")
 	set("COLORTERM=truecolor")
-	set("TERM_PROGRAM=Grove")
+	set("TERM_PROGRAM=Holt")
 	if !has("LANG") && !has("LC_ALL") && !has("LC_CTYPE") {
 		set("LANG=en_US.UTF-8")
 	}

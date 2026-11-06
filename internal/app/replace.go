@@ -11,9 +11,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/search"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/search"
 )
 
 // 这个文件是搜索页的替换（⇧⌘H）：结果的预览里画出换成什么，可以排除某几处，逐处 / 逐个文件 / 全部替换。

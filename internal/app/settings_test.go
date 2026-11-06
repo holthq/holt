@@ -12,9 +12,9 @@ import (
 	"github.com/egoist/mygo/plugins/terminal"
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 func TestPullArgs(t *testing.T) {

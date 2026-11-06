@@ -3,7 +3,7 @@ package app
 import (
 	"slices"
 
-	"github.com/lemoeade/grove/internal/docs"
+	"github.com/holthq/holt/internal/docs"
 )
 
 // 这个文件是在当前编辑器组的标签之间切：⇧⌘[ / ⇧⌘]、⌥⌘← / ⌥⌘→ 按标签条的顺序走（到头绕回），

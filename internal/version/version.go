@@ -43,5 +43,5 @@ func Platform() string { return runtime.GOOS + "/" + runtime.GOARCH }
 
 // String 是一行的版本信息，写在日志开头。
 func String() string {
-	return fmt.Sprintf("Grove %s (mygo %s, %s, %s)", App, Mygo(), Go(), Platform())
+	return fmt.Sprintf("Holt %s (mygo %s, %s, %s)", App, Mygo(), Go(), Platform())
 }

@@ -6,9 +6,9 @@ import (
 	"os"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是交互式变基向导：右栏历史里右键一个提交"从这里开始交互式变基…"，从 HEAD 到它的提交开成一个标签，

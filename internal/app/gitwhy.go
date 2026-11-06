@@ -5,8 +5,8 @@ import (
 	"strconv"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Git 操作"现在为什么不能做"的唯一出处：每种操作一个 XxxWhy，空串 = 能做，不然是一个短语。

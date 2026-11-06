@@ -8,11 +8,11 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // wsMenu 是标题栏工作区按钮的菜单。
@@ -451,7 +451,7 @@ func repoMoreItems(a *app.App, m menu, r *app.Repo, tree bool) {
 		}
 	}
 	// 和拖仓库行一样（MoveRepo）：只在同一组里挪，到头了灰着。键盘走法：文件树里光标停在仓库行上按 ⇧F10 / 菜单键，
-	// 在那一行下面打开 Grove 画的这份菜单（第一项高亮），↑↓ 挪到"更多"、→ 进去，再挪到上移 / 下移、回车
+	// 在那一行下面打开 Holt 画的这份菜单（第一项高亮），↑↓ 挪到"更多"、→ 进去，再挪到上移 / 下移、回车
 	m.Separator()
 	i := slices.Index(a.Repos, r)
 	if m.Item(i18n.T("上移")).Disabled(!a.CanMoveRepo(r, i-1)).Chosen() {

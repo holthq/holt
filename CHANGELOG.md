@@ -4,6 +4,13 @@
 
 ## 未发布
 
+- 设置窗口改成左侧栏布局：搜索框和 9 个分组（带图标）在左边，右边是这一组的设置；搜索时分组变灰、选项按组列出。
+  默认窗口大一点（760×540）。
+- 应用菜单和关于窗口加了「检查更新」：查 GitHub 上 holthq/holt 的最新 release，有新版本问要不要打开发布页；
+  开发版（`version.App == "dev"`）不查。只在点了菜单时联网，启动、刷新都不查。
+- 改名 Holt（组织 holthq）：用户看得到的名字全换（窗口标题、关于、菜单、`TERM_PROGRAM`、导出默认文件名 `holt-settings.json`），
+  bundle id 换成 `io.github.holthq.holt`；第一次启动把 `~/Library/Application Support/Grove`（更早是 Workbench）和
+  `~/Library/Logs/…` 里的状态搬到 Holt 下。Holt 是 [lemoeade/grove](https://github.com/lemoeade/grove) 的 fork，MIT，保留原作者的版权行。
 - 编辑器、终端和 diff 的等宽字体优先用系统里的 JetBrains Mono：只装了普通的版本（没有图标字形）也用它，缺的图标由系统回退补上；
   别的 Nerd Font（Meslo、Hack……）排到后面，都没装时照旧用自带的 JetBrainsMono Nerd Font。
 - 拖到程序坞图标上的文件夹（还有 `open -a`、命令行再开一次）在新窗口打开（#58）：已经开着的工作区或仓库叫到前面（仓库跳到它那一段），

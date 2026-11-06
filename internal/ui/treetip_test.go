@@ -6,8 +6,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 文件树行的悬停提示（#20）：停 0.6 s 还没有（mygo 全局的延迟），停满 1 s 才出，画在行的下方、不盖上一行；

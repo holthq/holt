@@ -5,7 +5,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 装订线改动块的就地卡：点块里的行号（OnGutterClick）弹卡，头一行“第 1 / 2 处改动”、−1 +1，下面是 HEAD 里的旧行；

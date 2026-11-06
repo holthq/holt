@@ -1,4 +1,4 @@
-// Grove（以前叫 Workbench）是一个"多仓库工作台"：左边侧栏（文件 / 搜索 / Git），中间标签页里的
+// Holt（以前叫 Grove，更早叫 Workbench）是一个"多仓库工作台"：左边侧栏（文件 / 搜索 / Git），中间标签页里的
 // 编辑器和 Diff，右边提交历史，下面每个仓库一个终端和操作输出。读仓库状态都是只读的
 // git 命令；会改仓库的操作（暂存、提交、切分支、拉取推送……）和保存文件只在用户明确
 // 点了按钮、菜单或按了快捷键后才做。
@@ -7,16 +7,16 @@
 // （第一次用、或最近的都打不开了是空工作区：侧栏两个按钮打开文件夹 / 工作区文件）；环境变量 WORKBENCH_WORKSPACE
 // 或第一个命令行参数（.code-workspace）再开一个（已经开着就叫到前面）。开着时用 ⌘O 或菜单换，⌥⌘N 新窗口。
 //
-// 只开一个实例：`Grove 目录|文件` 再启动时把路径交给开着的那个（mygo 的单实例锁），
-// `open -a Grove 路径` 和拖到 Dock 图标上的经 OnOpenFile 来（分不出是哪种，一起走 app.Windows.Route）：
+// 只开一个实例：`Holt 目录|文件` 再启动时把路径交给开着的那个（mygo 的单实例锁），
+// `open -a Holt 路径` 和拖到 Dock 图标上的经 OnOpenFile 来（分不出是哪种，一起走 app.Windows.Route）：
 // .code-workspace 开新窗口（或叫到前面）；目录开着的叫到前面、前台是空工作区就在它里面开、不然开新窗口；
 // 文件交给前台窗口的 App.OpenArgs。拖进窗口里的（OnFileDrop）照旧走 OpenArgs，目录问要不要加进当前工作区。
-// 崩溃（任何 goroutine 里没接住的 panic）和后台出的错写进 ~/Library/Logs/Grove/（internal/crash）。
+// 崩溃（任何 goroutine 里没接住的 panic）和后台出的错写进 ~/Library/Logs/Holt/（internal/crash）。
 //
-// `Grove termd <套接字> [日志]` 是终端后台进程（internal/termd）：设置里开了"关掉窗口后终端继续在后台运行"时
+// `Holt termd <套接字> [日志]` 是终端后台进程（internal/termd）：设置里开了"关掉窗口后终端继续在后台运行"时
 // 应用带这个参数再起一个自己，main 第一行就分出去，不开窗口、不抢单实例锁。
 //
-// `Grove askpass <提示>` 是 git / ssh 要凭据时调的 helper（internal/askpass）：同样第一行就分出去，
+// `Holt askpass <提示>` 是 git / ssh 要凭据时调的 helper（internal/askpass）：同样第一行就分出去，
 // 把提示经 unix 套接字交给开着的应用弹框，回答写到 stdout。
 package main
 
@@ -30,16 +30,16 @@ import (
 	"github.com/egoist/mygo"
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/askpass"
-	"github.com/lemoeade/grove/internal/crash"
-	"github.com/lemoeade/grove/internal/fonts"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/render"
-	"github.com/lemoeade/grove/internal/termd"
-	"github.com/lemoeade/grove/internal/ui"
-	"github.com/lemoeade/grove/internal/version"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/askpass"
+	"github.com/holthq/holt/internal/crash"
+	"github.com/holthq/holt/internal/fonts"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/render"
+	"github.com/holthq/holt/internal/termd"
+	"github.com/holthq/holt/internal/ui"
+	"github.com/holthq/holt/internal/version"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 func main() {
@@ -71,7 +71,7 @@ func main() {
 		}
 	}
 
-	// 改名 Grove：旧的状态目录、日志目录搬过来（migrate.go）。要在下面第一次取 mygo 的路径之前——取了就建出空的新目录。
+	// 改名 Holt：旧的状态目录、日志目录搬过来（migrate.go）。要在下面第一次取 mygo 的路径之前——取了就建出空的新目录。
 	moved := migrateDirs(mygo.App.Name())
 
 	// 日志：WORKBENCH_LOGS=<目录> 换个地方（测崩溃日志时不动平时的）；WORKBENCH_PANIC=1 启动 3 秒后在后台 goroutine 里 panic。
@@ -190,10 +190,10 @@ func main() {
 			settingsApp = a
 			settingsWin = mygo.NewWindow(mygo.WindowOptions{
 				Title:           i18n.T("设置"),
-				Width:           640,
-				Height:          480,
-				MinWidth:        560,
-				MinHeight:       360,
+				Width:           760,
+				Height:          540,
+				MinWidth:        700,
+				MinHeight:       420,
 				StateKey:        "settings",
 				DisableMaximize: true,
 				Content:         wui.View(ui.SettingsView(a)),
@@ -214,7 +214,7 @@ func main() {
 			}
 			aboutApp = a
 			aboutWin = mygo.NewWindow(mygo.WindowOptions{
-				Title:           i18n.T("关于 Grove"),
+				Title:           i18n.T("关于 Holt"),
 				Width:           460,
 				Height:          640,
 				MinWidth:        400,

@@ -5,8 +5,8 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // TestPanelShots 在 WORKBENCH_SHOT=目录 时把 #56 改过的几处截下来（临时仓库，不读真实工作区）：

@@ -4,8 +4,8 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是子模块：文件树里是一行（不展开），双击把它添加为工作区里的仓库（照"所有仓库同时可见"，不在树里另开一棵），

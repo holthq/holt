@@ -8,9 +8,9 @@ import (
 	"path/filepath"
 )
 
-// oldName 是改名 Grove 之前的应用名：状态目录 ~/Library/Application Support/Workbench/、
-// 日志目录 ~/Library/Logs/Workbench/ 都按它取。
-const oldName = "Workbench"
+// oldNames 是改名 Holt 之前的应用名，新的在前：状态目录 ~/Library/Application Support/<名字>/、
+// 日志目录 ~/Library/Logs/<名字>/ 都按它取。以后再加新名字，往最前面加。
+var oldNames = []string{"Grove", "Workbench"}
 
 // rename 是搬目录先试的那一步（测试换掉它，走拷贝那条路）。
 var rename = os.Rename
@@ -20,23 +20,33 @@ var rename = os.Rename
 var lineLogf = fmt.Sprintf
 
 // migrateDirs 把改名前的状态目录和日志目录搬到新名字 name 下，要在第一次取 mygo 的路径之前调
-// （mygo.App.Path 会先建出空的新目录，那就搬不了了）。只在 name 是 Grove（打包的应用）时搬：
+// （mygo.App.Path 会先建出空的新目录，那就搬不了了）。只在 name 是 Holt（打包的应用）时搬：
 // go run / go test 的名字是可执行文件名 workbench，在不分大小写的盘上就是旧目录本身。
 // 设了 WORKBENCH_STATE 或 WORKBENCH_LOGS（量内存、冒烟、手测用的另一份）什么都不搬。
 // 新目录已经有了、旧的没有，都不动。返回给日志的几行（日志这时还没接上）。
 func migrateDirs(name string) []string {
-	if name != "Grove" || os.Getenv("WORKBENCH_STATE") != "" || os.Getenv("WORKBENCH_LOGS") != "" {
+	if name != "Holt" || os.Getenv("WORKBENCH_STATE") != "" || os.Getenv("WORKBENCH_LOGS") != "" {
 		return nil
 	}
 	var lines []string
 	if conf, err := os.UserConfigDir(); err == nil {
-		lines = append(lines, migrateDir(lineLogf("状态目录"), filepath.Join(conf, oldName), filepath.Join(conf, name))...)
+		lines = append(lines, migrateFrom(lineLogf("状态目录"), conf, name)...)
 	}
 	if home, err := os.UserHomeDir(); err == nil {
 		logs := filepath.Join(home, "Library", "Logs")
-		lines = append(lines, migrateDir(lineLogf("日志目录"), filepath.Join(logs, oldName), filepath.Join(logs, name))...)
+		lines = append(lines, migrateFrom(lineLogf("日志目录"), logs, name)...)
 	}
 	return lines
+}
+
+// migrateFrom 按 oldNames 从新到旧试：找到旧目录就搬（新目录已经有了、旧的没有，migrateDir 自己不动）。
+func migrateFrom(what, parent, name string) []string {
+	for _, old := range oldNames {
+		if lines := migrateDir(what, filepath.Join(parent, old), filepath.Join(parent, name)); lines != nil {
+			return lines
+		}
+	}
+	return nil
 }
 
 // migrateDir 把目录 old 搬成 dir：先 rename（同一个盘上，一下就好）；不行就整个拷到 dir 旁边的临时目录、
@@ -50,7 +60,7 @@ func migrateDir(what, old, dir string) []string {
 	}
 	err := rename(old, dir)
 	if err == nil {
-		return []string{lineLogf("%s从 %s 搬到 %s（改名 Grove）", what, old, dir)}
+		return []string{lineLogf("%s从 %s 搬到 %s（改名 Holt）", what, old, dir)}
 	}
 	tmp := dir + ".migrating"
 	os.RemoveAll(tmp)
@@ -62,7 +72,7 @@ func migrateDir(what, old, dir string) []string {
 		os.RemoveAll(tmp)
 		return []string{lineLogf("%s没搬成：改名 %v；拷完改名 %v。用新的空目录，旧的 %s 还在", what, err, rerr, old)}
 	}
-	return []string{lineLogf("%s从 %s 拷到 %s（改名 Grove；直接改名不行：%v），旧的留着", what, old, dir, err)}
+	return []string{lineLogf("%s从 %s 拷到 %s（改名 Holt；直接改名不行：%v），旧的留着", what, old, dir, err)}
 }
 
 // copyTree 把目录 src 拷成 dst（dst 不能已有）：目录、普通文件（权限照旧）、符号链接；套接字这类跳过

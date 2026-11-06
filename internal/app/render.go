@@ -1,6 +1,6 @@
 package app
 
-import "github.com/lemoeade/grove/internal/render"
+import "github.com/holthq/holt/internal/render"
 
 // Renderer 是这个窗口画 Markdown 预览里 Mermaid 图和公式的渲染器（internal/render）：第一次要时建，
 // WebView 等真有东西要画才建，60 秒没活自己销毁。设置里关了时关掉、返回 nil；没有窗口、测试里也没给 RenderOpen 时也是 nil，

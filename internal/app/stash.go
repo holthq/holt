@@ -5,9 +5,9 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是贮藏（git stash）：贮藏改动、Git 栏里每个仓库段的贮藏列表上的应用 / 弹出 / 丢弃、展开看文件、只应用其中几个文件，

@@ -8,8 +8,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 最大化底栏（⇧⌘J）：底栏占掉编辑区那块（终端在下面是高度、在右边是宽度），主区和拖条不画；

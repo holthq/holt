@@ -6,7 +6,7 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件把命令注册表变成菜单栏。菜单项一律不置灰（原生菜单的可用状态要每帧同步，
@@ -129,7 +129,7 @@ func (a *App) profileMenu() *mygo.MenuItem {
 	return &mygo.MenuItem{Label: i18n.T("用配置新建终端"), Submenu: items}
 }
 
-// appMenu 是菜单栏最左边的应用菜单：应用分组的命令（关于 Grove、设置…），加上系统的服务、隐藏、退出。
+// appMenu 是菜单栏最左边的应用菜单：应用分组的命令（关于 Holt、检查更新、设置…），加上系统的服务、隐藏、退出。
 // "关于"是自己的窗口（版本、日志目录、许可），不用系统的关于面板。
 func (a *App) appMenu() *mygo.MenuItem {
 	var items []*mygo.MenuItem

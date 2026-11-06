@@ -3,9 +3,9 @@ package ui
 import (
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/graph"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/graph"
 )
 
 // 这个文件画右栏历史每行最左边的提交图：泳道算法在 internal/graph，读历史时就算好了（History.Graph），这里只按行画。

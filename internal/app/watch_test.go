@@ -11,10 +11,10 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/watch"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/watch"
 )
 
 // 基本验收：开着监听，外部改文件、外部提交、外部切分支之后跟上——变更数、打开的文件、历史和分支。

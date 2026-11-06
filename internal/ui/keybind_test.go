@@ -7,9 +7,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 设置 → 快捷键：搜到命令面板，选中点“改…”开录键卡片；按 ⌘K 提示和“运行 git 命令…”冲突，回车写进 keybindings.json，
@@ -34,7 +34,7 @@ func TestKeyRecorder(t *testing.T) {
 		}
 		return string(b)
 	}
-	st := wui.NewTester(SettingsView(a), 720, 520)
+	st := wui.NewTester(SettingsView(a), 760, 520)
 	st.Frame()
 	mustClick(t, st, "快捷键")
 	if !st.HasText("命令面板…") || !st.HasText("⇧⌘P") {
@@ -107,7 +107,7 @@ func TestKeyRecorder(t *testing.T) {
 	}
 
 	// 设置的搜索框：搜 cmd+shift+p 出命令面板那行
-	st2 := wui.NewTester(SettingsView(a), 720, 520)
+	st2 := wui.NewTester(SettingsView(a), 760, 520)
 	st2.Frame()
 	mustClick(t, st2, "搜索设置")
 	st2.Type("cmd+shift+p")

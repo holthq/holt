@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 不开 termd 的回滚：关窗口时这一格的回滚写进 termhist（超过上限从一行的开头截，留最后的），会话里记着文件名；

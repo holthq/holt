@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 调仓库顺序：工作区文件里的那组写回 folders（只换先后，注释、name、别的设置原样），挪完 Repos 的顺序和

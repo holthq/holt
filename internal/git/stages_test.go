@@ -5,7 +5,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 冲突的"两边的 diff"（Code 'S'）：旧的一边是索引里的 :2（我们的），新的是 :3（他们的）；

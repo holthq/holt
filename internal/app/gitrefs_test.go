@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // refsRepo 是 base → main two（已推送到临时裸远程，有上游），feature 从 base 分出、有一个自己的提交。

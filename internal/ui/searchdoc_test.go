@@ -6,9 +6,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 搜索编辑器：搜索框里 ⌥⏎ 搜完开成只读的纯文本标签，顶上一行是怎么打开、上下文行数、重新搜索；

@@ -8,10 +8,10 @@ import (
 	"sync/atomic"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/watch"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/watch"
 )
 
 // 文件树里的符号链接：整棵读时已跟踪的看索引（mode 120000）、未跟踪的看磁盘，指向目录的在树里也是文件；

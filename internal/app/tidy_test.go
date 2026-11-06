@@ -9,8 +9,8 @@ import (
 
 	"golang.org/x/text/encoding/traditionalchinese"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 保存时整理：去行尾空白（光标所在的行、Markdown 的两空格硬换行不动）、补末尾换行（CRLF 的文件补 CRLF），

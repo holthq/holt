@@ -9,9 +9,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // gatedBlobs 把读 HEAD 版本换成要等放行的：每次读都等 release 关掉（或被放行一次），数读了几次。

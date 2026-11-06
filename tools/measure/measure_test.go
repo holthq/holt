@@ -9,8 +9,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 量内存的脚本：两个 zsh 脚本语法对、report.py 的自测过、种子按工作区换对（MEASURE_DRY 只造 state.json，不等空闲、不起应用）。
@@ -48,12 +48,12 @@ func TestMeasureScripts(t *testing.T) {
 	if err := os.WriteFile(ws, []byte(`{"folders": [`+folders+`], "settings": {}}`), 0o644); err != nil {
 		t.Fatal(err)
 	}
-	app := filepath.Join(t.TempDir(), "Grove.app")
+	app := filepath.Join(t.TempDir(), "Holt.app")
 	os.MkdirAll(filepath.Join(app, "Contents", "MacOS"), 0o755)
-	os.WriteFile(filepath.Join(app, "Contents", "MacOS", "Grove"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
+	os.WriteFile(filepath.Join(app, "Contents", "MacOS", "Holt"), []byte("#!/bin/sh\nexit 0\n"), 0o755)
 	os.WriteFile(filepath.Join(app, "Contents", "Info.plist"), []byte(`<?xml version="1.0" encoding="UTF-8"?>
 <!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
-<plist version="1.0"><dict><key>CFBundleExecutable</key><string>Grove</string><key>CFBundleShortVersionString</key><string>9.9.9</string></dict></plist>
+<plist version="1.0"><dict><key>CFBundleExecutable</key><string>Holt</string><key>CFBundleShortVersionString</key><string>9.9.9</string></dict></plist>
 `), 0o644)
 	out := t.TempDir()
 	dry := func(label, seed string) *workspace.State {

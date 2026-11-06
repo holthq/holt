@@ -19,11 +19,11 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/highlight"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/outline"
-	"github.com/lemoeade/grove/internal/snippets"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/highlight"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/outline"
+	"github.com/holthq/holt/internal/snippets"
 )
 
 // MaxEditBytes 是能编辑的最大文件；更大的文本只读打开（Doc.Big），图片不打开。

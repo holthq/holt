@@ -9,8 +9,8 @@ import (
 
 	"github.com/egoist/mygo/plugins/terminal"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/termd"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/termd"
 )
 
 // 这个文件是终端后台进程（internal/termd）在应用这边：设置里开了"关掉窗口后终端继续在后台运行"，

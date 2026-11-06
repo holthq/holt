@@ -8,10 +8,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 设置窗口的搜索：⌘F 到搜索框；中文、英文都认，名字、说明、分组名都算；结果按分组分开、组名做小标题；
@@ -20,7 +20,7 @@ func TestSettingsSearch(t *testing.T) {
 	t.Cleanup(func() { i18n.Set("") })
 	_, ws := testutil.TempRepo(t)
 	a, _, _ := newUI(t, ws, "")
-	sv := wui.NewTester(SettingsView(a), 640, 560)
+	sv := wui.NewTester(SettingsView(a), 760, 560)
 	sv.SetLocale(i18n.Locale())
 	sv.Frame()
 	mustText(t, sv, "界面缩放（%）")
@@ -156,7 +156,7 @@ func TestZoomKeys(t *testing.T) {
 	}
 	tt.Frame()
 	if !a.Menu.IsOpen() {
-		t.Fatal("缩放那格该开 Grove 菜单")
+		t.Fatal("缩放那格该开 Holt 菜单")
 	}
 	if err := chooseMenu(t, tt, "150%"); err != nil {
 		t.Fatalf("缩放菜单：%v %q", err, shownMenu(t, tt))

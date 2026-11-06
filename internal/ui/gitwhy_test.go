@@ -5,8 +5,8 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 灰着的 Git 操作写明原因：和 origin 一致时"更多 git 操作"菜单里推送灰着、标签后面括着原因，推送按钮的提示也是；

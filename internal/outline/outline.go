@@ -14,7 +14,7 @@ import (
 
 	mdparser "github.com/egoist/mygo/ui/markdown/parser"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // MaxBytes 是肯解析的最大文本：再大的没有大纲。

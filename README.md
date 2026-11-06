@@ -1,20 +1,22 @@
-# Grove
+# Holt
 
 中文 · [English](README.en.md)
 
-Grove 是一个 macOS 多仓库工作台，可以在同一个窗口里浏览文件、编辑代码、查看 Git 改动和提交历史，以及使用终端。
+Holt 是一个 macOS 多仓库工作台，可以在同一个窗口里浏览文件、编辑代码、查看 Git 改动和提交历史，以及使用终端。
 工作区里的所有仓库都会显示在文件树和 Git 栏中，方便一起查看各个仓库的改动。
 
-Grove 使用 Go 编写，界面由 [mygo](https://github.com/egoist/mygo) 原生绘制。打开五个仓库时，空闲内存占用约为 79 MiB。
+Holt 使用 Go 编写，界面由 [mygo](https://github.com/egoist/mygo) 原生绘制。打开五个仓库时，空闲内存占用约为 79 MiB。
 
-![Grove](docs/screenshots/light.png)
+Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核都从那里长出来，保留 MIT 许可和原作者的版权行。
+
+![Holt](docs/screenshots/light.png)
 
 ## 三条原则
 
 - **所有仓库同时可见**：文件树和 Git 栏同时列出所有仓库，搜索、历史和终端也按仓库组织。
 - **由你决定何时修改**：自动刷新只执行只读的 Git 命令（设置 `GIT_OPTIONAL_LOCKS=0`，不修改索引）。暂存、提交、推送等操作
   都需要手动触发，可能造成数据丢失的操作会先要求确认。
-- **不主动上传数据**：只有你发起抓取、拉取、推送或克隆等 Git 操作时，Grove 才会连接远程仓库。
+- **不主动上传数据**：只有你发起抓取、拉取、推送或克隆等 Git 操作时，Holt 才会连接远程仓库。
 
 ## 功能
 
@@ -39,17 +41,17 @@ Grove 使用 Go 编写，界面由 [mygo](https://github.com/egoist/mygo) 原生
   终端里跑着 claude、codex 等 agent 时，标签上会标出它在等你（琥珀色圆点：响铃或通知了，切进去就消失）还是在运行（转圈）；别的 agent 命令可以在设置里加。
 - **搜索和导航**：支持跨仓库搜索和替换。⌘P 查找文件，⇧⌘P 打开命令面板，⌘T 跳转到符号；⇧⌘[ / ⇧⌘] 切上一个 / 下一个标签，⌃Tab 切回上一个用过的标签。
 - **本地历史**：每次保存都会保留快照，方便找回误改或误删的内容。
-- **其他**：支持中英文界面、浅色和深色主题，以及自定义快捷键。
+- **其他**：支持中英文界面、浅色和深色主题、自定义快捷键；应用菜单和关于窗口里能检查更新（读 GitHub 上的 release）。
 
 ## 构建
 
 需要搭载 Apple Silicon 芯片、运行 macOS 13 或更新版本的 Mac。目前还没有安装包，需要自行构建：
 
 ```bash
-git clone https://github.com/lemoeade/grove.git
+git clone https://github.com/holthq/holt.git
 cd grove
 GOTOOLCHAIN=auto go tool mygo build -skip-dmg -skip-notarize -sign -
-open build/darwin-arm64/Grove.app
+open build/darwin-arm64/Holt.app
 ```
 
 mygo 已在 `go.mod` 中声明，无需单独安装。如果本机 Go 版本较旧，`GOTOOLCHAIN=auto` 会自动下载所需版本。
@@ -57,11 +59,11 @@ mygo 已在 `go.mod` 中声明，无需单独安装。如果本机 Go 版本较�
 
 ## 用法
 
-按 ⌘O 打开文件夹或 `.code-workspace` 文件，也可以在命令行中运行 `open -a Grove <路径>`。
+按 ⌘O 打开文件夹或 `.code-workspace` 文件，也可以在命令行中运行 `open -a Holt <路径>`。
 ⌘1–9 跳转到对应序号的仓库，⌘J 显示或隐藏终端，⇧⌘J 把底栏最大化（占掉编辑区，再按一下还原；双击底栏标题行的空白处也行）。
 完整快捷键见 [docs/shortcuts.md](docs/shortcuts.md)。
 
-设置和会话保存在 `~/Library/Application Support/Grove/`，日志保存在 `~/Library/Logs/Grove/`。
+设置和会话保存在 `~/Library/Application Support/Holt/`，日志保存在 `~/Library/Logs/Holt/`。
 
 ## 已知限制
 

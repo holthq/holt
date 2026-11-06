@@ -4,10 +4,10 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/fuzzy"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/tasks"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/fuzzy"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/tasks"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是任务：internal/tasks 从仓库根认出来的 npm scripts、make / just 目标、cargo / go 的常用命令（Repo.Tasks，读状态时后台扫）。

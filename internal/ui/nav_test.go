@@ -8,8 +8,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 面包屑和后退 / 前进：仓库段的菜单列出顶层、从子菜单打开文件；目录段"在文件树里显示"；

@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 普通文件夹（不是 Git 仓库）和一个仓库放在同一个工作区：文件树直接列目录，Git 栏只有段头、不能展开，

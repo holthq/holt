@@ -5,9 +5,9 @@ import (
 	"os"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 文件树（淡底，默认）的三种行底色在浅色、深色主题里都分得开：悬停 < 非活动选中（焦点在编辑器，中性灰）< 活动选中

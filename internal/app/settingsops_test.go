@@ -13,10 +13,10 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/version"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/version"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 界面缩放：⌘= / ⌘- 照缩放表一档一档走（表外的 105 走到挨着的那档），到头不动、照样提示；⌘0 回到 100%（存 0），

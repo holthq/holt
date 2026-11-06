@@ -6,8 +6,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // Git 栏里"工作树就是 agent 的工位"的界面：状态符号、展开的工作树（摘要、main...分支 的文件、终端）、"需要你"条。

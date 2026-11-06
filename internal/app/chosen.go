@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是文件树的多选：⌘点加减、⇧点一段、⌘A 全选、拖着选都是列表（FileList.Selection）做的，

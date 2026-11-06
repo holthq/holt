@@ -5,8 +5,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 git 写命令队列（app/queue.go）在界面上的样子：Git 栏段头和标题栏上转圈的队列按钮，

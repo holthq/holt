@@ -1,4 +1,4 @@
-// Package crash 把崩溃和后台出的错记到日志目录（打包的应用是 ~/Library/Logs/Grove/）：
+// Package crash 把崩溃和后台出的错记到日志目录（打包的应用是 ~/Library/Logs/Holt/）：
 //
 //   - 崩溃：runtime/debug.SetCrashOutput 让没接住的 panic 和 fatal error（任何 goroutine 里的，带所有 goroutine 的栈）
 //     除了 stderr 也写进 crash-pending.log。这个文件每次启动先清空、写好版本和启动时间；下次启动时它比开头长，

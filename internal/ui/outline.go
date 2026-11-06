@@ -3,10 +3,10 @@ package ui
 import (
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/outline"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/outline"
 )
 
 // outlineView 是侧栏的大纲模式：当前标签的文件的符号树（internal/outline）。单击跳到那一行、键盘回到编辑器，

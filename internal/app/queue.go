@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 git 写命令的队列：每个仓库一条队列，同一个仓库里一条跑完再跑下一条，不同仓库各跑各的。
@@ -139,7 +139,7 @@ func canceledText(out, label string, locks []string) string {
 
 // locksText 是取消后留下锁文件的提醒。
 func locksText(locks []string) string {
-	return i18n.Tf("仓库里有锁文件：%s。如果确定没有别的 git 在跑，手动删掉它再继续；Grove 不会替你删。",
+	return i18n.Tf("仓库里有锁文件：%s。如果确定没有别的 git 在跑，手动删掉它再继续；Holt 不会替你删。",
 		i18n.List(locks))
 }
 

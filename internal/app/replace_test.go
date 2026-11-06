@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 替换都在临时仓库上测。replaceRepos 建两个仓库：one 里 dirty.go（会开着、改了没存）、clean.go（开着、没改）、

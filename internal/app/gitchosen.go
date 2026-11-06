@@ -6,8 +6,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Git 栏的多选：⌘点加减、⇧点一段、⌘A 全选、拖着选都是列表（ChangeList.Selection）做的，

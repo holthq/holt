@@ -12,10 +12,10 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/transfer"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是文件树右键菜单和键盘的小件：复制 / 粘贴 / 创建副本（⌘C / ⌘V / ⌘D，都是复制不是移动，

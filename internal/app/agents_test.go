@@ -7,8 +7,8 @@ import (
 
 	"github.com/egoist/mygo/plugins/terminal"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // fakeConn 是不接 shell 的终端连接：读一直等到关，写的扔掉。

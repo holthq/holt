@@ -6,9 +6,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // refDialog 是分支改名、新建 / 删除标签、远程改名 / 添加共用的对话框（app.RefDlg，照"新建分支"做，dialogFrame）：

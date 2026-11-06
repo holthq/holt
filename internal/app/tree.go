@@ -8,12 +8,12 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/fuzzy"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/fuzzy"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是侧栏"文件"模式的那棵树：每个仓库是一个根节点，下面是它的文件树

@@ -9,10 +9,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 历史里展开的提交：文件行右边是 +/−（是 0 的一边不画），二进制写"二进制"，详情里"N 个文件 · +A −D"。
@@ -193,13 +193,13 @@ func TestCompareRows(t *testing.T) {
 	if !h.Compare.Open || !shows(tt, "c.txt") {
 		t.Fatal("再点标题应展开")
 	}
-	// 右键标题是 Grove 菜单
+	// 右键标题是 Holt 菜单
 	if err := rightClickRow(tt, title); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	if tt.Menu() != nil || !a.Menu.IsOpen() {
-		t.Fatalf("比较行的右键该是 Grove 菜单：系统菜单 %q", tt.Menu())
+		t.Fatalf("比较行的右键该是 Holt 菜单：系统菜单 %q", tt.Menu())
 	}
 	if err := chooseMenu(t, tt, "收起"); err != nil {
 		t.Fatal(err)
@@ -499,9 +499,9 @@ func TestUnstagedGroupWithUntracked(t *testing.T) {
 	}
 }
 
-// TestGitRowsGroveMenu：Git 栏的变更行、贮藏里的文件、未跟踪目录行和历史的标题行、比较行的右键是 Grove 画的菜单；
+// TestGitRowsHoltMenu：Git 栏的变更行、贮藏里的文件、未跟踪目录行和历史的标题行、比较行的右键是 Holt 画的菜单；
 // 行上装了 menuPress 以后单击（预览）、双击（固定）、点目录行展开照旧；已暂存和未暂存的同一个文件是两份菜单。
-func TestGitRowsGroveMenu(t *testing.T) {
+func TestGitRowsHoltMenu(t *testing.T) {
 	repo := testutil.NewRepo(t, "rows")
 	repo.Write("a.txt", "1\n")
 	repo.Write("s.txt", "s\n")
@@ -536,7 +536,7 @@ func TestGitRowsGroveMenu(t *testing.T) {
 			t.Fatalf("%s：开的是系统菜单 %q", what, tt.Menu())
 		}
 		if !a.Menu.IsOpen() {
-			t.Fatalf("%s：没开 Grove 菜单", what)
+			t.Fatalf("%s：没开 Holt 菜单", what)
 		}
 		m := shownMenu(t, tt)
 		for _, w := range want {
@@ -603,7 +603,7 @@ func TestGitRowsGroveMenu(t *testing.T) {
 	tt.RightClickAt(at("dir/"))
 	grove("没选中的目录行", "展开")
 
-	// 未跟踪目录行：单击展开，右键是 Grove 菜单（收起在里面）
+	// 未跟踪目录行：单击展开，右键是 Holt 菜单（收起在里面）
 	tt.Key(0, wui.KeyEscape)
 	tt.Advance(time.Second)
 	tt.Frame()

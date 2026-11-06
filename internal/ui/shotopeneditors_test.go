@@ -5,9 +5,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // TestScreenshotOpenEditors 是"打开的编辑器"的截图（WORKBENCH_SHOT=目录 时才跑），临时仓库 shop：

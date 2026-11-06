@@ -6,8 +6,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Git 栏里"工作树就是 agent 的工位"那一套：每个工作树算成七种状态之一（WtStateOf），组里按状态排，

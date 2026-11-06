@@ -1,6 +1,6 @@
-// Package askpass 是 git / ssh 要凭据时弹 Grove 自己的框。
+// Package askpass 是 git / ssh 要凭据时弹 Holt 自己的框。
 //
-// 应用给每条 git 写命令设 GIT_ASKPASS / SSH_ASKPASS 指向一个两行脚本（Server.Script），脚本 exec "Grove askpass <提示>"
+// 应用给每条 git 写命令设 GIT_ASKPASS / SSH_ASKPASS 指向一个两行脚本（Server.Script），脚本 exec "Holt askpass <提示>"
 // （helper 模式，Main，main 第一行就分出去，不碰 mygo）；helper 连上应用监听的 unix 套接字（EnvSock），发一行 JSON
 // （提示原文和这条命令的 id，EnvID），等应用回一行：ok 就把回答加换行写到 stdout、退出 0；不 ok、连不上、读断了都退出 1，
 // 什么都不打印（git / ssh 当作没拿到，命令失败）。helper 自己不设超时：用户可能在想。
@@ -23,7 +23,6 @@ import (
 	"strconv"
 	"strings"
 	"sync"
-	"syscall"
 )
 
 // 环境变量：套接字路径、这条命令的 id（应用拿它找是谁在问，不认识的 id 一律回不 ok）。
@@ -47,7 +46,7 @@ type Reply struct {
 // maxLine 是一行 JSON 最长多少（主机指纹那段提示也就几百字节）。
 const maxLine = 64 << 10
 
-// Main 是 helper 模式（Grove askpass <提示…>）：git / ssh 把提示当一个参数传进来。返回退出码。
+// Main 是 helper 模式（Holt askpass <提示…>）：git / ssh 把提示当一个参数传进来。返回退出码。
 func Main(args []string) int {
 	return Run(strings.Join(args, " "), os.Getenv(EnvSock), os.Getenv(EnvID), os.Stdout)
 }
@@ -179,7 +178,7 @@ func CleanStale(dir string) {
 		if err != nil || pid <= 0 || pid == os.Getpid() {
 			continue
 		}
-		if err := syscall.Kill(pid, 0); errors.Is(err, syscall.ESRCH) {
+		if !processAlive(pid) {
 			os.Remove(filepath.Join(dir, name))
 		}
 	}

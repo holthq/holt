@@ -13,10 +13,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"golang.org/x/text/encoding/simplifiedchinese"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 无障碍标签的自动检查（AGENTS 第 6 条）：画出来的每个按钮都要有读屏念得出来的名字——
@@ -311,7 +311,7 @@ func TestAccessLabels(t *testing.T) {
 	a.CancelOp(r)
 	wait("取消", idle(r))
 
-	mustClickRow(t, tt, "A 返回 1") // 提交行装了 Grove 的右键菜单（ctxMenu），点它按坐标
+	mustClickRow(t, tt, "A 返回 1") // 提交行装了 Holt 的右键菜单（ctxMenu），点它按坐标
 	wait("展开的提交", func() bool { return r.Hist.Expanded != "" && !r.Hist.FilesLoading })
 	accessCheck(t, tt, "展开的提交")
 	// 头部的图标开关是切换按钮（按下 = 开）
@@ -376,7 +376,7 @@ func TestAccessLabels(t *testing.T) {
 		t.Error("普通文件夹：历史没有提示、标题栏没有\"无 Git\"")
 	}
 
-	st := wui.NewTester(SettingsView(a), 600, 480)
+	st := wui.NewTester(SettingsView(a), 760, 540)
 	st.SetLocale(i18n.Locale())
 	for i, page := range settingsPages {
 		if i > 0 {

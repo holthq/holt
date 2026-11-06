@@ -9,7 +9,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // stickyGo 是一个长 Go 文件：Long 从第 3 行（下标 2）到 205 行，后面跟一个 Other。

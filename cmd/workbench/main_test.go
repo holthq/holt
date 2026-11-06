@@ -5,7 +5,7 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 主窗口的材质：窗口底是柔和（默认）、纯色时什么都不透；通透时默认侧栏，设置里选的那种，WORKBENCH_MATERIAL 压过设置。

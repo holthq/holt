@@ -7,8 +7,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 撤销文件操作都在临时仓库上测；废纸篓换成 fakeTrash。

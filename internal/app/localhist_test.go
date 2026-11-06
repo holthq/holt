@@ -8,9 +8,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/history"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/history"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 本地历史：这里的状态目录都是 t.TempDir()，history 子目录跟着测试删掉。

@@ -19,7 +19,7 @@ func TestVersions(t *testing.T) {
 	if !strings.HasPrefix(Go(), "go") || !strings.Contains(Platform(), "/") {
 		t.Errorf("Go() = %q, Platform() = %q", Go(), Platform())
 	}
-	if s := String(); !strings.HasPrefix(s, "Grove dev (mygo v") {
+	if s := String(); !strings.HasPrefix(s, "Holt dev (mygo v") {
 		t.Errorf("String() = %q", s)
 	}
 
@@ -40,7 +40,7 @@ func TestVersions(t *testing.T) {
 	}
 }
 
-// TestAppName：应用叫 Grove——mygo.json 的名字和 bundle id（单实例锁、open -a、Dock 跟着它）、版本那一行的开头。
+// TestAppName：应用叫 Holt——mygo.json 的名字和 bundle id（单实例锁、open -a、Dock 跟着它）、版本那一行的开头。
 func TestAppName(t *testing.T) {
 	var cfg struct{ Name, Identifier string }
 	b, err := os.ReadFile("../../mygo.json")
@@ -50,7 +50,7 @@ func TestAppName(t *testing.T) {
 	if err := json.Unmarshal(b, &cfg); err != nil {
 		t.Fatal(err)
 	}
-	if cfg.Name != "Grove" || cfg.Identifier != "io.github.lemoeade.grove" || !strings.HasPrefix(String(), "Grove ") {
-		t.Errorf("mygo.json %+v、String() %q，应是 Grove / io.github.lemoeade.grove", cfg, String())
+	if cfg.Name != "Holt" || cfg.Identifier != "io.github.holthq.holt" || !strings.HasPrefix(String(), "Holt ") {
+		t.Errorf("mygo.json %+v、String() %q，应是 Holt / io.github.holthq.holt", cfg, String())
 	}
 }

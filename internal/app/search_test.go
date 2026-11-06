@@ -6,9 +6,9 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // searchRepos 建两个临时仓库：one 里 a.go 有三处 needle（第 2、4 行和第 30 行），b.md 一处；two 里 c.txt 一处。

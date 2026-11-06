@@ -14,8 +14,8 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是文件树里的拖放：选中的文件 / 目录拖到别的目录行（或仓库行，即仓库根目录）上移动；

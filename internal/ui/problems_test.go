@@ -7,9 +7,9 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 问题面板（临时仓库，检查命令是 shell 一行）：两个仓库的问题一起列、按 仓库 → 文件 → 行 排；底栏标签和状态栏数

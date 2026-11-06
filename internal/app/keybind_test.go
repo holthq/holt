@@ -11,7 +11,7 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
+	"github.com/holthq/holt/internal/docs"
 )
 
 // resetKeys 让测试结束时命令表回到默认键（命令表是整个进程的）。

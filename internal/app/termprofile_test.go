@@ -5,8 +5,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 终端配置：用配置开的格跑配置的命令（没参数 -l）、加配置的环境，termd 的请求一样；分出来的格跟着；

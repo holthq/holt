@@ -26,7 +26,7 @@ func shortDir(t *testing.T) string {
 func TestAskpassRoundTrip(t *testing.T) {
 	dir := shortDir(t)
 	var got []Request
-	s, err := Listen(dir, "/Applications/My Apps/Grove.app/Contents/MacOS/Grove", func(req Request, reply func(Reply)) {
+	s, err := Listen(dir, "/Applications/My Apps/Holt.app/Contents/MacOS/Holt", func(req Request, reply func(Reply)) {
 		got = append(got, req) // Run 是同步的：一次只有一个连接
 		if strings.HasPrefix(req.Prompt, "Username") {
 			reply(Reply{OK: true, Text: "octo"})
@@ -65,7 +65,7 @@ func TestAskpassRoundTrip(t *testing.T) {
 		t.Errorf("套接字权限：%v %v", fi, err)
 	}
 	script, _ := os.ReadFile(s.Script)
-	if !strings.Contains(string(script), `exec '/Applications/My Apps/Grove.app/Contents/MacOS/Grove' askpass "$@"`) {
+	if !strings.Contains(string(script), `exec '/Applications/My Apps/Holt.app/Contents/MacOS/Holt' askpass "$@"`) {
 		t.Errorf("脚本：%q", script)
 	}
 

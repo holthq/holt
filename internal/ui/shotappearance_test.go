@@ -7,10 +7,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // TestScreenshotAppearance 是外观的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一套，临时仓库 shop：
@@ -95,7 +95,7 @@ func TestScreenshotAppearance(t *testing.T) {
 	ab.SetLocale(i18n.Locale())
 	shots(ab, "about")
 
-	sv := wui.NewTester(SettingsView(a), 640, 560)
+	sv := wui.NewTester(SettingsView(a), 760, 560)
 	sv.SetScale(2)
 	sv.SetLocale(i18n.Locale())
 	sv.Frame()

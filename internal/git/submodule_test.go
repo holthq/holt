@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 读子模块：没有 .gitmodules 是 nil；一个初始化了（检出着记的那次）、一个 deinit 了（路径里有空格）；

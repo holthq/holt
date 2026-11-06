@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // Git 日常操作在界面上的入口（临时仓库 + 临时裸远程）：分支下拉里"合并到当前分支 / 把当前分支变基到"两个子菜单、

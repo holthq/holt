@@ -1,4 +1,4 @@
-# Grove 的 CI：macOS 上 vet、测试、构建 .app（ad hoc 签名，不出 DMG、不公证）。
+# Holt 的 CI：macOS 上 vet、测试、构建 .app（ad hoc 签名，不出 DMG、不公证）。
 # 测试只用 t.TempDir() 里 git init 的临时仓库；读真实工作区的只读测试只在设了 WORKBENCH_TEST_WS 时跑，CI 里跳过。
 # 竞态检测（-race）慢一倍多，不在每次推送都跑：手动触发时勾上 race，或者每周一跑一次。
 name: CI
@@ -52,16 +52,16 @@ jobs:
       - name: go test
         run: go test -count=1 ./...
 
-      - name: 构建 Grove.app
+      - name: 构建 Holt.app
         run: go tool mygo build -skip-dmg -skip-notarize -sign -
 
       - name: 打包成 zip
-        run: ditto -c -k --keepParent build/darwin-arm64/Grove.app Grove-darwin-arm64.zip
+        run: ditto -c -k --keepParent build/darwin-arm64/Holt.app Holt-darwin-arm64.zip
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Grove-darwin-arm64
-          path: Grove-darwin-arm64.zip
+          name: Holt-darwin-arm64
+          path: Holt-darwin-arm64.zip
           retention-days: 14
 
   race:

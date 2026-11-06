@@ -1,4 +1,4 @@
-module github.com/lemoeade/grove
+module github.com/holthq/holt
 
 go 1.27.3
 

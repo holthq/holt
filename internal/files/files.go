@@ -14,8 +14,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/fuzzy"
-	"github.com/lemoeade/grove/internal/git"
+	"github.com/holthq/holt/internal/fuzzy"
+	"github.com/holthq/holt/internal/git"
 )
 
 // FilterCap 是筛选结果最多显示的行数。

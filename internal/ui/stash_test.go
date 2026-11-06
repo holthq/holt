@@ -7,9 +7,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 临时仓库上走一遍 Git 栏的贮藏列表：段头的条数、悬停的"应用"（贮藏留着）、右键"弹出贮藏"、

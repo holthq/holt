@@ -5,7 +5,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 编辑器标签切换（#19）：三个仓库各开一个文件，⇧⌘] / ⇧⌘[ 和 ⌥⌘→ / ⌥⌘← 按标签条顺序走、到头绕回；

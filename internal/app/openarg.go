@@ -7,12 +7,12 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
-// 从外面交进来的路径：命令行参数（`Grove 目录|文件`）、第二个实例转过来的参数（单实例）、
-// `open -a Grove 路径` 和拖到 Dock 图标上的（mygo 的 OnOpenFile）。main 把它们交给 Windows.Route：工作区文件和目录
+// 从外面交进来的路径：命令行参数（`Holt 目录|文件`）、第二个实例转过来的参数（单实例）、
+// `open -a Holt 路径` 和拖到 Dock 图标上的（mygo 的 OnOpenFile）。main 把它们交给 Windows.Route：工作区文件和目录
 // 在那里分到窗口（目录开新窗口或叫到前面，见 routeDir），文件交给前台窗口的 OpenArgs。
 // 拖进窗口里的（OnFileDrop）和拖到可编辑标签、终端上的直接交给那个窗口的 OpenArgs：目录问要不要加进当前工作区。
 
@@ -94,7 +94,7 @@ func (a *App) askAdd(roots []string) {
 	if len(roots) > 1 {
 		title, msg = i18n.Tn("添加 %d 个仓库", len(roots)), i18n.Tn("把这 %d 个仓库加进这个工作区？\n%s", len(roots), strings.Join(roots, "\n"))
 	}
-	a.Ask(title, msg+"\n"+i18n.T("只记在 Grove 自己的设置里，不改工作区文件。"), i18n.T("添加"), func() {
+	a.Ask(title, msg+"\n"+i18n.T("只记在 Holt 自己的设置里，不改工作区文件。"), i18n.T("添加"), func() {
 		var errs []string
 		for _, root := range roots {
 			if err := a.AddRepoDir(root); err != nil {
@@ -111,12 +111,12 @@ func (a *App) askAdd(roots []string) {
 func (a *App) Greet(version string) {
 	switch {
 	case a.LastCrash != "":
-		a.Toast = i18n.Tf("上次异常退出了，崩溃日志 %s 在\"关于 Grove\"里能打开", filepath.Base(a.LastCrash))
+		a.Toast = i18n.Tf("上次异常退出了，崩溃日志 %s 在\"关于 Holt\"里能打开", filepath.Base(a.LastCrash))
 	case a.Toast != "": // 启动时已经有要说的（最近的工作区都打不开了）
 	case a.St.AppVersion == "":
-		a.Toast = i18n.Tf("欢迎使用 Grove %s", version)
+		a.Toast = i18n.Tf("欢迎使用 Holt %s", version)
 	case a.St.AppVersion != version:
-		a.Toast = i18n.Tf("已更新到 Grove %s", version)
+		a.Toast = i18n.Tf("已更新到 Holt %s", version)
 	}
 	if a.St.AppVersion != version {
 		a.St.AppVersion = version

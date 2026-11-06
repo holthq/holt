@@ -1,7 +1,7 @@
 #!/bin/zsh
-# 量内存（0.18.4）：起一次真的 Grove（0.18.5 以前叫 Workbench，老的构建照样能量），每隔几秒记它的 phys_footprint 和子 shell，跑够了 TERM 掉、打印汇总。
+# 量内存：起一次真的 Holt（老的 Grove / Workbench 构建照样能量），每隔几秒记它的 phys_footprint 和子 shell，跑够了 TERM 掉、打印汇总。
 #
-#   measure.sh <标签> <Grove.app> [-w 工作区文件] [-s 种子 state.json] [-a 搜索词] [-t all] [-m 分钟] [-i 采样秒]
+#   measure.sh <标签> <Holt.app> [-w 工作区文件] [-s 种子 state.json] [-a 搜索词] [-t all] [-m 分钟] [-i 采样秒]
 #
 # -w 默认 $WORKBENCH_TEST_WS（没设就必须给 -w）；-s 默认 seed/idle.json；-a 设 WORKBENCH_ALLOPEN（全开，跑够的分钟数从日志里"全开："那行算起）；
 # -t all 设 WORKBENCH_TERMS=all；-m 默认 5；-i 默认 5。结果在 $MEASURE_OUT/<标签>/（默认 $TMPDIR/workbench-measure）：
@@ -20,7 +20,7 @@ set -u
 zmodload zsh/datetime
 
 here=${0:A:h}
-usage() { print -u2 "用法：measure.sh <标签> <Grove.app> [-w 工作区文件] [-s 种子] [-a 搜索词] [-t all] [-m 分钟] [-i 采样秒]"; exit 2; }
+usage() { print -u2 "用法：measure.sh <标签> <Holt.app> [-w 工作区文件] [-s 种子] [-a 搜索词] [-t all] [-m 分钟] [-i 采样秒]"; exit 2; }
 (( $# >= 2 )) || usage
 label=$1 appdir=${2:a}
 shift 2
@@ -37,7 +37,7 @@ while getopts w:s:a:t:m:i: opt; do
 	esac
 done
 ws=${ws:a} seed=${seed:a}
-exe=$(defaults read "$appdir/Contents/Info" CFBundleExecutable 2>/dev/null) # 0.18.5 起是 Grove，以前 Workbench
+exe=$(defaults read "$appdir/Contents/Info" CFBundleExecutable 2>/dev/null) # 就是应用名（Holt；老的构建是 Grove / Workbench）
 bin=$appdir/Contents/MacOS/${exe:-${${appdir:t}%.app}}
 [[ -x $bin ]] || { print -u2 "没有 $bin"; exit 2; }
 [[ -f $ws ]] || { print -u2 "没有工作区文件 $ws"; exit 2; }

@@ -6,7 +6,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/lemoeade/grove/internal/files"
+	"github.com/holthq/holt/internal/files"
 )
 
 // 大仓库（文件数超过 files.MaxEmptyScan）不整棵 find 空目录，展开到哪一层读哪一层：展开着的目录

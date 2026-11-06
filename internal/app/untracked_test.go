@@ -4,9 +4,9 @@ import (
 	"slices"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 未跟踪目录：harness/ 折叠成一行，后台列出里面两个文件；选中目录行不开 Diff，回车、← → 展开 / 收起，

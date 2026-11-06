@@ -7,7 +7,7 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// 测 Grove 自己画的右键菜单的状态机（issue #48）：Tester 按不住右键，按住拖、松开、延迟、安全三角都在这里直接喂事件测。
+// 测 Holt 自己画的右键菜单的状态机（issue #48）：Tester 按不住右键，按住拖、松开、延迟、安全三角都在这里直接喂事件测。
 
 type popKit struct {
 	t      *testing.T

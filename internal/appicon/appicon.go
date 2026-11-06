@@ -1,4 +1,4 @@
-// Package appicon 画应用图标（Grove）：浅色圆角方块上一个钢蓝粗笔画的 G——一条弯回来的 git 分支，
+// Package appicon 画应用图标（Holt）：浅色圆角方块上一个钢蓝粗笔画的 G——一条弯回来的 git 分支，
 // 上端一个空心的提交环，横杠末端一颗琥珀色的提交点。都用有向距离场画，任意大小都抗锯齿。
 //
 // mygo build 用的 1024 × 1024 图标 assets/icon.png 由它生成

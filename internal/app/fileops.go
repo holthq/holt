@@ -12,10 +12,10 @@ import (
 	"syscall"
 	"unicode/utf8"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是文件树里的文件操作：新建文件 / 文件夹、行内重命名、移到废纸篓。都只在用户点了菜单或

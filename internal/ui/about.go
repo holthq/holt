@@ -5,10 +5,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/appicon"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/version"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/appicon"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/version"
 )
 
 // thirdParty 是打包进应用的第三方组件和它们的许可证；许可证全文在资源目录的 licenses/ 里。
@@ -45,11 +45,13 @@ func AboutView(a *app.App, licenses string) func(c *wui.Context) {
 		}
 		wui.Scroll(c).Fill().Children(func() {
 			wui.Column(c).Padding(24, 32, 24).Gap(6).AlignItems(wui.Center).Children(func() {
-				wui.Image(c, icon).Size(88, 88).Label(i18n.T("Grove 图标"))
-				wui.Text(c, "Grove").FontSize(20).FontWeight(600).Margin(6, 0, 0, 0)
+				wui.Image(c, icon).Size(88, 88).Label(i18n.T("Holt 图标"))
+				wui.Text(c, "Holt").FontSize(20).FontWeight(600).Margin(6, 0, 0, 0)
 				wui.Text(c, i18n.Tf("版本 %s", version.App)).FontSize(12.5).TextColor(t.TextMuted)
 				wui.Text(c, i18n.T("多仓库工作台：文件树、编辑器、按仓库的 Git 审阅和终端，所有仓库同时可见。")).
-					FontSize(12).TextColor(t.TextMuted).TextAlign(wui.Center).Margin(4, 0, 10, 0)
+					FontSize(12).TextColor(t.TextMuted).TextAlign(wui.Center).Margin(4, 0, 0, 0)
+				wui.Text(c, i18n.T("Grove 的 fork，MIT 许可，原作者的版权行照旧。")).
+					FontSize(11).TextColor(t.TextMuted.Alpha(0.8)).TextAlign(wui.Center).Margin(0, 0, 10, 0)
 
 				wui.Column(c).Gap(4).Padding(10, 14).Radius(8).Background(t.Surface).Selectable().Children(func() {
 					aboutRow(c, "mygo", version.Mygo())
@@ -61,6 +63,9 @@ func AboutView(a *app.App, licenses string) func(c *wui.Context) {
 					aboutRow(c, i18n.T("日志"), dir)
 				})
 				wui.Row(c).Gap(8).Margin(8, 0, 0, 0).Children(func() {
+					if wui.Button(c, i18n.T("检查更新")).Tooltip(i18n.T("查 GitHub 上最新的 release，和这个版本比")).Clicked() {
+						a.CheckUpdates()
+					}
 					if wui.Button(c, i18n.T("打开日志目录")).Disabled(a.LogDir == "").
 						Tooltip(i18n.T("崩溃日志（crash-….log）和错误日志（workbench.log）在这里")).Clicked() {
 						show(a.LogDir)

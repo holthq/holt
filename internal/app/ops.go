@@ -5,8 +5,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是界面上的 git 操作：每一个都对应用户点的一个按钮、菜单项或快捷键。

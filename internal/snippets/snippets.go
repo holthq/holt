@@ -16,7 +16,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 //go:embed builtin/*.json

@@ -9,13 +9,13 @@ import (
 	"github.com/egoist/mygo/ui"
 )
 
-// 文件树的右键菜单是 Grove 自己画的（issue #48）：mygo 的 PopoverMenu 不能按住右键拖到项上松开、子菜单没有悬停延迟
+// 文件树的右键菜单是 Holt 自己画的（issue #48）：mygo 的 PopoverMenu 不能按住右键拖到项上松开、子菜单没有悬停延迟
 // 和安全三角、灰着的项说不了原因、点菜单外面那一下还会落到底下的行上。这里是它的状态机，不碰界面：
 // 项由建菜单的函数经 MenuSink 收集，位置、命中、计时都按窗口坐标（DIP）算，界面（internal/ui/gmenu.go）
 // 每帧把指针、按键、时间喂进来，再照着 PopMenu 画。测试直接喂事件（popmenu_test.go），Tester 按不住右键也测得到。
 
 // MenuSink 是建菜单的函数往里加项的地方：mygo 的 *ui.Menu（系统菜单、PopoverMenu，经 internal/ui 的适配器）
-// 和 Grove 自己画的菜单（PopMenu）都实现它，menus.go 的那些建菜单的函数两边共用。
+// 和 Holt 自己画的菜单（PopMenu）都实现它，menus.go 的那些建菜单的函数两边共用。
 type MenuSink interface {
 	Item(label string) MenuItem
 	Separator()
@@ -28,10 +28,10 @@ type MenuItem interface {
 	Disabled(bool) MenuItem
 	Checked(bool) MenuItem
 	Shortcut(ui.Modifiers, ui.Key) MenuItem
-	// Why 是灰着的原因（空是没灰），同时设上 Disabled。Grove 画的菜单悬停时用提示说；系统菜单没有悬停说明，
+	// Why 是灰着的原因（空是没灰），同时设上 Disabled。Holt 画的菜单悬停时用提示说；系统菜单没有悬停说明，
 	// 只能括在标签后面（internal/ui 的 withWhy）。
 	Why(string) MenuItem
-	// Danger 标出破坏性的项（删、丢弃、强推……）：Grove 画的菜单用危险色，系统菜单画不了。
+	// Danger 标出破坏性的项（删、丢弃、强推……）：Holt 画的菜单用危险色，系统菜单画不了。
 	Danger() MenuItem
 	Chosen() bool
 }
@@ -117,7 +117,7 @@ func entryH(it MenuEntry) float32 {
 	return MenuItemH
 }
 
-// PopMenu 是 Grove 自己画的菜单（右键菜单和按钮弹出的菜单都是它）。零值是关着的。
+// PopMenu 是 Holt 自己画的菜单（右键菜单和按钮弹出的菜单都是它）。零值是关着的。
 type PopMenu struct {
 	// Owner 是菜单对着的东西（文件树行的 FileKey 之类）：那一行画 1 pt 描边。
 	Owner any

@@ -1,15 +1,18 @@
-# Grove
+# Holt
 
 [中文](README.md) · English
 
-Grove is a multi-repo workbench for macOS. Browse files, edit code, review Git changes and commit history, and use
+Holt is a multi-repo workbench for macOS. Browse files, edit code, review Git changes and commit history, and use
 terminals in one window. The file tree and Git bar show every repo in your workspace, so you can review their
 changes together.
 
-Grove is written in Go, with a native UI drawn by [mygo](https://github.com/egoist/mygo). With five repos open, it uses
+Holt is written in Go, with a native UI drawn by [mygo](https://github.com/egoist/mygo). With five repos open, it uses
 about 79 MiB of memory when idle.
 
-![Grove](docs/screenshots/light.png)
+Holt is a fork of [Grove](https://github.com/lemoeade/grove): the UI and the core grew out of it, under the same MIT
+license and the original author's copyright notice.
+
+![Holt](docs/screenshots/light.png)
 
 ## Three principles
 
@@ -18,7 +21,7 @@ about 79 MiB of memory when idle.
 - **You decide when to make changes**: automatic refreshes only run read-only Git commands, with
   `GIT_OPTIONAL_LOCKS=0` to leave the index unchanged. Staging, committing, pushing and other write operations require
   your input. Operations that could cause data loss ask for confirmation first.
-- **No automatic uploads**: Grove only connects to remote repos when you start a Git operation such as fetch, pull,
+- **No automatic uploads**: Holt only connects to remote repos when you start a Git operation such as fetch, pull,
   push or clone.
 
 ## Features
@@ -53,19 +56,19 @@ about 79 MiB of memory when idle.
 - **Search and navigation**: search and replace across repos. Use ⌘P to find files, ⇧⌘P to open the command palette
   and ⌘T to jump to symbols; ⇧⌘[ / ⇧⌘] switch to the previous / next tab and ⌃Tab goes back to the last used tab.
 - **Local history**: each save keeps a snapshot to help recover content you changed or deleted by mistake.
-- **Other features**: Chinese and English UI (Chinese by default; change it in Settings), light and dark themes, and
-  customizable shortcuts.
+- **Other features**: Chinese and English UI (Chinese by default; change it in Settings), light and dark themes,
+  customizable shortcuts, and Check for Updates in the app menu and the About window (reads releases from GitHub).
 
 ## Building
 
 Requires a Mac with Apple Silicon running macOS 13 or later. There are no prebuilt downloads yet, so you'll need to
-build Grove yourself:
+build Holt yourself:
 
 ```bash
-git clone https://github.com/lemoeade/grove.git
+git clone https://github.com/holthq/holt.git
 cd grove
 GOTOOLCHAIN=auto go tool mygo build -skip-dmg -skip-notarize -sign -
-open build/darwin-arm64/Grove.app
+open build/darwin-arm64/Holt.app
 ```
 
 mygo is listed in `go.mod` and doesn't need a separate installation. If your Go version is too old,
@@ -74,11 +77,11 @@ notarization and DMG packaging instructions.
 
 ## Usage
 
-Press ⌘O to open a folder or a `.code-workspace` file, or run `open -a Grove <path>` from the command line.
+Press ⌘O to open a folder or a `.code-workspace` file, or run `open -a Holt <path>` from the command line.
 Use ⌘1–9 to jump to the corresponding repo and ⌘J to show or hide the terminal; ⇧⌘J maximizes the bottom panel over the editor area (press again, or double-click the blank part of its header, to restore).
 See [docs/shortcuts.md](docs/shortcuts.md) for the full shortcut list.
 
-Settings and sessions are saved in `~/Library/Application Support/Grove/`. Logs are saved in `~/Library/Logs/Grove/`.
+Settings and sessions are saved in `~/Library/Application Support/Holt/`. Logs are saved in `~/Library/Logs/Holt/`.
 
 ## Known limitations
 

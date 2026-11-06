@@ -3,9 +3,9 @@ package app
 import (
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 状态栏选的语言、缩进记进会话（Tab.Lang / Tab.Indent），重开窗口和 ⇧⌘T 都放回；和设置一样的缩进不另记，

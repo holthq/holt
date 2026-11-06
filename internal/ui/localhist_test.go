@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	lhist "github.com/lemoeade/grove/internal/history"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	lhist "github.com/holthq/holt/internal/history"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 本地历史比较标签的面包屑是工作区里的那个文件（仓库 › 目录 › 文件），不是状态目录里的内容文件。

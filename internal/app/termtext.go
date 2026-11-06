@@ -6,8 +6,8 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是把终端内容开成标签（⇧⌘C）和复制全部输出：终端插件没有键盘选区的 API，要用键盘选一段输出、

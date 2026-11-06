@@ -10,10 +10,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/snippets"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/snippets"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 底栏标题行：shell 的标题很长时它自己省略，标签（「输出」）整个留着——标题从「输出」的右边以后才开始。
@@ -209,7 +209,7 @@ func TestSnippetUI(t *testing.T) {
 		t.Fatal("Esc 没结束会话")
 	}
 
-	st := wui.NewTester(SettingsView(a), 640, 1400)
+	st := wui.NewTester(SettingsView(a), 760, 1400)
 	st.SetLocale(i18n.Locale())
 	st.Frame()
 	mustClick(t, st, "片段")

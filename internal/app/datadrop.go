@@ -5,7 +5,7 @@ import (
 
 	"github.com/egoist/mygo/transfer"
 
-	"github.com/lemoeade/grove/internal/docs"
+	"github.com/holthq/holt/internal/docs"
 )
 
 // 这个文件是别的应用拖进来的东西：访达、备忘录、浏览器拖到可编辑的文件标签上和终端的一格上。

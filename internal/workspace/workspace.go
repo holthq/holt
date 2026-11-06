@@ -12,7 +12,7 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // DefaultPath 是只读测试和截图用的真实工作区（.code-workspace 或目录），取自环境变量 WORKBENCH_TEST_WS；

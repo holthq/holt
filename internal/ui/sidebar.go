@@ -6,10 +6,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 var sidebarModes = []string{workspace.ModeFiles, workspace.ModeSearch, workspace.ModeGit, workspace.ModeOutline}
@@ -278,7 +278,7 @@ func treeCommands(a *app.App) func(wui.InputEvent) bool {
 	}
 }
 
-// 文件树里的右键菜单（空白处 treeMenu、行 rowMenu、仓库行、钉在顶上的行、压缩目录的每一段）是 Grove 自己画的
+// 文件树里的右键菜单（空白处 treeMenu、行 rowMenu、仓库行、钉在顶上的行、压缩目录的每一段）是 Holt 自己画的
 // （gmenu.go，issue #48），不用 ContextMenu（系统的 NSMenu）：mygo 弹系统菜单用的是
 // popUpMenuPositioningItem:nil，左上角钉在点的地方，下面放不下时 AppKit 不往上翻，而是把菜单折起来、
 // 底下出滚动箭头（issue #6）。也不用 PopoverMenu：按住右键拖到项上松开、子菜单延迟和安全三角、灰项的原因、
@@ -1205,7 +1205,7 @@ func repoLine(a *app.App, c *wui.Context, tr app.TreeRow, sel, filtering, pin bo
 	return el
 }
 
-// menuRing 在文件树的一行 el 上画一圈 1 pt 强调色描边，*on 是这一帧它的右键菜单开着（Grove 画的菜单 gmenu.go 开着、
+// menuRing 在文件树的一行 el 上画一圈 1 pt 强调色描边，*on 是这一帧它的右键菜单开着（Holt 画的菜单 gmenu.go 开着、
 // 对着这一行，menuOnRow / menuOwned）：右键没选中的行时菜单对它，选中不挪，靠这圈描边看出菜单是对哪行开的；菜单关了就没有了。
 func menuRing(el wui.Element, on *bool) {
 	el.DrawOver(func(p *wui.Painter, r wui.Rect) {
@@ -1219,7 +1219,7 @@ func menuRing(el wui.Element, on *bool) {
 
 // treePress 是没选中的文件 / 目录行（第 i 行）自己接的鼠标按下：没按 ⌘ ⇧ ⌃ 的单击，按下那一帧就选中它
 // （PressTreeRow，这一帧就画成选中），按着拖到别的行是拖着选（DragTreePress），松开时才打开
-// （ReleaseTreePress）。原来交给列表时，列表在按下时选中、Grove 在同一帧就打开了文件，按下和点击分不开。
+// （ReleaseTreePress）。原来交给列表时，列表在按下时选中、Holt 在同一帧就打开了文件，按下和点击分不开。
 // 按 ⌘ ⇧ 的、双击、右键、按在目录的箭头上的不接，照旧交给列表 / 箭头 / 菜单。
 func treePress(a *app.App, i int, tr app.TreeRow, indent float32) func(ev wui.InputEvent) bool {
 	return func(ev wui.InputEvent) bool {

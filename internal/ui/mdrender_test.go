@@ -12,9 +12,9 @@ import (
 	"sync"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/render"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/render"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // fakeRender 是假的渲染后端：等 gate 关了才画；源码里有 bad 的是源码错；别的画一张洋红的 PNG（宽是源码长度 × 8 DIP）。

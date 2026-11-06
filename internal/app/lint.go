@@ -15,8 +15,8 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 检查：保存时（设置“格式化”页的“保存时检查”，默认关）或手动（“检查当前文件”、编辑器右键）跑一条外部命令

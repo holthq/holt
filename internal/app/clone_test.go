@@ -8,10 +8,10 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/askpass"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/askpass"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 地址 → 目录名（git clone 不给目录名时用的那个）；会跑的命令里地址的密码换成 ***。

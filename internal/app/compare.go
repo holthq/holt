@@ -3,8 +3,8 @@ package app
 import (
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是右栏历史里的"比较两个提交"：在一个提交上右键"标记为比较起点"，再在同一个仓库的另一个提交上右键"与 … 比较"，

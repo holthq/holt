@@ -12,9 +12,9 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是多窗口（VS Code 的样子）：一个窗口一个工作区，可以同时开几个窗口，同一个工作区只开在一个窗口里
@@ -241,12 +241,12 @@ func (a *App) StateKey() string {
 	return "main-" + strconv.Itoa(a.Slot)
 }
 
-// Title 是窗口的标题（窗口菜单、调度中心里看得到）：工作区名 — Grove，空工作区就是 Grove。
+// Title 是窗口的标题（窗口菜单、调度中心里看得到）：工作区名 — Holt，空工作区就是 Holt。
 func (a *App) Title() string {
 	if a.WsPath == "" {
-		return "Grove"
+		return "Holt"
 	}
-	return a.WsName() + " — Grove"
+	return a.WsName() + " — Holt"
 }
 
 // Find 是开着工作区 ws（绝对路径）的窗口，没有为 nil。

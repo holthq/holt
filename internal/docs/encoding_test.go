@@ -19,7 +19,7 @@ import (
 	"golang.org/x/text/encoding/traditionalchinese"
 	"golang.org/x/text/encoding/unicode"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 样本都在这里用 x/text 现编，不放二进制文件。

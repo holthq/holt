@@ -13,11 +13,11 @@ import (
 	"time"
 	"unicode/utf8"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/fuzzy"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/outline"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/fuzzy"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/outline"
 )
 
 // 这个文件是工作区符号（⌘T，面板的 "#"）：所有仓库里大纲认的文件的符号放进一个索引，按符号名模糊匹配。

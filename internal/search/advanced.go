@@ -11,7 +11,7 @@ import (
 
 	"github.com/dlclark/regexp2/v2"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 高级正则：Go 的 RE2 不认反向引用和环视。表达式 RE2 编不了、里面又有这几种写法时，换 regexp2

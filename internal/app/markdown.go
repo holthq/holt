@@ -10,9 +10,9 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"github.com/egoist/mygo/ui/markdown"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/fonts"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/fonts"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 Markdown 预览（⇧⌘V）和编辑器的显示选项（软换行 ⌥Z、空白字符、缩进、字体），

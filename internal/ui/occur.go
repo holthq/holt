@@ -9,7 +9,7 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
+	"github.com/holthq/holt/internal/docs"
 )
 
 // OccurRest 是光标在一个词上停稳多久后高亮这个词的其他出现（像 VS Code 的 occurrencesHighlight）。
@@ -22,7 +22,7 @@ const occurMax = 2000
 // mygo 默认 0.45，一选一大片箭头比字还抢眼，降到和缩进参考线差不多淡。
 const whitespaceAlpha = 0.22
 
-// codeTheme 给编辑器套 Grove 改过的代码颜色：现在只有空白符号；别的字段留零，mygo 按窗口外观补默认的。
+// codeTheme 给编辑器套 Holt 改过的代码颜色：现在只有空白符号；别的字段留零，mygo 按窗口外观补默认的。
 // 颜色没变就沿用原来那个，不每帧新建。
 func codeTheme(st *editor.State, t *wui.Theme) {
 	ws := t.TextMuted.Alpha(whitespaceAlpha)

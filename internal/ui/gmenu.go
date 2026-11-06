@@ -6,11 +6,11 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
-// 文件树的右键菜单是 Grove 自己画的（issue #48），状态机是 app.PopMenu（App.Menu），这里只管喂事件和画：
+// 文件树的右键菜单是 Holt 自己画的（issue #48），状态机是 app.PopMenu（App.Menu），这里只管喂事件和画：
 //
 //   - 文件树的行（文件 / 目录行、仓库行、钉在顶上的行、压缩目录的每一段）和列表的空白处在右键按下时打开它
 //     （menuPress）；按下归了那一行，按着拖的移动和松开都还送到那一行，转给菜单（按住拖到项上松开选它）。
@@ -24,7 +24,7 @@ import (
 // 为什么不用 mygo 的 PopoverMenu：它不能按住右键拖到项上松开，子菜单没有悬停延迟和安全三角，灰着的项说不了原因，
 // 点外面的那一下还会落到底下。见 docs/mygo-pitfalls.md。
 
-// menu / menuItem 是建菜单的函数用的接口：系统菜单经 nativeMenu 适配，Grove 画的菜单是 app.PopMenu 自己的。
+// menu / menuItem 是建菜单的函数用的接口：系统菜单经 nativeMenu 适配，Holt 画的菜单是 app.PopMenu 自己的。
 type (
 	menu     = app.MenuSink
 	menuItem = app.MenuItem
@@ -60,7 +60,7 @@ func (w wuiItem) Danger() menuItem        { return w } // 系统菜单画不了�
 func (w wuiItem) Chosen() bool            { return w.it.Chosen() }
 
 // whyItem 加一项灰着说原因的（why 为空就是普通的一项）：系统菜单把原因括在标签后面（withWhy），
-// Grove 画的菜单悬停出提示。
+// Holt 画的菜单悬停出提示。
 func whyItem(m menu, label, why string) menuItem {
 	if _, ok := m.(wuiMenu); ok {
 		label = withWhy(label, why)
@@ -127,7 +127,7 @@ func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func
 // ctxMenu / ctxMenuRow 的 owner 也可以是别的可比较的值（Git 栏的行用 app.ChangeKey，已暂存和未暂存的同一个文件是两行）。
 type menuOwner struct{ Kind, Key string }
 
-// ctxMenu 给 el 装上 Grove 画的右键菜单（文件树以外的地方用它代替 ContextMenu）：和文件树的行一样，
+// ctxMenu 给 el 装上 Holt 画的右键菜单（文件树以外的地方用它代替 ContextMenu）：和文件树的行一样，
 // 右键按下打开、按住拖到项上松开选它，菜单开着时在别处右键换成那里的。el 不能再挂别的 HandleInput。
 //
 // el 有键盘（或键盘在它里面）时 ⇧F10 / 菜单键在它左下角下面开同一份菜单，第一项高亮（menuKeyTarget）。
@@ -147,7 +147,7 @@ func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, own
 	}
 }
 
-// menuDo 给建菜单的函数里"等列表建完再做"的动作（搜索结果的 do）用：Grove 菜单选中的项是在下一帧建树之前、
+// menuDo 给建菜单的函数里"等列表建完再做"的动作（搜索结果的 do）用：Holt 菜单选中的项是在下一帧建树之前、
 // gmenuRunChoice 里再跑一遍建菜单的函数时执行的，这时候不在建列表，直接做。建菜单时捕获的 do 是打开菜单那一帧的，
 // 那一帧的列表早就过去了，交给它的动作没人执行。
 func menuDo(fn func()) { fn() }
@@ -158,7 +158,7 @@ func menuKeyTarget(a *app.App, el wui.Element, owner any, build func(menu)) {
 	a.MenuKeyAt = &app.MenuKeyTarget{Owner: owner, Build: build, X: b.X, Y: b.Y + b.H}
 }
 
-// openMenuBelow 在按钮 b（上一帧的位置）左下角下面打开 build 建的 Grove 菜单（按钮的菜单用它代替 Menu）。
+// openMenuBelow 在按钮 b（上一帧的位置）左下角下面打开 build 建的 Holt 菜单（按钮的菜单用它代替 Menu）。
 // 下面放不下翻到按钮上面（不盖住按钮，状态栏的按钮就是这样），窗口都放不下就滚（PopMenu.layout）。
 // 按钮当成 OpenRow 的“那一行”，上下各让出 2。
 func openMenuBelow(a *app.App, c *wui.Context, b wui.Rect, owner menuOwner, build func(menu)) {
@@ -169,7 +169,7 @@ func openMenuBelow(a *app.App, c *wui.Context, b wui.Rect, owner menuOwner, buil
 	c.Invalidate()
 }
 
-// menuButton 让 b 点了（鼠标或空格 / 回车）在它下面开 Grove 菜单（按钮的菜单用它代替 Menu），返回 b。
+// menuButton 让 b 点了（鼠标或空格 / 回车）在它下面开 Holt 菜单（按钮的菜单用它代替 Menu），返回 b。
 func menuButton(a *app.App, c *wui.Context, b wui.Element, owner menuOwner, build func(menu)) wui.Element {
 	if b.Clicked() {
 		openMenuBelow(a, c, b.Bounds(), owner, build)

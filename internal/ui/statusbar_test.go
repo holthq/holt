@@ -10,9 +10,9 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // toasted 是 s 还在 a.Toast 里，或已经被界面拿去显示了。
@@ -110,7 +110,7 @@ func TestStatusBarMenus(t *testing.T) {
 
 	// 缩进：Go 按语言是 Tab；选 2 个空格只管这个文件；转成空格 / Tab 一步撤销
 	mustClick(t, tt, "缩进 Tab 4")
-	// Grove 菜单的 shownMenu 不列分隔线
+	// Holt 菜单的 shownMenu 不列分隔线
 	if menu := shownMenu(t, tt); !slices.Equal(menu, []string{"按语言默认", "Tab", "2 个空格", "4 个空格", "8 个空格", "把缩进转成空格", "把缩进转成 Tab"}) {
 		t.Fatalf("缩进菜单 %q", menu)
 	}

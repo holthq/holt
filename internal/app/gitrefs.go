@@ -4,8 +4,8 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是分支和标签的 Git 日常操作：分支改名 / 删除 / 删远程分支 / 发布，标签新建 / 推送 / 删除，

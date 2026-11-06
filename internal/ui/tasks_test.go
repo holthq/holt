@@ -4,9 +4,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/tasks"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/tasks"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 任务：⇧⌘B（task.run）开面板 "!"，回车在仓库里新开一个叫任务名的终端标签跑（在最后、键盘给它）；

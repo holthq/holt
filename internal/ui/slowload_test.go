@@ -6,9 +6,9 @@ import (
 	"syscall"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 预览标签换成一个读得慢的文件（这里是还没人写的命名管道）："读取中…"只在 SlowLoad（读了约 150 ms 还没读完）时画，

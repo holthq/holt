@@ -5,10 +5,10 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 打开的编辑器（gaps 1.4）：侧栏文件模式“仓库”头上面一段，所有组的标签各一行（ui/openeditors.go）。

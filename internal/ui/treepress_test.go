@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 文件树的鼠标手感（issue #46）：按下（还没松开）那一帧选中就挪过去、行画成"按下"的底色，打开文件等松开；

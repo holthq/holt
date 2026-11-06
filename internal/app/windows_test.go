@@ -12,10 +12,10 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // winHarness 是测试里的多窗口：没有真窗口（Win 为 nil），所有窗口的回调排进一个队列；
@@ -195,7 +195,7 @@ func TestWindowsOpenFocus(t *testing.T) {
 		t.Fatal(err)
 	}
 	a := h.w.Apps[0]
-	if len(h.w.Apps) != 1 || a.WsPath != ws[0] || a.Slot != 1 || a.StateKey() != "main" || a.Title() != "甲 — Grove" || h.from[a] != nil {
+	if len(h.w.Apps) != 1 || a.WsPath != ws[0] || a.Slot != 1 || a.StateKey() != "main" || a.Title() != "甲 — Holt" || h.from[a] != nil {
 		t.Fatalf("第一个窗口：%v slot=%d key=%s title=%q from=%v", winPaths(h.w), a.Slot, a.StateKey(), a.Title(), h.from[a])
 	}
 
@@ -203,7 +203,7 @@ func TestWindowsOpenFocus(t *testing.T) {
 	if b == nil || !slices.Equal(winPaths(h.w), ws[:2]) || b.Slot != 2 || b.StateKey() != "main-2" || h.from[b] != a || h.w.Focused() != b {
 		t.Fatalf("新窗口里打开乙：%v slot=%d from=%v", winPaths(h.w), b.Slot, h.from[b])
 	}
-	if b.Title() != "乙 — Grove" || a.WsPath != ws[0] {
+	if b.Title() != "乙 — Holt" || a.WsPath != ws[0] {
 		t.Errorf("标题 %q，甲成了 %s", b.Title(), a.WsPath)
 	}
 	h.idle()
@@ -225,7 +225,7 @@ func TestWindowsOpenFocus(t *testing.T) {
 	// 新建窗口：空工作区，可以开好几个
 	a.NewWindow()
 	e := h.w.Focused()
-	if len(h.w.Apps) != 3 || e.WsPath != "" || e.Slot != 3 || e.Title() != "Grove" || h.from[e] != a {
+	if len(h.w.Apps) != 3 || e.WsPath != "" || e.Slot != 3 || e.Title() != "Holt" || h.from[e] != a {
 		t.Fatalf("新建窗口：%v slot=%d title=%q", winPaths(h.w), e.Slot, e.Title())
 	}
 	e.NewWindow()
@@ -247,7 +247,7 @@ func TestWindowsOpenFocus(t *testing.T) {
 
 	// 空窗口里打开工作区：就在这个窗口里换
 	e.OpenWorkspace(ws[2])
-	if e.WsPath != ws[2] || h.w.Find(ws[2]) != e || len(h.w.Apps) != 3 || e.Title() != "丙 — Grove" {
+	if e.WsPath != ws[2] || h.w.Find(ws[2]) != e || len(h.w.Apps) != 3 || e.Title() != "丙 — Holt" {
 		t.Errorf("空窗口里打开丙：%s %v", e.WsPath, winPaths(h.w))
 	}
 	h.idle()

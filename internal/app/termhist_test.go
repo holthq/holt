@@ -6,8 +6,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 分屏记进会话：左右分、右边再上下分，各格自己的目录、比例照记；重开后树一样（不启动 shell），有键盘的是第一格；

@@ -11,8 +11,8 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 十六进制 dump：一行 16 字节、两组中间多一格、右边 ASCII（不可打印的是点），最后一行不满照样对齐；

@@ -6,8 +6,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 格式化（临时仓库，假命令）：设置"格式化"页一种语言一行，改了记进设置、清空回到内置默认；加一种语言、移除；
@@ -22,7 +22,7 @@ func TestFormatUI(t *testing.T) {
 	wait("读好", func() bool { return d.Buf != nil && !d.Loading })
 	tt.Frame()
 
-	st := wui.NewTester(SettingsView(a), 600, 1400)
+	st := wui.NewTester(SettingsView(a), 760, 1400)
 	st.SetLocale(i18n.Locale())
 	st.Frame()
 	mustClick(t, st, "格式化")

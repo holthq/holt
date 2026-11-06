@@ -7,7 +7,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 右键菜单有两种：系统菜单（ContextMenu，Tester 的 Menu / ChooseMenuItem / CloseMenu 管）和 mygo 画在窗口里的

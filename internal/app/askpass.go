@@ -10,9 +10,9 @@ import (
 	"sync"
 	"time"
 
-	"github.com/lemoeade/grove/internal/askpass"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/askpass"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是 git / ssh 要凭据时弹的框（helper 和套接字见 internal/askpass）。整个进程一个套接字，第一条写命令前起；

@@ -3,7 +3,7 @@ package app
 import (
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 最大化底栏：命令切 BottomMax、BottomH 不动；关底栏、打开文件、切组、进禅模式都还原；底栏关着时打开并最大化；不存进 state。

@@ -6,8 +6,8 @@ import (
 	"path/filepath"
 	"slices"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 文件树的撤销：重命名 / 移动改回去，新建 / 复制进来的移到废纸篓。移到废纸篓的不记（放回要靠访达），

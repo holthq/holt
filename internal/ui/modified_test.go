@@ -9,8 +9,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 改过未存的大文件每帧不再整篇比较（#12）：标签的圆点和状态栏每帧都问 Doc.Modified，

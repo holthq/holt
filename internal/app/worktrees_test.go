@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 工作树都建在 t.TempDir() 里：主仓库 proj 旁边一个分支工作树（经过符号链接加进工作区）、一个分离 HEAD 的，

@@ -7,8 +7,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 面板 "!"：读完状态后列所有仓库的任务（"仓库 · 命令"，右边是哪个文件），空查询下面一行说找哪些；

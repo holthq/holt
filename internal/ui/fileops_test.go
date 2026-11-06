@@ -8,8 +8,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 临时仓库上走一遍文件树里的文件操作：⌘N 新建文件（输入框在树里、回车建、打开、焦点给编辑器）、

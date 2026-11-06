@@ -8,7 +8,7 @@ import (
 
 	"github.com/egoist/mygo/transfer"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 别的应用拖进来的：拖来的文字插在编辑器光标处、文件照旧打开，拖到终端的文件是单引号写法。

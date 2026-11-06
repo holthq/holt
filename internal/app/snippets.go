@@ -8,9 +8,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/snippets"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/snippets"
 )
 
 // 这个文件是代码片段的应用一侧：给编辑器补全、认出选了哪一条、跳位会话、命令面板的 ">snip "、设置页的目录。

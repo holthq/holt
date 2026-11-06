@@ -21,10 +21,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/render"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/render"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // shotRender 是截图用的渲染后端（WORKBENCH_SHOT_RENDER=目录）：预览要的每一张记进目录里的 requests.jsonl；
@@ -241,7 +241,7 @@ func TestScreenshotMedia(t *testing.T) {
 	}
 	shots(tt, "snippet")
 
-	sv := wui.NewTester(SettingsView(a), 640, 560)
+	sv := wui.NewTester(SettingsView(a), 760, 560)
 	sv.SetScale(2)
 	sv.SetLocale(i18n.Locale())
 	sv.Frame()

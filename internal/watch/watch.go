@@ -21,8 +21,8 @@ import (
 
 	"github.com/egoist/mygo"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 合并时间：最后一次变化之后等 Debounce 再报，一直在变时离第一次变化最多 MaxDelay 就报。

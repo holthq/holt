@@ -7,8 +7,8 @@ import (
 	"github.com/egoist/mygo/plugins/terminal"
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是设置（⌘, 的设置窗口）怎么生效。设置窗口每改一项调 SettingsChanged：外观和语言马上换，

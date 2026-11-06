@@ -4,9 +4,9 @@ import (
 	"github.com/egoist/mygo"
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/fonts"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/fonts"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是各区域共用的小部件：图标按钮、开关按钮、胶囊、状态字母、居中的提示。

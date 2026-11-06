@@ -10,9 +10,9 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // TestScreenshotSettingsSearch 是设置搜索的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一套（-light / -dark），临时仓库 shop：
@@ -44,7 +44,7 @@ func TestScreenshotSettingsSearch(t *testing.T) {
 	a.RefreshRepo(r, app.WhyManual)
 	wait("git status", idle(r))
 
-	sv := wui.NewTester(SettingsView(a), 640, 560)
+	sv := wui.NewTester(SettingsView(a), 760, 560)
 	sv.SetScale(2)
 	sv.SetLocale(i18n.Locale())
 	sv.Frame()

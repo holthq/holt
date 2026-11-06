@@ -12,13 +12,12 @@ import (
 	"slices"
 	"strconv"
 	"strings"
-	"syscall"
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 变更数必须与 `git status --porcelain` 的行数一致；分支名与 `git branch --show-current` 一致。
@@ -600,7 +599,7 @@ func TestRunOpCancel(t *testing.T) {
 		t.Fatalf("取消后过了 %v 才返回", d)
 	}
 	deadline = time.Now().Add(3 * time.Second)
-	for syscall.Kill(pid, 0) == nil {
+	for processAlive(pid) {
 		if time.Now().After(deadline) {
 			t.Fatalf("取消后 sleep（%d）还活着", pid)
 		}

@@ -10,8 +10,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这里的测试都在 t.TempDir() 的临时仓库上跑；BenchmarkWorkspace 只读用户的工作区。

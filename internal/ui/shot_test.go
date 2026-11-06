@@ -17,12 +17,12 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // shotBar 是截图里红绿灯占的位置：和真的窗口一样（启动日志"标题栏：窗口按钮 {Height:38 Left:72}"），
@@ -232,7 +232,7 @@ func TestScreenshotPreviewSettings(t *testing.T) {
 	tt.Key(0, wui.KeyEscape)
 	tt.Frame()
 
-	st := wui.NewTester(SettingsView(a), 600, 480)
+	st := wui.NewTester(SettingsView(a), 760, 540)
 	st.SetScale(2)
 	st.SetLocale(i18n.Locale())
 	st.Frame()

@@ -7,8 +7,8 @@ import (
 	"github.com/egoist/mygo/plugins/terminal"
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // bottomBar 是底栏：当前仓库的终端标签（每个仓库自己一组，切仓库就切过去；没有仓库时是家目录的）、输出（git 操作、>git 命令的日志）

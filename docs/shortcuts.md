@@ -232,7 +232,7 @@
 
 ## 自定义
 
-上面是默认键，可以改：设置 → 快捷键里选中一条命令点“改…”按新键（⌫ 是不要快捷键，Esc 不改），或者直接编辑 `<状态目录>/keybindings.json`（平时是 `~/Library/Application Support/Grove/keybindings.json`，快捷键页右上 ⋯ → 打开 keybindings.json）。文件是一个数组，一条管一个命令：
+上面是默认键，可以改：设置 → 快捷键里选中一条命令点“改…”按新键（⌫ 是不要快捷键，Esc 不改），或者直接编辑 `<状态目录>/keybindings.json`（平时是 `~/Library/Application Support/Holt/keybindings.json`，快捷键页右上 ⋯ → 打开 keybindings.json）。文件是一个数组，一条管一个命令：
 
 ```json
 [

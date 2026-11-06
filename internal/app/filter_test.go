@@ -11,8 +11,8 @@ import (
 	"testing"
 	"time"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 筛选是模糊匹配：两个仓库的匹配放在一起按分取前 FilterCap 个——第一个仓库一大堆差的匹配挤不掉第二个仓库

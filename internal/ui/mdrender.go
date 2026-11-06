@@ -7,9 +7,9 @@ import (
 	"github.com/egoist/mygo/ui/markdown"
 	"github.com/egoist/mygo/ui/markdown/parser"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/render"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/render"
 )
 
 // 这个文件是 Markdown 预览里的 Mermaid 图和公式：给 markdown.Options 挂上 Code["mermaid"]、Math、InlineMath，

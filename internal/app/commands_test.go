@@ -12,9 +12,9 @@ import (
 	"github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 var update = flag.Bool("update", false, "重新生成 docs/shortcuts.md")
@@ -127,13 +127,13 @@ func TestMenuStructure(t *testing.T) {
 	items := a.BuildMenu().Items()
 	var labels []string
 	for i, it := range items {
-		if i == 0 { // 应用菜单：标题是应用名，第一项是自己的"关于 Grove"（不是系统的关于面板），然后分隔线、设置…
+		if i == 0 { // 应用菜单：标题是应用名，第一项是自己的"关于 Holt"（不是系统的关于面板），然后检查更新、分隔线、设置…
 			labels = append(labels, "appMenu")
 			if !slices.ContainsFunc(it.Submenu, func(x *mygo.MenuItem) bool { return x.ID == "app.settings" && x.Accelerator == "Cmd+," }) {
 				t.Errorf("应用菜单里没有 设置…（⌘,）：%+v", it.Submenu)
 			}
-			if sub := it.Submenu; len(sub) < 3 || sub[0].ID != "app.about" || sub[1].Type != mygo.MenuItemSeparator || sub[2].ID != "app.settings" {
-				t.Errorf("应用菜单开头不是 关于 / 分隔线 / 设置…：%+v", sub)
+			if sub := it.Submenu; len(sub) < 4 || sub[0].ID != "app.about" || sub[1].ID != "app.checkUpdate" || sub[2].Type != mygo.MenuItemSeparator || sub[3].ID != "app.settings" {
+				t.Errorf("应用菜单开头不是 关于 / 检查更新 / 分隔线 / 设置…：%+v", sub)
 			}
 			if slices.ContainsFunc(it.Submenu, func(x *mygo.MenuItem) bool { return x.Role == mygo.RoleAbout }) {
 				t.Errorf("应用菜单里还有系统的关于面板")

@@ -13,8 +13,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是不开 termd 时终端的回滚：关窗口 / 退出 / 换工作区前（NoteTermDirs）把每个在应用进程里的格的回滚

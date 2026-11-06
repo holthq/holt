@@ -8,10 +8,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // TestScreenshotTasksProfiles 是任务和终端配置的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一套（-light / -dark），临时仓库 shop：
@@ -75,7 +75,7 @@ func TestScreenshotTasksProfiles(t *testing.T) {
 		a.ClosePalette()
 	}
 
-	sv := wui.NewTester(SettingsView(a), 720, 560)
+	sv := wui.NewTester(SettingsView(a), 760, 560)
 	sv.SetScale(2)
 	sv.SetLocale(i18n.Locale())
 	sv.Frame()

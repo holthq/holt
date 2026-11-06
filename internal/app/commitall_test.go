@@ -6,9 +6,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 什么都没暂存时提交全部：未跟踪的也进提交，信息清掉。

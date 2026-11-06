@@ -6,8 +6,8 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // stashFiles 准备一个有一条贮藏的仓库（a.txt、b.txt 改了，-u 时带上没跟踪的 new.txt），展开它，返回应用和文件行。

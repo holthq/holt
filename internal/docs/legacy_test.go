@@ -13,7 +13,7 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // openAs 按 enc（"" 为自动认）读 d，像"用别的编码重新打开"。

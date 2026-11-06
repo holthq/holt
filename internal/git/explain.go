@@ -4,7 +4,7 @@ import (
 	"regexp"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // explains 是常见失败的认法和说明（gaps 2.2 顺带）：按顺序认，第一个对上的算。git 和 ssh 在 LC_ALL=C 下是英文的，
@@ -23,7 +23,7 @@ var explains = []struct {
 		"连不上远程：看看网络和地址。"},
 	{regexp.MustCompile(`already exists and is not an empty directory`), "目标目录已经存在，而且不是空的。"},
 	{regexp.MustCompile(`index\.lock|Unable to create '[^']*\.lock'`),
-		"仓库里有锁文件：有另一个 git 在跑，或者上次中断时留下的。如果确定没有别的 git 在跑，手动删掉它再继续；Grove 不会替你删。"},
+		"仓库里有锁文件：有另一个 git 在跑，或者上次中断时留下的。如果确定没有别的 git 在跑，手动删掉它再继续；Holt 不会替你删。"},
 	{regexp.MustCompile(`Your local changes to the following files would be overwritten`), "工作区里的改动会被覆盖：先提交或贮藏。"},
 	{regexp.MustCompile(`CONFLICT \(`), "有冲突：在 Git 栏里解决之后继续。"},
 }

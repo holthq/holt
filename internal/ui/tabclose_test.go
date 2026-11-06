@@ -3,9 +3,9 @@ package ui
 import (
 	"testing"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 标签右边那一格（#17）：有没保存的改动时当前标签也是一个点、没有 ×；鼠标移到标签上变成 ×，点了照旧关（会问）；

@@ -18,17 +18,17 @@ import (
 	"github.com/egoist/mygo"
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/globs"
-	"github.com/lemoeade/grove/internal/history"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/render"
-	"github.com/lemoeade/grove/internal/snippets"
-	"github.com/lemoeade/grove/internal/tasks"
-	"github.com/lemoeade/grove/internal/watch"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/globs"
+	"github.com/holthq/holt/internal/history"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/render"
+	"github.com/holthq/holt/internal/snippets"
+	"github.com/holthq/holt/internal/tasks"
+	"github.com/holthq/holt/internal/watch"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // StaleAfter 之后再切到一个没在监听的仓库，就顺手在后台重读一次它的状态。
@@ -263,10 +263,10 @@ type App struct {
 	TreeClip     []string                      // 文件树里 ⌘C 复制的文件 / 目录（绝对路径），⌘V 粘贴它们；应用里记着，不读系统剪贴板
 	rowTips      map[FileKey]rowTip            // 文件树行的悬停提示，仓库刷新之后重算（RowTip）
 	TreeTip      TreeTip                       // 文件树行的悬停提示停了多久（treetip.go；界面写）
-	Menu         PopMenu                       // Grove 自己画的菜单（文件树和 Git 栏的右键、分支菜单，popmenu.go；界面喂事件）
+	Menu         PopMenu                       // Holt 自己画的菜单（文件树和 Git 栏的右键、分支菜单，popmenu.go；界面喂事件）
 	MenuShown    int                           // 菜单开着画了几帧（界面用：画过两帧后接收层没了焦点就是窗口失去了焦点）
 	MenuByKey    bool                          // 菜单是 ⇧F10 / 菜单键开的：没选就关了时键盘回到文件树
-	MenuKeyAt    *MenuKeyTarget                // 这一帧有键盘、装了 Grove 右键菜单的元素：⇧F10 / 菜单键开它的菜单（界面每帧写、帧末用掉）
+	MenuKeyAt    *MenuKeyTarget                // 这一帧有键盘、装了 Holt 右键菜单的元素：⇧F10 / 菜单键开它的菜单（界面每帧写、帧末用掉）
 	dirInfos     map[FileKey]*dirInfo          // 目录行悬停提示的大小、最近改动（dirtip.go）
 	Edit         *TreeEdit                     // 文件树里正在输入的名字（新建 / 重命名），nil 为没有
 	TreeFocused  bool                          // 这一帧文件树有焦点（界面每帧写；⌘N 据此决定建在哪）

@@ -6,7 +6,7 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // ⌘T 工作区符号：带着 "#" 打开面板，"#main" 列出两个仓库里的 main（名字、签名、仓库/路径:行号），

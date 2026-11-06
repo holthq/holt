@@ -1,6 +1,6 @@
 # 架构
 
-本文按子系统介绍 Grove 当前的结构和实现，供修改代码时参考。各版本的改动记录在根目录的 `CHANGELOG.md`。
+本文按子系统介绍 Holt 当前的结构和实现，供修改代码时参考。各版本的改动记录在根目录的 `CHANGELOG.md`。
 
 ```
 cmd/workbench ──► internal/ui ──► internal/app ──► internal/{git, files, docs, workspace, search, globs, fuzzy, watch,
@@ -22,7 +22,7 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 | `internal/ui/` | 纯界面，按区域分文件：`view.go` 总布局，`titlebar.go`，`sidebar.go`（文件树），`gitbar.go`，`search.go`，`outline.go`，`openeditors.go`，`tabs.go`（编辑器组和标签内容），`history.go` / `graph.go`（右栏），`bottom.go`（终端 / 输出 / 问题），`statusbar.go`，`palette.go`，`dialogs.go` / `dialogframe.go`，`menus.go`（右键菜单），`settings.go` / `about.go`（两个小窗口），`widgets.go` / `icons.go` / `fileicons.go` / `accent.go` |
 | `internal/workspace/` | `.code-workspace` 解析、state.json 的 schema 和旧格式迁移、`Settings`、`Session`（按工作区的标签、展开目录、终端、布局）、几个窗口共用的 `Store`、设置的 JSON 形式（`settingsjson.go`）、`files.exclude` 的读取 |
 | `internal/git/` | Git 命令调用。只读：status（porcelain v2）、diff 两侧、log、分支 / 标签 / 远程、blob、ls-files、blame、工作树、子模块；写入：`RunRW` / `RunOp`（非交互环境、超时、进程组）；块级和行级补丁（`hunk.go`）、远程地址转网页（`web.go`）、常见错误说明（`explain.go`）、需要终端的命令识别（`interactive.go`） |
-| `internal/askpass/` | 凭据提示的两端：`Main` / `Run` 处理 `Grove askpass <提示>` 子进程（连接套接字、发送一行 JSON、等待回答），`Listen` / `Server` / `Close` 处理应用端；`CleanStale` 清理上次遗留的目录，`Classify` 识别用户名、密码或口令提示 |
+| `internal/askpass/` | 凭据提示的两端：`Main` / `Run` 处理 `Holt askpass <提示>` 子进程（连接套接字、发送一行 JSON、等待回答），`Listen` / `Server` / `Close` 处理应用端；`CleanStale` 清理上次遗留的目录，`Classify` 识别用户名、密码或口令提示 |
 | `internal/files/` | 文件树模型：`git ls-files` 建，普通文件夹用 `Walk`；展开收起、筛选、改动标记、被忽略的文件懒读、符号链接、子模块行、合并目录、增量 `Diff` / `Apply`、空目录 |
 | `internal/docs/` | 打开的文档：各种 `Kind`、读写、外部改动检测、编码、大文件、历史版本、Diff 两侧、冲突块解析、保存整理、按行 diff（`LineEdits`）、交互式变基的计划、光标信息 |
 | `internal/highlight/` | 大文件的后台高亮：`For(name)` 复制 mygo 的语言定义，只替换 `Highlighter`；一个 goroutine 从头分词并记录每行开头的状态，主线程据此处理可见行 |
@@ -108,7 +108,7 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 ### 状态目录
 
-默认是 `~/Library/Application Support/Grove/`，`WORKBENCH_STATE=目录` 时用那个目录（测试和多开都靠它）。里面有：
+默认是 `~/Library/Application Support/Holt/`，`WORKBENCH_STATE=目录` 时用那个目录（测试和多开都靠它）。里面有：
 
 | 文件 | 内容 |
 |---|---|
@@ -157,7 +157,7 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 ## 所有仓库同时可见
 
-这是 Grove 的第一原则：文件树、Git 栏、搜索、历史都同时列出工作区里的每个仓库，没有“当前仓库 + 切换器”的视图。新功能也需遵守，不要新增只显示当前仓库的列表。
+这是 Holt 的第一原则：文件树、Git 栏、搜索、历史都同时列出工作区里的每个仓库，没有“当前仓库 + 切换器”的视图。新功能也需遵守，不要新增只显示当前仓库的列表。
 
 “当前仓库”（`Current()`）还在，但只用在少数地方：新终端开在哪、右栏历史的“当前仓库”页、标题栏的分支胶囊。点文件树、Git 栏或者切到某个文件标签也会更新当前仓库（`UseRepo` / `SelectRepo`），⌘1–⌘9 跳到第几个仓库（`JumpRepo`）。
 
@@ -215,9 +215,9 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 ### 凭据
 
-git 请求用户名、密码或 SSH 口令时，由 Grove 显示凭据对话框。启动时在 `os.TempDir()` 下建 `grove-askpass-<pid>`：一个 0600 的套接字和一个 0700 的小脚本，脚本就是 `exec Grove askpass "$@"`。只有写命令的环境里带 `GIT_ASKPASS` / `SSH_ASKPASS` / `SSH_ASKPASS_REQUIRE=force` 指向它；读命令不带，不会在刷新时弹框。
+git 请求用户名、密码或 SSH 口令时，由 Holt 显示凭据对话框。启动时在 `os.TempDir()` 下建 `grove-askpass-<pid>`：一个 0600 的套接字和一个 0700 的小脚本，脚本就是 `exec Holt askpass "$@"`。只有写命令的环境里带 `GIT_ASKPASS` / `SSH_ASKPASS` / `SSH_ASKPASS_REQUIRE=force` 指向它；读命令不带，不会在刷新时弹框。
 
-`Grove askpass <提示>` 子进程（`askpass.Main`）连接套接字，发送一行 JSON（提示、`GROVE_ASKPASS_ID`），等待回答后写入标准输出。应用端按 id 查找对应的窗口和命令（`askRegister` / `askDone`），由 `Classify` 识别提示种类，加入 `a.Cred` 后显示对话框，用户回答后调用 `AnswerCred`。同一主机的用户名和密码在 `credCache` 中保留 2 分钟，避免在一次“全部拉取”中重复询问。启动时由 `CleanStale` 清理上次遗留的目录。测试的 `TestMain` 也识别 askpass 模式，因此测试二进制也能作为 askpass 脚本的入口。
+`Holt askpass <提示>` 子进程（`askpass.Main`）连接套接字，发送一行 JSON（提示、`GROVE_ASKPASS_ID`），等待回答后写入标准输出。应用端按 id 查找对应的窗口和命令（`askRegister` / `askDone`），由 `Classify` 识别提示种类，加入 `a.Cred` 后显示对话框，用户回答后调用 `AnswerCred`。同一主机的用户名和密码在 `credCache` 中保留 2 分钟，避免在一次“全部拉取”中重复询问。启动时由 `CleanStale` 清理上次遗留的目录。测试的 `TestMain` 也识别 askpass 模式，因此测试二进制也能作为 askpass 脚本的入口。
 
 ### 暂存、块和行
 
@@ -330,19 +330,19 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 `files.Tree` 由 `git ls-files` 建（带模式位，`LsFilesModes`，认得出符号链接和子模块），未跟踪的文件来自 status。普通文件夹用 `Walk`。树里每个仓库是一段，段头贴顶；展开的目录记在会话 `dirs` 里。
 
-文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）、Git 栏段头的右键菜单和分支菜单、标题栏分支胶囊的菜单是 Grove 自己画的（issue #48、#58），不用系统菜单
+文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）、Git 栏段头的右键菜单和分支菜单、标题栏分支胶囊的菜单是 Holt 自己画的（issue #48、#58），不用系统菜单
 右键一行时菜单用 `PopMenu.OpenRow` 开：在指针的横坐标、那一行底下展开，下面放不下翻到那一行上面，不盖住它；比 `MenuRowMax`（64）高的（列表空白处）按指针处开。菜单开着时右键别的登记过的地方也一样。
 文件树以外用 `ctxMenu` / `ctxMenuRow`（右键）/ `menuButton`、`openMenuBelow`（按钮）的：Git 栏段头、分支胶囊和段头的分支、编辑器标签、打开的编辑器、贮藏、历史的提交 / 改动 / 仓库行、本地历史、工作树行和工作树操作、blame、终端标签、搜索结果和摘要行、推送按钮的右键、状态栏的语言 / 缩进 / 换行 / 编码和缩放、只读条的“换编码…”、⋯ Git 操作、git 队列、变基每一步的动作、
 Git 栏的变更行 / 贮藏里的文件行 / 未跟踪目录行（owner 是 `app.ChangeKey`，已暂存和未暂存的同一个文件是两份；多选照旧按 `MenuChanges` 算）、历史面板的标题行和比较行、
 提交卡片的“更多”、标题栏的工作区按钮、底栏「+」的终端配置、搜索编辑器的上下文行数、克隆框的右键。
 按钮的菜单（`openMenuBelow`）按 `OpenRow` 开、按钮当“那一行”：下面放不下翻到按钮上面，不盖住它（状态栏）。
-Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里的 `gmenuRunChoice`，和系统菜单在下一帧建到那个元素时执行差不多）：换工作区、重搜这类换掉列表状态的动作
+Holt 菜单选中的项在下一帧的开头、建树之前执行（`root` 里的 `gmenuRunChoice`，和系统菜单在下一帧建到那个元素时执行差不多）：换工作区、重搜这类换掉列表状态的动作
 要是在树建完以后做，这一帧的布局还拿着旧的列表（mygo 的 `layoutList` 空指针）。建菜单函数里“等列表建完再做”的 `do`（搜索结果）传 `menuDo`（直接做）；打开那一帧捕获的 `do` 交出去的动作没人执行。
 建菜单的函数每帧重跑（`PopMenu.Refresh`），开着时对着的东西可能没了：按打开时的下标取切片的先核对（搜索结果的 `searchRowLive`、变基的那一步、比较段、克隆），
 不在了就什么也不加；一项都没有时 `Refresh` 关掉菜单，选中的项也不执行。
 还是 mygo 画的（`ContextMenu` / `Menu`）：设置窗口里的“更多”（设置、快捷键页；设置是另一个窗口，没有 `gmenuView`，`App.Menu` 也只有主窗口那一份）、
 标题栏的面包屑（`dirMenu` 两层子菜单、每层最多 80 项，`menuCollect` 连子菜单一起每帧建，最坏几十万项，要先让子菜单按需建）、编辑器的右键菜单。
-`root` 每帧 `c.SetMenuPresentation(wui.PopoverMenus)`：这些还是 `ContextMenu` / `Menu` 的、编辑器的右键菜单（`d.St.ContextMenu`，mygo 编辑器自己开的，Grove 接不过来）、文本框和可选中文字的编辑菜单都由 mygo 画在窗口里（mygo 的 `PopoverMenu` 的样子，不是 Grove 菜单的）。
+`root` 每帧 `c.SetMenuPresentation(wui.PopoverMenus)`：这些还是 `ContextMenu` / `Menu` 的、编辑器的右键菜单（`d.St.ContextMenu`，mygo 编辑器自己开的，Holt 接不过来）、文本框和可选中文字的编辑菜单都由 mygo 画在窗口里（mygo 的 `PopoverMenu` 的样子，不是 Holt 菜单的）。
 （窗口靠下时会折成带滚动箭头的，见 `docs/mygo-pitfalls.md`），也不用 mygo 的 `PopoverMenu`（不能按住右键拖到项上松开、子菜单没有延迟和安全三角、
 灰项说不了原因、点外面那一下会落到底下）：
 
@@ -360,8 +360,8 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
   接收层第一帧不拿键盘、第二帧才 `Focus()`：mygo 在 Overlay 出现那一帧（建完以后）记下当时有键盘的元素，接收层消失时还回去（`restoreFocus`），
   所以关了菜单（选了、Esc、点外面）键盘回到打开前的元素。样子：字号 13、项高 24、面板圆角 8、内边距 4、项圆角 5，最小宽 180；勾选位只在这一层有勾选项时留（`MenuLevel.TextL`），没有时字左边留 10；高亮项是字色 8% 的淡填充、字色不变（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
 - 建菜单的函数（`menus.go`）都收 `menu` 接口（`app.MenuSink`），系统菜单（`ContextMenu` / `Menu`）经 `nativeMenu(m)` 适配，所以两边共用；
-  灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Grove 画的悬停提示。
-  破坏性的项（废纸篓、丢弃、删除、强推、中止、硬重置、从列表移除）链上 `Danger()`：Grove 画的用 `t.Danger`，悬停填充也是；系统菜单画不了，什么也不做。
+  灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Holt 画的悬停提示。
+  破坏性的项（废纸篓、丢弃、删除、强推、中止、硬重置、从列表移除）链上 `Danger()`：Holt 画的用 `t.Danger`，悬停填充也是；系统菜单画不了，什么也不做。
   文件和目录的菜单顶层 14 项以内（`fileMenu`），不常用的进“更多”（`fileMoreItems`）；组序：打开查看 → 暂存 → 访达和路径 → 复制粘贴 → 重命名、废纸篓 → 更多，`changeMenu` 跟这个顺序。
 
 刷新是增量的（`app/treediff.go`）：监听报的 `Change.Dirs` 交给 `fileHints`，后台只对这些目录重新 `ls-files`，`Tree.Diff` 算出加减，回主线程 `Tree.Apply`。变了的目录超过 200 个或 `Full` 时整个重建。后台计算期间若整棵树已被替换（`Gen` 变化），则丢弃结果。
@@ -417,7 +417,7 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
 
 ## 编辑器
 
-编辑器使用 mygo 的 `editor`；Grove 负责文档、标签、编辑器组及相关功能。
+编辑器使用 mygo 的 `editor`；Holt 负责文档、标签、编辑器组及相关功能。
 
 ### 文档和标签
 
@@ -512,7 +512,7 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
 - 代码片段（`internal/snippets`）：内置的加状态目录里的，Tab 展开，Tab / ⇧Tab 跳位。
 - 图片：预览、和 HEAD 的图片 Diff；Markdown 和 SVG 用 ⇧⌘V 在源码和预览之间切（`TogglePreview`）；`app/image.go` 的 `ToggleHex` 切十六进制视图，也能用默认应用打开。
 - 键盘移动光标后，编辑器让光标上下各留 min(5 行, 视图高 1/5)（`ui/caret.go` 的 `caretMargin`）。mygo 自己只留 3 行；点击和滚轮不受影响。
-- 光标在标识符上（没有选区、只有一个光标）停稳 250 ms（`ui.OccurRest`）后，本文件里同名的其他出现（整词、区分大小写）铺上 mygo 的 `Occurrence` 底色（`ui/occur.go` 的 `occurMarks`，写进 `St.TextBackgrounds`，状态在 `Doc.Occur`）；打字、换词马上清掉。mygo 自己只在有选区时标选中文字的其他出现，也没有"光标下的词"这个选项，所以用 `TextBackgrounds` 在 Grove 这边做；按内容版本和词算一次，大于 `StickyQuick` 的文件只搜看得见的行、滚了重搜。搜索编辑器（底色是搜到的那几处）和十六进制视图不标。
+- 光标在标识符上（没有选区、只有一个光标）停稳 250 ms（`ui.OccurRest`）后，本文件里同名的其他出现（整词、区分大小写）铺上 mygo 的 `Occurrence` 底色（`ui/occur.go` 的 `occurMarks`，写进 `St.TextBackgrounds`，状态在 `Doc.Occur`）；打字、换词马上清掉。mygo 自己只在有选区时标选中文字的其他出现，也没有"光标下的词"这个选项，所以用 `TextBackgrounds` 在 Holt 这边做；按内容版本和词算一次，大于 `StickyQuick` 的文件只搜看得见的行、滚了重搜。搜索编辑器（底色是搜到的那几处）和十六进制视图不标。
 - 选中里画出来的空白符号（点、箭头）用 `TextMuted` 的 0.22（mygo 默认 0.45，`ui/occur.go` 的 `codeTheme` 设 `St.Theme.Whitespace`，别的代码颜色留零、照旧跟 mygo 的默认）。
 - 编辑器和 Diff 中的光标在停止操作一段时间后不再闪烁（`ui/caret.go`，`WORKBENCH_CARET_REST=off` 关掉）。mygo 的编辑器有键盘时每 500 ms 排一帧闪光标，而 mygo 要 2 秒没有新帧才放掉整窗的帧内存，因此持续闪烁会额外占用一两百 MB 内存，并持续消耗 CPU。
 - Diff 有并排和统一两种，全文 / 只看改动两种（`unified` / `fullDiff`）。
@@ -569,7 +569,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 ### agent 状态
 
-终端里跑着 claude、codex 这类 agent 时，按格算它的状态，再按工作树汇总（`app/agents.go`）。全在本机算，只看 Grove 自己的终端，不读 agent 的日志、不接它的接口。
+终端里跑着 claude、codex 这类 agent 时，按格算它的状态，再按工作树汇总（`app/agents.go`）。全在本机算，只看 Holt 自己的终端，不读 agent 的日志、不接它的接口。
 
 - 等你（`AgentWaiting`）：终端响铃（BEL）或要通知（OSC 9 / OSC 777），而键盘不在这一格（`paneLooked`）；记在 `TermPane.bellAt`，用户切进这一格（`FocusPane`、`GoToPane`）时清。认序列靠 mygo 终端的 `OnBell` / `OnNotify`（OSC 0/2/7/52 里当结束符的 BEL 它不算）；termd 的会话在无头终端上接这两个回调，发 `frameBell` 给窗口（没窗口接着时记下，接上时补一帧），窗口端是 `Conn.OnBell`。
 - 运行中 / 空闲（`AgentRunning` / `AgentIdle`）：前台命令在 agent 名单里（`DefaultAgents` 加设置的「agent 命令」），最近 10 秒（`agentQuiet`）有输出算运行中，否则空闲。前台命令由后台 goroutine（`agentPoller`）每 2 秒用一次 `ps -A -o pid,pgid,tpgid,args` 读所有开着的格（node / bun / python 跑的脚本按脚本名）；读到的和上一轮一样就不回主线程，免得空闲时每 2 秒多一帧。输出时间：termd 的格每来一帧屏幕记一次（`Conn.OnOutput`，原子量），本地的格没有输出回调，前台是 agent 时看屏幕文字的指纹变没变。
@@ -584,7 +584,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 设置里开了“关掉窗口后终端继续在后台运行”，新建分屏的 shell 会在终端后台进程 termd 中运行，窗口里的终端只是镜像。
 
-- 进程：就是 Grove 自己带 `termd` 参数（`Grove termd <sock> <log>`），`main` 第一行分出去，不起 `mygo.App`。由 `termd.Spawn` 用 `Setsid` 起，等它能连上。
+- 进程：就是 Holt 自己带 `termd` 参数（`Holt termd <sock> <log>`），`main` 第一行分出去，不起 `mygo.App`。由 `termd.Spawn` 用 `Setsid` 起，等它能连上。
 - 套接字：状态目录里的 `termd.sock`，0600，不做别的认证（只有这个用户能连）。路径太长（unix 套接字有长度限制）时换成 `$TMPDIR/grove-termd-<sha1>.sock`。同时起了两个时靠 `<sock>.lock` 的 flock 只留一个。一个状态目录一个 termd，所以 `WORKBENCH_STATE` 的实例有自己的。
 - 会话：由一个 pty（自行实现的 `pty_darwin.go`，使用 `/dev/ptmx` + `ioctl`）、一个 shell 和一个无头 `terminal.Terminal` 组成。shell 输出传给无头终端，窗口中的终端通过 `terminal.Options.Conn` 获取镜像帧，保持屏幕和回滚内容一致。仅在窗口端尺寸实际变化时发送大小（`ResizeByConn`）。每个会话同时只允许一条连接，新连接会替换旧连接，另一个窗口会显示“被别的窗口接走了”。
 - 断开和关掉：关窗口、⌘Q、换工作区是断开，会话留在 termd 里，会话记下 sid，再开同一个工作区接回去；关格、关标签、移除仓库、重新启动是关掉会话（shell 收到 SIGHUP）。
@@ -600,7 +600,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 同一仓库在两个窗口中打开时，各自拥有独立的监听和终端。
 
-外面交进来的路径（命令行参数、第二个实例转过来的、`open -a Grove`、拖到程序坞图标上，`OnOpenFile` 分不出来，冷启动时攒着的在 `Restored` 里一起派）都进 `Route`：工作区文件开新窗口（开着就置于前台）；目录走 `routeDir`：已经是哪个窗口的工作区就叫到前面，是哪个开着的窗口里的仓库（或它的 git 根是）就叫到前面并跳到那个仓库，前台窗口是空工作区就在它里面开，别的一个目录开一个新窗口；文件交给前台窗口的 `OpenArgs`。拖进窗口里的（`OnFileDrop`）不走 `Route`，直接交给那个窗口的 `OpenArgs`。`OpenArg` 对目录的处理：已在工作区里的仓库跳到那一段；不在的先问要不要加进来（只记进会话，不改 `.code-workspace`）；空工作区的窗口直接把目录当工作区打开。
+外面交进来的路径（命令行参数、第二个实例转过来的、`open -a Holt`、拖到程序坞图标上，`OnOpenFile` 分不出来，冷启动时攒着的在 `Restored` 里一起派）都进 `Route`：工作区文件开新窗口（开着就置于前台）；目录走 `routeDir`：已经是哪个窗口的工作区就叫到前面，是哪个开着的窗口里的仓库（或它的 git 根是）就叫到前面并跳到那个仓库，前台窗口是空工作区就在它里面开，别的一个目录开一个新窗口；文件交给前台窗口的 `OpenArgs`。拖进窗口里的（`OnFileDrop`）不走 `Route`，直接交给那个窗口的 `OpenArgs`。`OpenArg` 对目录的处理：已在工作区里的仓库跳到那一段；不在的先问要不要加进来（只记进会话，不改 `.code-workspace`）；空工作区的窗口直接把目录当工作区打开。
 
 ### 启动
 
@@ -666,7 +666,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 ## Markdown 渲染
 
-Markdown 预览由 mygo 画，Grove 补充 mygo 无法绘制的三类内容：Mermaid 图和 TeX 公式（mygo 的 SVG 解析器画不了文字），还有带图片的表格（mygo 的单元格只排字，图片显示成 `[说明]`）。
+Markdown 预览由 mygo 画，Holt 补充 mygo 无法绘制的三类内容：Mermaid 图和 TeX 公式（mygo 的 SVG 解析器画不了文字），还有带图片的表格（mygo 的单元格只排字，图片显示成 `[说明]`）。
 
 带图片的表格在 `ui/mdtable.go`：预览挂 mygo 的 `Options.Block` 钩子（源码里有 `|` 和 `![` 才挂），碰到单元格里有图片的表格自己搭——列等宽铺满一栏，全空的表头行不画，每个单元格是一个 `ShareSelection` 的小 `markdown.View`（选项存在表格元素的 `ui.Local` 上，图片缓存才留得住）；`cellSource` 给开头像块标记的字加反斜杠，免得单独解析成标题、列表。别的表格照旧给 mygo。
 

@@ -10,9 +10,9 @@ import (
 	"github.com/egoist/mygo/ui/editor"
 	"golang.org/x/text/encoding/japanese"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 老编码能编辑：Shift_JIS 的文件改了按 Shift_JIS 存；加了写不进去的 emoji，⌘S 先问"转成 UTF-8 保存？"

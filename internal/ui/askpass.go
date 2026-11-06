@@ -5,9 +5,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/askpass"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/askpass"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // credDlgKey 给每个凭据提示一份自己的输入框状态（换下一个提示时框是新的、焦点重新落到第一栏）。

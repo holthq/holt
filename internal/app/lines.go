@@ -3,9 +3,9 @@ package app
 import (
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 行级暂存：Diff 标签里点行号选几行（⇧ 点扩大到那一行），只暂存 / 取消暂存 / 丢弃选中的那几行。能做的和每一块上的

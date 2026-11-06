@@ -10,10 +10,10 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/snippets"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/snippets"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // selTexts 是 d 现在的几处选区的文字，主选区在前（mygo 的主选区是最后一个）。

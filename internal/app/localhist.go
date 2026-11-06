@@ -12,11 +12,11 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/fuzzy"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/history"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/fuzzy"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/history"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是本地历史：写盘前后各记一份（internal/history 存在状态目录的 history 下），右栏文件历史里

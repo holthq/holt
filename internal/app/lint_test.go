@@ -10,8 +10,8 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 检查：ParseProblems 认各家工具的输出行（go vet、tsc、eslint 两种、ruff、shellcheck、cargo），路径统一成仓库内的。

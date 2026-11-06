@@ -4,7 +4,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 命令面板 >git 跑的命令不弹密码提示、不开编辑器（RunOp 的环境），要人输入的命令在那里跑不成：

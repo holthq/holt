@@ -8,7 +8,7 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
+	"github.com/holthq/holt/internal/docs"
 )
 
 // still 是 550 ms 里画面一点没变（光标闪的话半秒内一定换过一次）。

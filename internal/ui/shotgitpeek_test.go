@@ -8,10 +8,10 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // TestScreenshotGitPeek 是改动块就地看等 Git 功能的截图（WORKBENCH_SHOT=目录 时才跑），浅色、深色各一套（-light / -dark）：
@@ -127,7 +127,7 @@ func TestScreenshotGitPeek(t *testing.T) {
 		a.SetHistAll(false)
 
 		a.St.Settings.WebHosts = []workspace.WebHost{{Host: "git.example.com", Kind: "gitlab"}}
-		st := wui.NewTester(SettingsView(a), 640, 520)
+		st := wui.NewTester(SettingsView(a), 760, 520)
 		st.SetLocale(i18n.Locale())
 		st.SetScale(2)
 		st.SetDark(dark)

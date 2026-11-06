@@ -6,8 +6,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/lemoeade/grove/internal/files"
-	"github.com/lemoeade/grove/internal/search"
+	"github.com/holthq/holt/internal/files"
+	"github.com/holthq/holt/internal/search"
 )
 
 // 这个文件是搜索结果跟着磁盘变：监听报来文件变了、保存了开着的文件（含自动保存），结果里有的那些文件

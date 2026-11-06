@@ -10,11 +10,11 @@ import (
 
 	"github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 这个文件是侧栏的搜索页：在列表里所有仓库的文件里搜文字（internal/search，只读），

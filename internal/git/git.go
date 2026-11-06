@@ -13,7 +13,7 @@ import (
 	"slices"
 	"strings"
 
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 超过这个大小的文件不加载 diff，避免原型里一次性读入大文件。

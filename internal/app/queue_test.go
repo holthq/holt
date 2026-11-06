@@ -7,7 +7,7 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // remoteRepos 建全部抓取 / 拉取用的三个临时仓库和一个本地的裸仓库当远程：

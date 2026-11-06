@@ -12,11 +12,11 @@ import (
 
 	"github.com/egoist/mygo/plugins/terminal"
 
-	"github.com/lemoeade/grove/internal/git"
+	"github.com/holthq/holt/internal/git"
 )
 
 // 终端里的 agent（claude、codex……）的状态，按工作树汇总：工作树就是 agent 的工位。
-// 全在本机算，只看 Grove 自己的终端：前台进程名在 agent 名单里算有 agent；程序响铃（BEL）或要通知（OSC 9 / 777）、
+// 全在本机算，只看 Holt 自己的终端：前台进程名在 agent 名单里算有 agent；程序响铃（BEL）或要通知（OSC 9 / 777）、
 // 而用户没在看这一格算"等你"，一直到用户切进这一格；最近 10 秒有输出算"运行中"，否则"空闲"。
 // 不读 agent 的日志，不接它的接口，换一个 agent 也一样。
 

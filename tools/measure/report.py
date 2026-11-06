@@ -50,7 +50,7 @@ class Run:
         return max(early, key=lambda s: s[1]) if early else None
 
     def stable(self):
-        """稳定段：SETTLE 以后，去掉这个 Workbench 在前台的那几段（连同回到后面以后 FRONT_GRACE 秒，帧内存放得慢）。"""
+        """稳定段：SETTLE 以后，去掉这个 Holt 在前台的那几段（连同回到后面以后 FRONT_GRACE 秒，帧内存放得慢）。"""
         spans = front_spans(self)
         return [s for s in self.samples if s[0] >= self.base + SETTLE and not any(a <= s[0] <= b + FRONT_GRACE for a, b in spans)]
 
@@ -121,7 +121,7 @@ def read_log(path, start):
 
 
 def read_front(path):
-    """front.txt：前台换成谁的那一刻（秒, pid, 名字）；量的那个自己在前台时名字是可执行文件名（Grove，0.18.5 以前 Workbench），别的是 ps 的 comm（路径）。"""
+    """front.txt：前台换成谁的那一刻（秒, pid, 名字）；量的那个自己在前台时名字是可执行文件名（Holt，老的构建是 Grove / Workbench），别的是 ps 的 comm（路径）。"""
     out = []
     if os.path.exists(path):
         with open(path, encoding="utf-8", errors="replace") as f:
@@ -134,12 +134,12 @@ def read_front(path):
 
 def front_spans(run):
     """量的那个（meta 里的 pid）在前台的几段 [(起, 止)]；到量完还在前台的止是最后一个点。
-    别的 Grove（别的会话的冒烟）到前台不算：那时这个在后面。"""
+    别的 Holt（别的会话的冒烟）到前台不算：那时这个在后面。"""
     spans, since = [], None
     end = run.samples[-1][0] if run.samples else 0
     pid = run.meta.get("pid", "")
     for sec, who, name in run.front:
-        mine = who == pid if pid else name == run.meta.get("exe", "Workbench")
+        mine = who == pid if pid else name == run.meta.get("exe", "Holt")
         if mine and since is None:
             since = sec
         elif not mine and since is not None:
@@ -182,7 +182,7 @@ def summary(run):
         out.append(f"  帧：共 {len(run.frames)} 帧，最后一帧第 {run.frames[-1]:.0f} s，稳定段里 {late} 帧")
     spans = front_spans(run)
     if spans:
-        out.append("  " + run.meta.get("exe", "Workbench") + " 到过前台（这几段光标闪、帧数涨，不算）：" + "、".join(f"第 {a:g}–{b:g} s" for a, b in spans))
+        out.append("  " + run.meta.get("exe", "Holt") + " 到过前台（这几段光标闪、帧数涨，不算）：" + "、".join(f"第 {a:g}–{b:g} s" for a, b in spans))
     elif run.front:
         out.append("  一直在后台")
     out.extend("  " + line for line in run.lines)
@@ -279,7 +279,7 @@ def selftest():
         assert "全开（TODO）：第 30 s 打出那行" in summary(run)
         with open(os.path.join(d, "front.txt"), "a", encoding="utf-8") as f:
             f.write("100 4242 Workbench\n130 19923 /Applications/Claude.app/Contents/MacOS/Claude\n"
-                    "200 5151 /tmp/x/Workbench.app/Contents/MacOS/Workbench\n7000 4242 Workbench\n")  # 5151 是别的 Workbench
+                    "200 5151 /tmp/x/Workbench.app/Contents/MacOS/Workbench\n7000 4242 Workbench\n")  # 5151 是别的 Holt
         run = Run(d)
         assert front_spans(run) == [(100, 130), (7000, 7295)], front_spans(run)
         st = [s[0] for s in run.stable()]

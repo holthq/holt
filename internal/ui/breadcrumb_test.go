@@ -5,8 +5,8 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 面包屑挤不下时一步步让（crumbFit）：先缩目录段，再把目录全收进"…"，再缩文件名，最后才缩仓库名；

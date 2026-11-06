@@ -8,9 +8,9 @@ import (
 
 	wui "github.com/egoist/mygo/ui"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // 搜索小功能的界面：替换框和行上的按钮、最近搜索、"在此搜索"和范围胶囊。都在临时仓库上测。
@@ -260,7 +260,7 @@ func TestSearchInMenu(t *testing.T) {
 	}
 }
 
-// TestSearchMenuStale：结果里一处的 Grove 菜单开着时结果变少（重搜、替换、撤销替换），菜单每帧用打开时的下标重建，
+// TestSearchMenuStale：结果里一处的 Holt 菜单开着时结果变少（重搜、替换、撤销替换），菜单每帧用打开时的下标重建，
 // 不能越界崩溃，要关掉、什么也不执行。
 func TestSearchMenuStale(t *testing.T) {
 	_, ws := replaceRepo(t)

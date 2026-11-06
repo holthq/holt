@@ -5,9 +5,9 @@ import (
 	"strings"
 	"testing"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 替换预览都在临时仓库上测：不写盘，旧的一边是现在的文字（开着改了没存的用缓冲区），新的一边是换好的。

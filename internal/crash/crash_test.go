@@ -16,7 +16,7 @@ import (
 // 子进程：Setup 之后在后台 goroutine 里 panic（TestCrashLog 用环境变量叫它）。
 func TestMain(m *testing.M) {
 	if dir := os.Getenv("CRASH_TEST_DIR"); dir != "" {
-		_, w, err := Setup(dir, "Grove test")
+		_, w, err := Setup(dir, "Holt test")
 		if err != nil {
 			fmt.Fprintln(os.Stderr, err)
 			os.Exit(3)
@@ -48,18 +48,18 @@ func TestCrashLog(t *testing.T) {
 	if err != nil {
 		t.Fatal(err)
 	}
-	for _, want := range []string{"Grove test\nstarted ", sep, "panic: 后台出错了", "goroutine ", "crash_test.go"} {
+	for _, want := range []string{"Holt test\nstarted ", sep, "panic: 后台出错了", "goroutine ", "crash_test.go"} {
 		if !bytes.Contains(b, []byte(want)) {
 			t.Errorf("崩溃日志里没有 %q：\n%s", want, b)
 		}
 	}
-	if l, _ := os.ReadFile(filepath.Join(dir, LogName)); !bytes.Contains(l, []byte("读状态失败：示例")) || !bytes.Contains(l, []byte("Grove test")) {
+	if l, _ := os.ReadFile(filepath.Join(dir, LogName)); !bytes.Contains(l, []byte("读状态失败：示例")) || !bytes.Contains(l, []byte("Holt test")) {
 		t.Errorf("workbench.log：%s", l)
 	}
 
 	// 下次启动（在本进程里；最后把 SetCrashOutput 关掉）
 	t.Cleanup(func() { debug.SetCrashOutput(nil, debug.CrashOptions{}) })
-	last, w, err := Setup(dir, "Grove test 2")
+	last, w, err := Setup(dir, "Holt test 2")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -70,11 +70,11 @@ func TestCrashLog(t *testing.T) {
 	if old, _ := os.ReadFile(last); !bytes.Equal(old, b) {
 		t.Errorf("留下的崩溃日志变了")
 	}
-	if p, _ := os.ReadFile(filepath.Join(dir, PendingName)); !strings.HasPrefix(string(p), "Grove test 2\n") || !strings.HasSuffix(string(p), sep) {
+	if p, _ := os.ReadFile(filepath.Join(dir, PendingName)); !strings.HasPrefix(string(p), "Holt test 2\n") || !strings.HasSuffix(string(p), sep) {
 		t.Errorf("新的 crash-pending.log：%q", p)
 	}
 	// 没崩：再启动不留东西
-	last, w, err = Setup(dir, "Grove test 3")
+	last, w, err = Setup(dir, "Holt test 3")
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -93,8 +93,8 @@ func TestCrashLogRotation(t *testing.T) {
 	for i := range MaxCrashLogs + 3 {
 		os.WriteFile(filepath.Join(dir, "crash-"+base.Add(time.Duration(i)*time.Hour).Format("20060102-150405")+".log"), []byte("old"), 0o644)
 	}
-	os.WriteFile(filepath.Join(dir, PendingName), []byte("Grove x\n"+sep+"panic: boom\n"), 0o644)
-	last, w, err := Setup(dir, "Grove y")
+	os.WriteFile(filepath.Join(dir, PendingName), []byte("Holt x\n"+sep+"panic: boom\n"), 0o644)
+	last, w, err := Setup(dir, "Holt y")
 	if err != nil {
 		t.Fatal(err)
 	}

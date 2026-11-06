@@ -4,10 +4,10 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"strconv"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 这个文件是交互式变基向导标签（app/rebase.go 跑它）：每个提交一行，最老的在上面；行上是动作按钮、哈希、标题、
@@ -68,7 +68,7 @@ func rebaseRow(a *app.App, row wui.ListRow, p *docs.RebasePlan, i int, locked bo
 	wui.Column(c).Padding(4, 6, 4, 8).Gap(4).Children(func() {
 		wui.Row(c).Gap(8).AlignItems(wui.Center).Children(func() {
 			wui.Textf(c, "%d", i+1).Font(mono()).FontSize(11).TextColor(muted).Width(20).Shrink(0)
-			// 动作选择：点开是 Grove 菜单（当前的打勾，不能合并的灰着）
+			// 动作选择：点开是 Holt 菜单（当前的打勾，不能合并的灰着）
 			act := wui.ButtonBase(c).Width(84).Height(22).Shrink(0).Padding(0, 4, 0, 8).Gap(4).AlignItems(wui.Center).
 				Radius(5).Border(1, t.Border).Label(i18n.Tf("第 %d 行做什么：%s", i+1, s.Action)).Tooltip(s.Action.Text()).Disabled(locked)
 			if act.Hovered() && !locked {

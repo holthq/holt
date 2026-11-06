@@ -9,8 +9,8 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 外部格式化（临时仓库，假的格式化命令，不跑真的 gofmt 那些）：只套改了的地方、光标留着（改了的行里也是）、一步撤销；

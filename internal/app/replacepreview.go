@@ -7,9 +7,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/search"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/search"
 )
 
 // 替换预览：替换之前，把一个文件按当前的搜索结果和替换词换好的样子和现在的文字放进一个只读的 diff 标签

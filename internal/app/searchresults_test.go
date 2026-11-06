@@ -10,8 +10,8 @@ import (
 
 	"golang.org/x/text/encoding/japanese"
 
-	"github.com/lemoeade/grove/internal/search"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/search"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // "再读 5000"：6000 处先收 5000、到顶；再读一次收全，前面的 5000 处不变，

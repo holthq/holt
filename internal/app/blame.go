@@ -7,9 +7,9 @@ import (
 
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // blame 装订线（⌃⌘B）：文件、历史版本标签左边一列，连着几行是同一次提交改的就归成一段，标出是谁、什么时候、哪次提交。

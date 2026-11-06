@@ -10,11 +10,10 @@ import (
 	"regexp"
 	"slices"
 	"strings"
-	"syscall"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/i18n"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/i18n"
 )
 
 // 外部格式化：格式化文档（⇧⌥F、编辑器右键、命令面板）和保存时格式化（设置"格式化"页）都是把缓冲区的
@@ -205,8 +204,8 @@ func runTool(ctx context.Context, shell, dir, cmd, stdin string, timeout time.Du
 	c.Stdin = strings.NewReader(stdin)
 	var stdout, stderr bytes.Buffer
 	c.Stdout, c.Stderr = &stdout, &stderr
-	c.SysProcAttr = &syscall.SysProcAttr{Setpgid: true}
-	c.Cancel = func() error { return syscall.Kill(-c.Process.Pid, syscall.SIGKILL) }
+	setToolProcGroup(c)
+	c.Cancel = func() error { return killTool(c.Process) }
 	c.WaitDelay = time.Second
 	err := c.Run()
 	res := toolRun{stdout: stdout.String(), stderr: strings.TrimSpace(stderr.String()), exit: -1}

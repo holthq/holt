@@ -5,8 +5,8 @@ import (
 	"slices"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/workspace"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/workspace"
 )
 
 // allOpenLogf 是“全开”那行日志打到哪儿（测试换掉）。

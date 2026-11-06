@@ -5,11 +5,11 @@ import (
 	"slices"
 	"time"
 
-	"github.com/lemoeade/grove/internal/docs"
-	"github.com/lemoeade/grove/internal/git"
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/tasks"
-	"github.com/lemoeade/grove/internal/watch"
+	"github.com/holthq/holt/internal/docs"
+	"github.com/holthq/holt/internal/git"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/tasks"
+	"github.com/holthq/holt/internal/watch"
 )
 
 // 这个文件是文件监听和重读仓库状态的唯一入口 RefreshRepo：监听到的变化（合并 300 ms）、⌘R、

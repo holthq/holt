@@ -13,9 +13,9 @@ mkdir -p <目录> && WORKBENCH_SHOT=<目录> GOTOOLCHAIN=auto go test -run 'Test
 GOTOOLCHAIN=auto go test -run TestCatalog ./internal/i18n/   # 改了界面文案先 -update 收集 zh-CN.json，再给 en.json 补译文
 GOTOOLCHAIN=auto go test -run '^$' -bench . -benchtime 20x ./internal/search/ ./internal/fuzzy/   # 搜索 / 模糊匹配的速度
 GOTOOLCHAIN=auto go tool mygo build -skip-dmg -skip-notarize -sign -
-open -n -g -a build/darwin-arm64/Grove.app --env WORKBENCH_STATE=<目录> --env WORKBENCH_LOGS=<目录>   # 30 秒后 footprint -p <pid> --noCategories -f bytes，然后只杀这个 pid
-open -n -g -a build/darwin-arm64/Grove.app --env WORKBENCH_STATE=<目录> --env "WORKBENCH_ALLOPEN=async def"   # "全开"的内存（两个 Diff、搜索、当前仓库的终端都起）
-open -n -a build/darwin-arm64/Grove.app --env WORKBENCH_STATE=<目录> --env WORKBENCH_FOCUS=editor   # 有焦点的内存（editor 或 terminal，lsappinfo front 核对在最前），无焦点加 -g；--env WORKBENCH_CARET_REST=off 对比不歇的光标
+open -n -g -a build/darwin-arm64/Holt.app --env WORKBENCH_STATE=<目录> --env WORKBENCH_LOGS=<目录>   # 30 秒后 footprint -p <pid> --noCategories -f bytes，然后只杀这个 pid
+open -n -g -a build/darwin-arm64/Holt.app --env WORKBENCH_STATE=<目录> --env "WORKBENCH_ALLOPEN=async def"   # "全开"的内存（两个 Diff、搜索、当前仓库的终端都起）
+open -n -a build/darwin-arm64/Holt.app --env WORKBENCH_STATE=<目录> --env WORKBENCH_FOCUS=editor   # 有焦点的内存（editor 或 terminal，lsappinfo front 核对在最前），无焦点加 -g；--env WORKBENCH_CARET_REST=off 对比不歇的光标
 ```
 
 日常测量内存使用 `tools/measure/measure.sh`，方法和要求见 [AGENTS.md](../AGENTS.md) 的“单实例、真窗口和量内存”一节。
@@ -110,13 +110,13 @@ open -n -a build/darwin-arm64/Grove.app --env WORKBENCH_STATE=<目录> --env WOR
 - 界面测试把 `app.TermdStart` 换成进程内的 `Server`，设置的 `termDaemon` 在 `newUI` 之前写进 state.json。`termKey` 经 `a.Update` 走，输入后需用 `wait(...)` 等待队列处理完成；
   ⇧⌘C 之后再往终端里敲字先 `a.FocusTerm = true; tt.Frame()`。
 - **冒烟测试**（实际应用和 termd）：使用独立的 `WORKBENCH_STATE` / `WORKBENCH_LOGS`，使该实例拥有自己的 termd。
-  1. 首次启动时带 `WORKBENCH_TERM_CMD='echo MARK-$$'`，等待提示符后用 TERM 终止应用；用 `pgrep -f 'Grove.app/Contents/MacOS/Grove termd'` 确认 termd 仍在运行，且该 shell 仍是其子进程。
+  1. 首次启动时带 `WORKBENCH_TERM_CMD='echo MARK-$$'`，等待提示符后用 TERM 终止应用；用 `pgrep -f 'Holt.app/Contents/MacOS/Holt termd'` 确认 termd 仍在运行，且该 shell 仍是其子进程。
   2. 第二次启动不带该变量，确认屏幕上仍是同一个 `MARK-<pid>`（`WORKBENCH_CAPTURE` 截一张看），termd.log 里只有 1 个会话。
   3. 最后 `kill -TERM` 这个 termd（它会挂断 shell、删掉套接字），只终止自己启动的进程。
 - **测量 termd 内存**：分别记录应用、termd 和其子 shell 的内存（shell 是 termd 的子进程，不是应用的），窗口保持在后台，只采用 front=other 时的数据：
 
   ```bash
-  A=…/Grove.app; P=$(pgrep -nf "$A/Contents/MacOS/Grove\$"); D=$(pgrep -f "$A/Contents/MacOS/Grove termd")
+  A=…/Holt.app; P=$(pgrep -nf "$A/Contents/MacOS/Holt\$"); D=$(pgrep -f "$A/Contents/MacOS/Holt termd")
   footprint -p $P --noCategories -f bytes | grep phys_footprint; footprint -p $D --noCategories -f bytes | grep phys_footprint
   for k in $(pgrep -P $D); do footprint -p $k --noCategories -f bytes | grep phys_footprint; done; ps -o pid,ppid,rss,command -p $D
   ```
@@ -126,9 +126,9 @@ open -n -a build/darwin-arm64/Grove.app --env WORKBENCH_STATE=<目录> --env WOR
 - **无障碍标签**：`TestAccessLabels` 遍历主窗口的十几种状态、设置的每一页和关于窗口，检查按钮是否有可供读屏使用的名称。新加的区域 / 浮层 / 窗口需要在测试中增加绘制步骤，
   才能纳入检查。`TestAccessProbe` 核对 reflect 读取的字段是否仍匹配，升级 mygo 时会先由它报错。
 - **打开路径**：`TestOpenArgs` 在临时仓库上测（工作区里的、不在工作区的、普通目录、找不到的、别的 `.code-workspace`），“添加仓库”后确认 `.code-workspace` 的内容完全未变。
-  真实的单实例、`open -a` 要起两个进程：用独立的 `WORKBENCH_STATE` / `WORKBENCH_LOGS` 加 `WORKBENCH_SINGLE=1`，先 `pgrep -fl Grove` 确认没有别的实例
+  真实的单实例、`open -a` 要起两个进程：用独立的 `WORKBENCH_STATE` / `WORKBENCH_LOGS` 加 `WORKBENCH_SINGLE=1`，先 `pgrep -fl Holt` 确认没有别的实例
   （否则参数会交给已运行的实例），仅按 pid 终止自己启动的进程。
-- **崩溃日志**：`internal/crash` 的测试在临时目录里；真机用 `WORKBENCH_PANIC=1` + `WORKBENCH_LOGS=<临时目录>`，不动 `~/Library/Logs/Grove/`。
+- **崩溃日志**：`internal/crash` 的测试在临时目录里；真机用 `WORKBENCH_PANIC=1` + `WORKBENCH_LOGS=<临时目录>`，不动 `~/Library/Logs/Holt/`。
 - **版本**：`TestVersions` 检查 CHANGELOG 中是否有 `mygo.json` 对应版本的小节，以及 mygo 版本是否与锁定版本一致；发布步骤见 [release.md](release.md)。
 
 ## 验收标准

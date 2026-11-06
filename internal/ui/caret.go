@@ -6,7 +6,7 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/docs"
+	"github.com/holthq/holt/internal/docs"
 )
 
 // 光标停手不闪。mygo 的代码编辑器（ui/editor）只要有键盘，就每 500 ms 排一帧让光标闪，没有开关；

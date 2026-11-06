@@ -11,8 +11,8 @@ import (
 	"strings"
 	"time"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/search"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/search"
 )
 
 // 这个文件是撤销上次替换：替换时没开着、直接写了盘的文件记下替换前的字节，"撤销上次替换"问过之后

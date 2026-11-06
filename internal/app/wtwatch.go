@@ -3,8 +3,8 @@ package app
 import (
 	"slices"
 
-	"github.com/lemoeade/grove/internal/i18n"
-	"github.com/lemoeade/grove/internal/watch"
+	"github.com/holthq/holt/internal/i18n"
+	"github.com/holthq/holt/internal/watch"
 )
 
 // 这个文件是 Git 栏"工作树"块算着状态时（WtTracked：块展开着，或收着但有工作树在等你、在跑、可合并）对链接工作树目录的监听：

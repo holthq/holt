@@ -7,8 +7,8 @@ import (
 	wui "github.com/egoist/mygo/ui"
 	"github.com/egoist/mygo/ui/editor"
 
-	"github.com/lemoeade/grove/internal/app"
-	"github.com/lemoeade/grove/internal/testutil"
+	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/testutil"
 )
 
 // 编辑器的查找 / 替换 / 跳行（mygo 的 FindBar、GoToLineBar，中文文案）：编辑器有焦点时它自己接
