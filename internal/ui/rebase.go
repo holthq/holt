@@ -78,8 +78,12 @@ func rebaseRow(a *app.App, row wui.ListRow, p *docs.RebasePlan, i int, locked bo
 				wui.Text(c, s.Action.String()).Font(mono()).FontSize(11.5).SingleLine().Grow(1).MinWidth(0)
 				wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(t.TextMuted)
 			})
-			step := i
+			step, hash := i, s.Commit.Hash
 			menuButton(a, c, act, menuOwner{"rebase", strconv.Itoa(step)}, func(m menu) {
+				// 每帧重建：菜单开着时计划变了（行少了、换了顺序）就什么也不加，菜单关掉
+				if step >= len(p.Steps) || p.Steps[step].Commit.Hash != hash {
+					return
+				}
 				for k, x := range docs.RebaseActions {
 					it := m.Item(i18n.Tf("%s — %s（按 %s）", x, x.Text(), rebaseKeyNames[k])).Checked(p.Steps[step].Action == x).
 						Disabled(x.Melds() && !app.CanMeld(p, step))

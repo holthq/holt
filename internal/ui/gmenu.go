@@ -262,6 +262,11 @@ func gmenuView(a *app.App, c *wui.Context) {
 	root := c.Root().Bounds()
 	gmenuMeasure(a, c)
 	m.Refresh(root.W, root.H)
+	if !m.IsOpen() { // 建菜单的函数说对着的东西没了（见 PopMenu.Refresh）
+		a.MenuShown, a.MenuByKey = 0, false
+		c.Invalidate()
+		return
+	}
 	now := c.Now()
 	if wait := m.Tick(now); wait > 0 {
 		c.After(wait)

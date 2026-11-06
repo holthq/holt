@@ -577,7 +577,11 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 	replacing := s.Replacing && s.CanReplace()
 	if sr.File {
 		el := wui.Row(c).Height(24).Padding(0, 4, 0, 4).Gap(5).AlignItems(wui.Center).Cursor(wui.CursorPointer).Tooltip(m.Repo + "/" + m.Path)
-		ctxMenuRow(a, c, row, el, menuOwner{"searchFile", m.Root + "\x00" + m.Path}, func(mn menu) { searchFileMenu(a, mn, sr, menuDo) })
+		ctxMenuRow(a, c, row, el, menuOwner{"searchFile", m.Root + "\x00" + m.Path}, func(mn menu) {
+			if searchRowLive(s, sr, m, true) {
+				searchFileMenu(a, mn, sr, menuDo)
+			}
+		})
 		hover := el.Hovered()
 		if hover {
 			s.Hover = row.Index
@@ -611,7 +615,11 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 		return
 	}
 	el := wui.Row(c).Height(22).Padding(0, 4, 0, 24).Gap(8).AlignItems(wui.Center)
-	ctxMenuRow(a, c, row, el, menuOwner{"searchMatch", strconv.Itoa(sr.Match)}, func(mn menu) { searchMatchMenu(a, mn, sr, menuDo) })
+	ctxMenuRow(a, c, row, el, menuOwner{"searchMatch", strconv.Itoa(sr.Match)}, func(mn menu) {
+		if searchRowLive(s, sr, m, false) {
+			searchMatchMenu(a, mn, sr, menuDo)
+		}
+	})
 	hover := el.Hovered()
 	if hover {
 		s.Hover = row.Index
@@ -639,6 +647,20 @@ func searchRow(a *app.App, row wui.ListRow, sr app.SearchRow, do func(func())) {
 		}
 		rowButton(c, iconClose, i18n.T("排除"), app.Tip(i18n.T("排除这一处（不显示，全部替换时跳过）"), "search.dismiss"), func() { do(func() { a.DismissMatch(sr.Match) }) })
 	})
+}
+
+// searchRowLive 报打开菜单时的那一行（want 是当时 sr.Match 上的那一处）还在：Grove 菜单每帧用打开时的 sr 重建，
+// 菜单开着时结果变了（替换、撤销替换、排除、重搜）下标就可能越界或指到别处。不在了建菜单的函数什么也不加，
+// 菜单关掉（PopMenu.Refresh），选中的项也不执行。文件行只比文件，一处还要比行列。
+func searchRowLive(s *app.SearchState, sr app.SearchRow, want search.Match, file bool) bool {
+	if sr.Match < 0 || sr.Match >= len(s.Res.Matches) {
+		return false
+	}
+	got := s.Res.Matches[sr.Match]
+	if got.Root != want.Root || got.Path != want.Path {
+		return false
+	}
+	return file || got.Line == want.Line && got.Col == want.Col && got.Len == want.Len
 }
 
 // searchMatchMenu 是结果里一处的右键菜单；改结果的动作经 do 等列表建完再做（Grove 菜单传 menuDo）。

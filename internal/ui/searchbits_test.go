@@ -258,3 +258,51 @@ func TestSearchInMenu(t *testing.T) {
 		t.Fatalf("在此仓库里搜索：%+v", s.Scope)
 	}
 }
+
+// TestSearchMenuStale：结果里一处的 Grove 菜单开着时结果变少（重搜、替换、撤销替换），菜单每帧用打开时的下标重建，
+// 不能越界崩溃，要关掉、什么也不执行。
+func TestSearchMenuStale(t *testing.T) {
+	_, ws := replaceRepo(t)
+	a, tt, wait := newUI(t, ws, "")
+	s := &a.Search
+	a.ShowSidebar(workspace.ModeSearch)
+	s.Query.Text = "foo"
+	a.SearchNow()
+	wait("搜索", func() bool { return s.Done && !s.Running && len(s.Res.Matches) == 4 })
+	tt.Frame()
+
+	for _, row := range []string{"结果 demo/docs/b.md:1:3", "结果文件 demo/docs/b.md"} {
+		if err := rightClickRow(tt, row); err != nil {
+			t.Fatalf("右键 %q: %v；texts=%q", row, err, tt.Texts())
+		}
+		tt.Frame()
+		if !a.Menu.IsOpen() {
+			t.Fatalf("右键 %q 没开菜单", row)
+		}
+		s.Query.Text = "foo one" // 只剩 a.txt 的一处：b.md 那一行的下标越界
+		a.SearchNow()
+		wait("重搜", func() bool { return s.Done && !s.Running && len(s.Res.Matches) == 1 })
+		tt.Frame()
+		tt.Frame()
+		if a.Menu.IsOpen() {
+			t.Fatalf("%q 的结果没了，菜单还开着", row)
+		}
+		s.Query.Text = "foo"
+		a.SearchNow()
+		wait("搜回来", func() bool { return s.Done && !s.Running && len(s.Res.Matches) == 4 })
+		tt.Frame()
+	}
+
+	// 下标还在、指到了别处：也关
+	if err := rightClickRow(tt, "结果 demo/docs/b.md:1:3"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	s.Query.Text = "o" // 结果多了、顺序变了：原来那个下标上是 a.txt 的另一处
+	a.SearchNow()
+	wait("重搜", func() bool { return s.Done && !s.Running && len(s.Res.Matches) > 4 })
+	tt.Frame()
+	if a.Menu.IsOpen() {
+		t.Fatal("下标指到了别的一处，菜单还开着")
+	}
+}

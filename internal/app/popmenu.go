@@ -263,6 +263,11 @@ func (m *PopMenu) Refresh(winW, winH float32) {
 	s := &menuCollect{}
 	m.build(s)
 	m.root = tidy(s.items)
+	if len(m.root) == 0 {
+		// 建菜单的函数每帧重跑，对着的东西没了（结果变少、行被删）时它什么也不加：关掉，不留一块空面板
+		m.Close()
+		return
+	}
 	m.layout()
 }
 
