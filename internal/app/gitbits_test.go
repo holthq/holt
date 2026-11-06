@@ -38,6 +38,7 @@ func TestStashExpand(t *testing.T) {
 	repo.Write("a.txt", "1\n2\n") // 暂存了改动、工作区又改回去：贮藏的工作区和 HEAD 一样
 	repo.Git("stash", "push", "-q", "-m", "空的")
 	a, wait := newTestApp(t, testutil.Workspace(t, repo.Root))
+	showGroups(a)
 	r := a.Repos[0]
 	a.RefreshRepo(r, WhyManual)
 	wait("读状态", idle(r))

@@ -301,6 +301,7 @@ var settingLabels = map[string]string{
 	"showOpenEditors": "显示打开的编辑器", "shell": "Shell", "termFont": "终端字体", "termSize": "终端字号", "termTheme": "终端配色", "scrollback": "回滚（MB）",
 	"termBlink": "光标闪烁", "termDock": "终端位置", "termDaemon": "关掉窗口后终端继续在后台运行", "termOptionAsAlt": "⌥ 作为 Meta 键",
 	"termCopyOnSelect": "选中即复制", "termProfiles": "其他配置", "agentNames": "agent 命令", "pullMode": "拉取方式", "autoPush": "提交后推送",
+	"showWorktrees": "在 Git 栏显示工作树", "showStashes": "在 Git 栏显示贮藏",
 	"authorName": "作者名字", "authorEmail": "作者邮箱", "inlineBlame": "行内 blame", "webHosts": "网页风格",
 	"formatOnSave": "保存时格式化", "formatters": "格式化命令", "lintOnSave": "保存时检查", "linters": "检查命令", "lang": "界面语言",
 }

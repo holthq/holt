@@ -163,6 +163,9 @@ func TestSettingsWindow(t *testing.T) {
 
 	// Git：拉取方式、作者
 	mustClick(t, st, "Git")
+	st.Move(300, 300)
+	st.Scroll(300, 300, 0, -100000) // 终端页滚到了底，Git 页的行多了以后也跟着滚下去了：滚回顶上
+	st.Frame()
 	pick("只快进（--ff-only）", "变基（--rebase）")
 	mustClick(t, st, "作者名字")
 	st.Type("某人")

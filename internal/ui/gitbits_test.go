@@ -58,6 +58,7 @@ func TestStashFileRows(t *testing.T) {
 	repo.Write("新文件.txt", "n\n")
 	repo.Git("stash", "push", "-q", "-u", "-m", "改了两个")
 	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	showGroups(a)
 	r := a.Repos[0]
 	a.Exec("view.git")
 	a.RefreshRepo(r, app.WhyManual)
@@ -439,6 +440,7 @@ func TestUnstagedGroupWithUntracked(t *testing.T) {
 	repo.Git("stash", "-q")
 	repo.Write("new.txt", "新\n")
 	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	showGroups(a)
 	a.St.BottomBar = false
 	r := a.Repos[0]
 	a.RefreshRepo(r, app.WhyManual)

@@ -6,6 +6,7 @@ import (
 	"path/filepath"
 	"slices"
 	"strconv"
+	"strings"
 	"testing"
 
 	wui "github.com/egoist/mygo/ui"
@@ -218,7 +219,24 @@ func TestCommitButton(t *testing.T) {
 	if r.CanCommit() {
 		t.Fatal("没写信息不该能提交")
 	}
-	_ = tt.Click(i18n.Tf("提交 %s 个文件", "120"))
+	// 不调 Disabled（mygo 的 Disabled 不显示悬停提示），提示里写原因
+	label := i18n.Tf("提交 %s 个文件", "120")
+	var found *accNode
+	nodes := accessTree(t, tt)
+	for i := range nodes {
+		if nodes[i].Label == label {
+			found = &nodes[i]
+		}
+	}
+	switch {
+	case found == nil:
+		t.Fatalf("无障碍树里没有 %q", label)
+	case found.States&accessDisabled != 0:
+		t.Error("不能提交时按钮不该是 Disabled：那样没有悬停提示")
+	case !strings.Contains(found.Desc, i18n.T("还没写提交信息")):
+		t.Errorf("提示里该写原因：%q", found.Desc)
+	}
+	_ = tt.Click(label)
 	tt.Frame()
 	if r.Busy != "" || repo.Git("rev-parse", "HEAD") != head {
 		t.Errorf("不能提交时点了按钮也提交了: busy=%q", r.Busy)

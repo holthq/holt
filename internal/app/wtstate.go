@@ -107,18 +107,20 @@ func (a *App) SortedWorktrees(r *Repo) []Worktree {
 
 // WtShown 是 Git 栏里仓库段的工作树组展开着（列出各工作树的行）：只有用户点开的（WtOpen，记在会话里），
 // 或 GoToWorktree 跳过去的。在等你、在跑、可合并也不自动展开，收着的组头右边有状态符号（WtGroupTop）。
-func (r *Repo) WtShown() bool { return r.WtOpen }
+// 设置里没开"在 Git 栏显示工作树"时总是假（WtOpen 留着，再打开时恢复）。
+func (r *Repo) WtShown() bool { return r.WtOpen && r.ShowWts() }
 
 // WtTracked 是各工作树的状态在算、目录在盯（loadWtInfo、syncWtWatch）：组展开着，或者收着但有工作树在等你、
 // 在跑、可合并（wtAuto）。和 WtShown 分开：组收着时"需要你"条和组头的状态符号也要跟得上（可合并要有 WtInfo 才认得出）。
-func (r *Repo) WtTracked() bool { return r.WtOpen || r.wtAuto }
+// 设置里没开"在 Git 栏显示工作树"时总是假：不算、不盯。
+func (r *Repo) WtTracked() bool { return r.ShowWts() && (r.WtOpen || r.wtAuto) }
 
 // SyncWtAuto 每帧画 Git 栏前对一次各仓库的 wtAuto：有工作树在等你、在跑或可合并就接着算状态（组不展开）；
 // 刚开始算时懒算各工作树的状态、盯着它们的目录（和点开一样），不用再算了就停掉监听。
 func (a *App) SyncWtAuto() {
 	for _, r := range a.Repos {
 		was := r.WtTracked()
-		if len(r.Worktrees) == 0 {
+		if len(r.Worktrees) == 0 || !r.ShowWts() {
 			r.wtAuto = false
 		} else {
 			_, r.wtAuto = a.WtGroupTop(r)
@@ -244,7 +246,11 @@ type NeedYou struct {
 
 // NeedsYou 是"需要你"条上的工作树：所有仓库里先是等你的、再是可合并的，同一档按仓库、组里的顺序。
 // 可合并要知道领先几个，只有算过状态的（组展开过，或收着但 WtTracked）才认得出。
+// 设置里没开"在 Git 栏显示工作树"时是空的（条不出现）。
 func (a *App) NeedsYou() []NeedYou {
+	if !a.St.Settings.ShowWorktrees {
+		return nil
+	}
 	var wait, merge []NeedYou
 	for _, r := range a.Repos {
 		for _, w := range a.SortedWorktrees(r) {
@@ -278,7 +284,11 @@ func (a *App) StepNeedsYou(d int) {
 }
 
 // GoToWorktree 在 Git 栏里跳到工作树 w：展开它的仓库段和工作树组，展开它、选中它、滚到它（当前仓库跟过去）。
+// 设置里没开"在 Git 栏显示工作树"时什么都不做（没有工作树的行可跳）。
 func (a *App) GoToWorktree(r *Repo, w Worktree) {
+	if !r.ShowWts() {
+		return
+	}
 	if !r.GitOpen() {
 		r.GitFold = FoldOpen
 	}
@@ -314,3 +324,31 @@ func (s AgentState) Since() time.Time {
 
 // Now 是现在（界面算"等了多久"用；测试里是可拨的钟）。
 func (a *App) Now() time.Time { return a.now() }
+
+// syncShownGroups 在设置改了之后（SettingsChanged 里对每个窗口）对一次"在 Git 栏显示工作树 / 贮藏"：
+// 关掉工作树时收起展开着的工作树、右栏不再看工作树的历史、扔掉算好的状态、停掉各工作树目录的监听；
+// 打开时按会话里的 WtOpen 恢复各仓库的展开，展开着的重算状态、接上监听。选中落在没了的行上的跟着清掉（syncChangeSel）。
+func (a *App) syncShownGroups() {
+	s := &a.St.Settings
+	wt, st := s.ShowWorktrees != a.wtShowOn, s.ShowStashes != a.stashShowOn
+	a.wtShowOn, a.stashShowOn = s.ShowWorktrees, s.ShowStashes
+	if wt {
+		if !s.ShowWorktrees {
+			a.WtExp = nil
+			a.clearRefHistories(nil)
+		}
+		for _, r := range a.Repos {
+			switch {
+			case !s.ShowWorktrees:
+				r.wtAuto, r.WtInfo, r.WtLoading = false, nil, false
+				r.wtGen++ // 在算的那轮算完也不放进来
+			case r.WtTracked() && len(r.Worktrees) > 0:
+				a.loadWtInfo(r)
+			}
+			a.syncWtWatch(r)
+		}
+	}
+	if wt || st {
+		a.syncChangeSel()
+	}
+}

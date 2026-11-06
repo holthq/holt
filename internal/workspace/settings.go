@@ -62,12 +62,15 @@ type Settings struct {
 	AgentNames       string        `json:"agentNames,omitempty"` // 另外认作 agent 的前台命令，逗号分开（默认的 claude、codex… 不用写）     // "其他配置"表：底栏「+」右键、"用配置新建终端…"里挑（上面的 Shell 是默认）
 
 	// Git
-	PullMode    string    `json:"pullMode,omitempty"`    // 拉取方式："" 只快进（--ff-only）、"rebase"、"merge"
-	AutoPush    bool      `json:"autoPush,omitempty"`    // 提交后自动推送，默认关
-	AuthorName  string    `json:"authorName,omitempty"`  // 提交时改用的作者，空为用 git 自己的配置（默认）
-	AuthorEmail string    `json:"authorEmail,omitempty"` //
-	InlineBlame bool      `json:"inlineBlame,omitempty"` // 行内 blame：光标所在行的行尾显示作者、时间和提交摘要，默认关
-	WebHosts    []WebHost `json:"webHosts,omitempty"`    // "在网页打开"按哪种风格拼地址：主机名不带关键字的自建 GitLab / Gitea 在这里指
+	PullMode string `json:"pullMode,omitempty"` // 拉取方式："" 只快进（--ff-only）、"rebase"、"merge"
+	AutoPush bool   `json:"autoPush,omitempty"` // 提交后自动推送，默认关
+	// Git 栏里显示工作树 / 贮藏，默认都关（app.Repo.ShowWts / ShowStashes）
+	ShowWorktrees bool      `json:"showWorktrees,omitempty"` // 工作树组、"需要你"条、段头的工作树数；关着时也不算各工作树的状态、不盯它们的目录
+	ShowStashes   bool      `json:"showStashes,omitempty"`   // 贮藏组和段头的贮藏数；关着时贮藏、弹出贮藏照常能用
+	AuthorName    string    `json:"authorName,omitempty"`    // 提交时改用的作者，空为用 git 自己的配置（默认）
+	AuthorEmail   string    `json:"authorEmail,omitempty"`   //
+	InlineBlame   bool      `json:"inlineBlame,omitempty"`   // 行内 blame：光标所在行的行尾显示作者、时间和提交摘要，默认关
+	WebHosts      []WebHost `json:"webHosts,omitempty"`      // "在网页打开"按哪种风格拼地址：主机名不带关键字的自建 GitLab / Gitea 在这里指
 
 	// 格式化（app/format.go）
 	FormatOnSave bool              `json:"formatOnSave,omitempty"` // 保存时先跑外部格式化命令，默认关

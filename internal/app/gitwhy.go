@@ -288,6 +288,19 @@ func UndoWhy(r *Repo) string {
 	return ""
 }
 
+// CommitWhy 是提交框里的提交按钮不能点的原因（CanCommit 是假时），能点是 ""。按钮只有图标，灰着时靠悬停提示里的这句说明。
+func CommitWhy(r *Repo) string {
+	switch {
+	case r.Committing():
+		return i18n.T("正在提交")
+	case strings.TrimSpace(r.CommitMsg) == "":
+		return i18n.T("还没写提交信息")
+	case r.Status.Staged == 0 && !(r.Amend && r.Extra.Head != "") && !r.MergeReady():
+		return i18n.T("没有已暂存的改动")
+	}
+	return ""
+}
+
 // PickWhy 是历史右键"拣选这个提交"不能做的原因。
 func PickWhy(r *Repo, cm git.Commit) string {
 	switch {

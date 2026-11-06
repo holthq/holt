@@ -26,6 +26,7 @@ func TestStashAndWeb(t *testing.T) {
 	ws := testutil.Workspace(t, repo.Root)
 
 	a, tt, wait := newUI(t, ws, "")
+	showGroups(a)
 	var opened []string
 	a.OpenURL = func(u string) error { opened = append(opened, u); return nil }
 	r := a.Repos[0]
@@ -141,4 +142,43 @@ func TestStashAndWeb(t *testing.T) {
 	if !slices.Equal(opened, want) {
 		t.Errorf("打开的网页 %q，应为 %q", opened, want)
 	}
+}
+
+// 设置里的"在 Git 栏显示工作树 / 贮藏"默认都关：段头没有贮藏数、工作树数，展开后没有贮藏组、工作树组，
+// 侧栏顶上没有"需要你"条；干净但有工作树的仓库不自动展开。打开开关后都回来。全在临时仓库上。
+func TestGitGroupsHiddenByDefault(t *testing.T) {
+	repo := testutil.NewRepo(t, "proj")
+	repo.Write("a.txt", "原来\n")
+	repo.Commit("初始提交")
+	feat := filepath.Join(filepath.Dir(repo.Root), "proj-feat")
+	repo.Git("worktree", "add", "-q", "-b", "wt/feat", feat)
+	repo.Git("-C", feat, "commit", "-q", "--allow-empty", "-m", "工作树里的提交") // 领先 1：开着时是"可合并"、进"需要你"条
+	repo.Write("a.txt", "改\n")
+	repo.Git("stash", "push", "-q", "-m", "一条")
+
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("git status", func() bool { return idle(r)() && len(r.Worktrees) == 1 && len(r.Extra.Stashes) == 1 })
+	tt.Frame()
+	if r.GitOpen() {
+		t.Error("干净、只有工作树的仓库不该自动展开")
+	}
+	for _, s := range []string{"1 条贮藏", "1 个工作树", "需要你"} {
+		if shows(tt, s) {
+			t.Errorf("关着时不该有 %q", s)
+		}
+	}
+	a.ToggleGitRepo(r)
+	tt.Frame()
+	for _, s := range []string{"贮藏", "工作树"} {
+		if shows(tt, s) {
+			t.Errorf("展开后关着时也不该有 %q 组：%q", s, tt.Texts())
+		}
+	}
+	r.GitFold = app.FoldAuto // 回到自动：打开开关后有工作树就自动展开
+
+	showGroups(a)
+	wait("贮藏组、工作树组回来", func() bool { return r.GitOpen() && shows(tt, "贮藏") && shows(tt, "工作树") })
 }

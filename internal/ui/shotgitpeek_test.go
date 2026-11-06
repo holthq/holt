@@ -53,6 +53,7 @@ func TestScreenshotGitPeek(t *testing.T) {
 
 	stateDir := t.TempDir()
 	a, tt, wait := newUI(t, testutil.Workspace(t, p.Root, q.Root), stateDir)
+	showGroups(a)
 	tt.SetScale(2)
 	tt.SetTitleBar(shotBar)
 	a.St.BottomBar = false

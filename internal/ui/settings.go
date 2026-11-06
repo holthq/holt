@@ -274,6 +274,12 @@ func SettingsView(a *app.App) func(c *wui.Context) {
 			}},
 			{5, "拉取方式", "", func(c *wui.Context, l, _ string) { choice(c, l, &s.PullMode, workspace.PullModes, pullModeNames, done) }},
 			{5, "提交后推送", "提交成功后马上推送当前分支（默认关）", func(c *wui.Context, l, d string) { toggle(c, l, d, &s.AutoPush, done) }},
+			{5, "在 Git 栏显示工作树", "工作树组、顶上的“需要你”条和段头的工作树数；关着时都不出现，也不再盯各工作树的目录（默认关）", func(c *wui.Context, l, d string) {
+				toggle(c, l, d, &s.ShowWorktrees, done)
+			}},
+			{5, "在 Git 栏显示贮藏", "贮藏组和段头的贮藏数；关着时贮藏还在，贮藏、弹出贮藏照常能用（默认关）", func(c *wui.Context, l, d string) {
+				toggle(c, l, d, &s.ShowStashes, done)
+			}},
 			{5, "行内 blame", "光标所在行的行尾显示作者、多久前和提交摘要（改了没保存时不显示）", func(c *wui.Context, l, d string) {
 				toggle(c, l, d, &s.InlineBlame, done)
 			}},

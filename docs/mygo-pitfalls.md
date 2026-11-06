@@ -127,6 +127,10 @@
 - 真窗口里拖文件树的行要先点一下选中（没选中的按住拖是拖着选）。合成拖动用 CGEvent 发按下 → 若干拖动 → 松开（一个小的 Swift 程序就够，
   坐标是窗口左上角起的 pt，每一下前确认前台进程是它）；两个动作之间停 1 秒，别被当成双击。
 
+- 只有图标的按钮灰着时别调 mygo 的 `Disabled`：它不出悬停提示，按钮上又没有字，用户不知道为什么点不了。提交按钮（`ui/gitbar.go` 的 `commitRow`）
+  是 `toolStyle(c, b, false, 灰)` 画灰、`能点 && b.Clicked()` 才做，提示里用 `withWhy` 写原因（`app.CommitWhy`）。要键盘能按到用 `wui.ButtonBase`，
+  `squareButton` 的 `Box` Tab 到不了。
+
 ## 键盘和快捷键
 
 - 菜单快捷键先于编辑器接到按键（mygo 在 darwin 上没有覆盖 performKeyEquivalent）：编辑器有焦点时 ⌘K 照样打开 `>git ` 面板，
@@ -288,6 +292,8 @@
 - 退出确认应在 `OnBeforeQuit` 中处理：mygo 先发 `OnBeforeQuit`，再一个个关窗口，哪个窗口的 `OnClose` 拦了就停，但前面已经关掉的不会回来。
   所以 ⌘Q 时要问的都在 `Windows.RequestQuit` 里：拦下、一个个问，问完自己 `Quit()`（`ending` 置真，这次放行）；问着时又来一次 ⌘Q（`quitting` 不为 nil）
   只将正在确认的窗口置于前台。不注册 `OnWindowAllClosed`，`Windows.Closed` 关到最后一个自己退。
+- 换工作区是 `*a = *n`（`app/workspaces.go`）：指向 `n` 里字段的指针拷过来后还指着 `n`。`Repo.set`（`&a.St.Settings`，Git 栏显示工作树 / 贮藏的开关读它）
+  所以在拷完之后对每个仓库重新指一遍；以后再往 `Repo` 里放指向 `App` 字段的指针也要这样。
 - `Window.OnReadyToShow` 只来一次（窗口画完第一帧时），之后再注册的不会再来。还原队列靠它推进：main 的 `NewWindow` 钩子里紧跟着注册
   `win.OnReadyToShow(func() { wins.Ready(a) })`。没画完第一帧就关掉的窗口等不到它，所以 `Windows.Closed` 里替它调一次 `Ready`。测试里没有真窗口，直接调 `w.Ready(a)`。
 - `RestoreGap` 的计时器要回主线程：`time.AfterFunc` 在别的 goroutine 上跑，到点只做 `mygo.RunOnMain(fn)`，`fn`（`Windows.next`）在主线程上读写注册表。

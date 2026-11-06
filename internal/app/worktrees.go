@@ -159,7 +159,11 @@ func (a *App) clearWorktrees(r *Repo) {
 func (r *Repo) HasWorktrees() bool { return len(r.Worktrees) > 0 || r.Linked }
 
 // loadWtInfo 在后台算每个工作树的改动数和领先 / 落后（并发 WtConcurrency 路），全算完一起放进 WtInfo。
+// 设置里没开"在 Git 栏显示工作树"时不算（WtTracked 是假的时候调用方本来也不调，这里再挡一道）。
 func (a *App) loadWtInfo(r *Repo) {
+	if !r.ShowWts() {
+		return
+	}
 	r.wtGen++
 	gen := r.wtGen
 	wts := slices.Clone(r.Worktrees)

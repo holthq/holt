@@ -491,6 +491,7 @@ func TestStashGroupDefault(t *testing.T) {
 	dir := t.TempDir()
 	open := func() (*App, *Repo) {
 		a, wait := newTestAppIn(t, ws, dir)
+		showGroups(a)
 		r := a.Repos[0]
 		r.GitFold = FoldOpen // 干净的仓库段默认收着：打开它才看得到分组
 		a.RefreshRepo(r, WhyManual)

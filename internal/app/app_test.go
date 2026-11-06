@@ -446,3 +446,9 @@ func TestStateMigration(t *testing.T) {
 		t.Fatalf("存回去的不是新格式：%s", data)
 	}
 }
+
+// showGroups 打开设置里的"在 Git 栏显示工作树 / 贮藏"（默认都关）：测工作树、贮藏的行和监听的测试在 setup 里调。
+func showGroups(a *App) {
+	a.St.Settings.ShowWorktrees, a.St.Settings.ShowStashes = true, true
+	a.syncShownGroups()
+}

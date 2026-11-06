@@ -29,6 +29,7 @@ func (a *App) SettingsChanged() {
 		o.reloadIgnored()
 		o.reloadExclude()
 		o.dropInlineBlames()
+		o.syncShownGroups()
 		o.eachPane(func(_ *Repo, p *TermPane) {
 			if p.Term != nil {
 				p.Term.SetFont(o.TermFont())

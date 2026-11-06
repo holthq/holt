@@ -260,6 +260,7 @@ func TestAccessLabels(t *testing.T) {
 	clean.Commit("初始提交")
 
 	a, tt, wait := termUI(t, testutil.Workspace(t, work.Root, clean.Root), termState(t, true))
+	showGroups(a) // 贮藏组要画出来才查得到
 	wait("两个仓库的状态", loaded(a))
 	r := a.Repos[0]
 	a.UseRepo(r)

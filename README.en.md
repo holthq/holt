@@ -37,7 +37,8 @@ about 79 MiB of memory when idle.
   history of all repos merged by time; commits co-authored by a coding agent are marked and can be filtered. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
   are available in the UI. Each repo's header in the Git panel has its own Pull and Push buttons, with ahead / behind
   commit counts; in each repo the commit box sits at the top, untracked files share the "Unstaged" group with unstaged
-  changes, and worktrees and stashes start collapsed. Each worktree is an agent's desk: one row with a single status mark (waiting for you, running, ready to
+  changes, and worktrees and stashes are hidden by default — turn on "Show worktrees / stashes in the Git panel" under
+  Settings → Git (Stash and Pop Stash work either way). With worktrees shown, each worktree is an agent's desk: one row with a single status mark (waiting for you, running, ready to
   merge, has changes, idle, merged); expand it to see what it adds over the main branch, review it, or merge it into main.
   A collapsed worktree group shows the most urgent mark on its header.
   A "Needs you" bar at the top lists worktrees across all repositories that are waiting or ready to merge, with previous /

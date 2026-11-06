@@ -26,6 +26,7 @@ func stashFiles(t *testing.T, untracked bool) (*App, *Repo, *testutil.Repo, func
 	}
 	repo.Git(args...)
 	a, wait := newTestApp(t, testutil.Workspace(t, repo.Root))
+	showGroups(a)
 	r := a.Repos[0]
 	a.RefreshRepo(r, WhyManual)
 	wait("读状态", idle(r))

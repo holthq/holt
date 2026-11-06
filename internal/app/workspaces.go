@@ -426,6 +426,9 @@ func (a *App) switchTo(p string, roots []string) {
 	// 旧的后台回调靠这几个计数认出自己过期了
 	n.Search.gen, n.Search.tick, n.histTick, n.paneSeq = a.Search.gen+1, a.Search.tick+1, a.histTick+1, a.paneSeq
 	*a = *n
+	for _, r := range a.Repos {
+		r.set = &a.St.Settings // newRepo 给的是 n 的设置，n 拷进 a 之后要指到 a 的
+	}
 	if a.Win != nil {
 		a.Win.SetTitle(a.Title())
 	}

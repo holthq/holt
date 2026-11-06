@@ -34,7 +34,7 @@ func (a *App) AddRepoDir(dir string) error {
 		a.SelectRepo(slices.Index(a.Repos, r))
 		return nil
 	}
-	r := NewRepo(root)
+	r := a.newRepo(root)
 	at := len(a.Repos)
 	if a.WsPath != "" && slices.Contains(a.WsRoots, root) {
 		at = a.wsSlot(root) // 移除过的工作区仓库放回它那组里（两组各排各的，CanMoveRepo）
@@ -122,7 +122,7 @@ func (a *App) ShowAllRepos() {
 	for _, root := range a.WsRoots {
 		r := a.RepoFor(root)
 		if r == nil {
-			r = NewRepo(root)
+			r = a.newRepo(root)
 			a.RefreshRepo(r, WhyOpen)
 			a.watchRepo(r)
 		}

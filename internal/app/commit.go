@@ -63,11 +63,8 @@ func (r *Repo) Committing() bool {
 
 // CanCommit 是提交按钮能不能点：有信息，有已暂存的改动（修改上一次提交时可以没有，只改信息；
 // 合并的冲突都解决了时也可以没有，提交的是这次合并），没有一条提交已经在跑或排队
-// （连点两下不排进两条；前面排着暂存的话，提交排在它后面）。
-func (r *Repo) CanCommit() bool {
-	return strings.TrimSpace(r.CommitMsg) != "" && !r.Committing() &&
-		(r.Status.Staged > 0 || r.Amend && r.Extra.Head != "" || r.MergeReady())
-}
+// （连点两下不排进两条；前面排着暂存的话，提交排在它后面）。不能点的原因见 CommitWhy。
+func (r *Repo) CanCommit() bool { return CommitWhy(r) == "" }
 
 // MergeReady 是合并停在一半、冲突都标成已解决了：没有已暂存的改动也能提交（比如冲突都用了我的，
 // git add 之后和 HEAD 一样）。拣选、变基没有这一说，git commit 会说没有可提交的。

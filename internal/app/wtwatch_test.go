@@ -20,6 +20,7 @@ func TestWatchWorktreeDirty(t *testing.T) {
 	m.Git("worktree", "add", "-q", "-b", "wt/feat", feat)
 	m.Git("worktree", "add", "-q", "-b", "wt/open", open)
 	a, wait := newTestApp(t, wsFile(t, "工作树监听", m.Root, open))
+	showGroups(a)
 	a.RefreshAll(WhyOpen)
 	r, or := a.Repos[0], a.Repos[1]
 	wait("读完", func() bool { return idle(r)() && idle(or)() })
@@ -91,6 +92,7 @@ func TestWatchLinkedGitdir(t *testing.T) {
 	wt := filepath.Join(filepath.Dir(m.Root), "proj-wt")
 	m.Git("worktree", "add", "-q", "-b", "wt/a", wt)
 	a, wait := newTestApp(t, wsFile(t, "链接", m.Root, wt))
+	showGroups(a)
 	a.RefreshAll(WhyOpen)
 	r, lr := a.Repos[0], a.Repos[1]
 	wait("读完", func() bool { return idle(r)() && idle(lr)() })

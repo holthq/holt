@@ -59,6 +59,7 @@ func TestRepoWorktrees(t *testing.T) {
 	stateDir := t.TempDir()
 	ws := wsFile(t, "工作树", m.Root, o.Root, link)
 	a, wait := newTestAppIn(t, ws, stateDir)
+	showGroups(a)
 	a.RefreshAll(WhyOpen)
 	mr, or, lr := a.Repos[0], a.Repos[1], a.Repos[2]
 	wait("三个读完", func() bool { return idle(mr)() && idle(or)() && idle(lr)() })
@@ -156,6 +157,7 @@ func TestRepoWorktrees(t *testing.T) {
 	// 展开的块记在会话里，重开还展开着
 	a.SaveState()
 	b, wait2 := newTestAppIn(t, ws, stateDir)
+	showGroups(b)
 	if !b.Repos[0].WtOpen || b.Repos[1].WtOpen || b.Repos[2].WtOpen {
 		t.Errorf("重开后 wtOpen：%v %v %v", b.Repos[0].WtOpen, b.Repos[1].WtOpen, b.Repos[2].WtOpen)
 	}
@@ -184,6 +186,7 @@ func TestWorktreeOps(t *testing.T) {
 	m.Git("branch", "free")
 	side := filepath.Dir(m.Root)
 	a, wait := newTestApp(t, wsFile(t, "写", m.Root))
+	showGroups(a)
 	r := a.Repos[0]
 	a.RefreshRepo(r, WhyOpen)
 	wait("读状态", idle(r))
@@ -305,6 +308,7 @@ func TestSwitchRefusedElsewhere(t *testing.T) {
 	m.Commit("初始")
 	m.Git("worktree", "add", "-q", "-b", "feat", filepath.Join(filepath.Dir(m.Root), "proj-feat"))
 	a, wait := newTestApp(t, wsFile(t, "切", m.Root))
+	showGroups(a)
 	r := a.Repos[0]
 	a.RefreshRepo(r, WhyOpen)
 	wait("读状态", idle(r))

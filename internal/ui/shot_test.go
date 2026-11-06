@@ -481,6 +481,7 @@ func TestScreenshotHunksHistory(t *testing.T) {
 	}
 
 	a, tt, wait := newUI(t, testutil.Workspace(t, api.Root, infra.Root), t.TempDir())
+	showGroups(a)
 	tt.SetScale(2)
 	tt.SetTitleBar(shotBar)
 	a.St.BottomBar = false // 测试里不起 shell，空终端占地方
@@ -854,6 +855,7 @@ func TestScreenshotWorktrees(t *testing.T) {
 	web.CommitAt("前端脚手架", ago(40))
 
 	a, tt, wait := newUI(t, testutil.Workspace(t, api.Root, web.Root), termState(t, false))
+	showGroups(a)
 	tt.SetScale(2)
 	tt.SetTitleBar(shotBar)
 	a.St.RightBar = true

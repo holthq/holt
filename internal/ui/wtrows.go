@@ -37,7 +37,7 @@ func accentSolid(t *wui.Theme) wui.Color {
 	return wui.Hex("#4E6E8E")
 }
 
-// accentIconButton 把 b 画成强调色实心的方按钮（合并到 main、提交）：边长 wtBtnSize+2、圆角 6、白色图标，
+// accentIconButton 把 b 画成强调色实心的方按钮（合并到 main）：边长 wtBtnSize+2、圆角 6、白色图标，
 // 悬停 / 按下变色；dim 时灰着（Opacity 0.4）、点了没反应。b 由调用方给（Box，或要能用键盘按到的 ButtonBase）。
 // 返回这一帧点没点。
 func accentIconButton(c *wui.Context, b wui.Element, ic *wui.SVG, label, tip string, dim bool) bool {

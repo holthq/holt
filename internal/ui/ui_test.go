@@ -86,3 +86,10 @@ func mustText(t *testing.T, tt *wui.Tester, s string) {
 }
 
 func itoa(n int) string { return strconv.Itoa(n) }
+
+// showGroups 打开设置里的"在 Git 栏显示工作树 / 贮藏"（默认都关），和在设置窗口里拨开关一样走 SettingsChanged：
+// 测工作树、贮藏的行、截图的测试在 setup 里调。
+func showGroups(a *app.App) {
+	a.St.Settings.ShowWorktrees, a.St.Settings.ShowStashes = true, true
+	a.SettingsChanged()
+}

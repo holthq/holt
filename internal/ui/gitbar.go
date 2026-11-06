@@ -14,8 +14,9 @@ import (
 )
 
 // gitView 是侧栏的 Git 模式：工作区里所有仓库同时列出，一个仓库一段。段头是仓库名、分支、
-// 各组的计数和（悬停时）"全部暂存"，滚动时贴在顶上；段头下面是横幅、工作树组头（默认收着），接着是这个仓库的提交框，
-// 再按冲突 / 已暂存 / 未暂存（含未跟踪）分组，最后是贮藏组头（默认收着）；每组点标题收起。点一项在主区的预览 Diff 标签里看（当前仓库切到它），双击 / 回车固定。
+// 各组的计数和（悬停时）"全部暂存"，滚动时贴在顶上；段头下面是横幅、工作树组头（设置里开了"在 Git 栏显示工作树"才有，
+// 默认收着），接着是这个仓库的提交框，再按冲突 / 已暂存 / 未暂存（含未跟踪）分组，最后是贮藏组头（设置里开了
+// "在 Git 栏显示贮藏"才有，默认收着）；每组点标题收起。点一项在主区的预览 Diff 标签里看（当前仓库切到它），双击 / 回车固定。
 func gitView(a *app.App, c *wui.Context) {
 	t := c.Theme()
 	if len(a.Repos) == 0 {
@@ -216,14 +217,14 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 			pill(c, i18n.Tf("%s中", op.String()), t.Warning, false).
 				Tooltip(i18n.Tf("正在%s：看下面的横幅", op.String()))
 		}
-		if n := len(r.Extra.Stashes); n > 0 && !open {
+		if n := len(r.Extra.Stashes); n > 0 && !open && r.ShowStashes() {
 			tip := i18n.Tf("%s 条贮藏", strconv.Itoa(n))
 			wui.Row(c).Gap(2).AlignItems(wui.Center).Shrink(0).Tooltip(tip).Label(tip).Children(func() {
 				wui.Icon(c, iconArchive).FontSize(iconInline).TextColor(t.TextMuted)
 				wui.Text(c, strconv.Itoa(n)).FontSize(sideSub).TextColor(t.TextMuted).SingleLine()
 			})
 		}
-		if n := len(r.Worktrees); n > 0 && !open {
+		if n := len(r.Worktrees); n > 0 && !open && r.ShowWts() {
 			tip := i18n.Tf("%s 个工作树", strconv.Itoa(n))
 			wui.Row(c).Gap(2).AlignItems(wui.Center).Shrink(0).Tooltip(tip).Label(tip).Children(func() {
 				wui.Icon(c, iconWorktree).FontSize(iconInline).TextColor(t.TextMuted)
@@ -887,9 +888,22 @@ func commitRow(a *app.App, row wui.ListRow, r *app.Repo) {
 			if r.Amend {
 				tip = app.Tip("git commit --amend", "commit")
 			}
-			// 强调色的图标按钮（和"合并到 main"一样），字进读屏和提示；ButtonBase 能用键盘按到，不能提交时 Disabled 同原来的按钮
-			can := r.CanCommit()
-			if accentIconButton(c, wui.ButtonBase(c.Key("commit")).Disabled(!can), iconCommit, label, label+"\n"+tip, !can) {
+			// 普通图标按钮（和左边"撤销上次提交"一样：没有底色，悬停才有淡底），字进读屏和提示。
+			// ButtonBase 能用 Tab 按到（squareButton 的 Box 不行）；不调 Disabled（mygo 的 Disabled 不显示悬停提示），
+			// 不能提交时画灰、提示里写原因（CommitWhy），点了不提交。
+			why := app.CommitWhy(r)
+			if why != "" {
+				tip = withWhy(label, why) + "\n" + tip
+			} else {
+				tip = label + "\n" + tip
+			}
+			b := wui.ButtonBase(c.Key("commit")).Size(rowToolSize, rowToolSize).Label(label)
+			tooltip(c, b, tip)
+			fg := toolStyle(c, b, false, why != "")
+			b.Children(func() {
+				wui.Icon(c, iconCommit).FontSize(iconRow).TextColor(fg)
+			})
+			if why == "" && b.Clicked() {
 				a.UseRepo(r)
 				a.Commit(r)
 			}

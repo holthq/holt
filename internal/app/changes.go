@@ -9,8 +9,8 @@ import (
 )
 
 // 这个文件是侧栏 Git 模式的变更列表：工作区里所有仓库同时列出，一个仓库一段（段头贴在顶上），
-// 段头下面是横幅、"工作树"块头（默认收着），接着是这个仓库的提交框，再按冲突 / 已暂存 / 未暂存分组（未跟踪的文件
-// 和未暂存的改动同在"未暂存"一组，接在已跟踪的后面），最后是贮藏（默认收着）。选中一项就在主区的
+// 段头下面是横幅、"工作树"块头（设置里开了"在 Git 栏显示工作树"才有，默认收着），接着是这个仓库的提交框，再按冲突 / 已暂存 / 未暂存分组（未跟踪的文件
+// 和未暂存的改动同在"未暂存"一组，接在已跟踪的后面），最后是贮藏（设置里开了"在 Git 栏显示贮藏"才有，默认收着）。选中一项就在主区的
 // 预览 Diff 标签里看它（"diff 跟着选择走"），并把当前仓库切到它所在的仓库。
 
 // RowKind 是 Git 栏一行的种类。
@@ -117,7 +117,7 @@ func (cr ChangeRow) Key() ChangeKey {
 	return ChangeKey{cr.Repo.Root, cr.Kind, cr.Change.Kind, cr.Change.Path}
 }
 
-// 仓库段的折叠：默认按有没有改动（有改动展开、干净的收成一行；有工作树、合并 / 变基停在一半的也展开，让"工作树"块和横幅看得见），
+// 仓库段的折叠：默认按有没有改动（有改动展开、干净的收成一行；有工作树（设置里开了显示工作树时）、合并 / 变基停在一半的也展开，让"工作树"块和横幅看得见），
 // 点过箭头就按用户的。
 const (
 	FoldAuto = iota
@@ -136,7 +136,7 @@ func (r *Repo) GitOpen() bool {
 	case FoldClosed:
 		return false
 	}
-	return r.Err != nil || r.Status.Count > 0 || r.HasWorktrees() || r.Extra.Ongoing != git.NoOp // 合并都用了我的、干净了也要看得见横幅
+	return r.Err != nil || r.Status.Count > 0 || (r.ShowWts() && r.HasWorktrees()) || r.Extra.Ongoing != git.NoOp // 合并都用了我的、干净了也要看得见横幅
 }
 
 // ToggleGitRepo 展开 / 收起 Git 栏里的一个仓库段，记进 state.json。
@@ -203,7 +203,7 @@ func (a *App) GitRows() []ChangeRow {
 		if r.Err == nil && r.Loaded && r.Extra.Ongoing != git.NoOp {
 			rows = append(rows, ChangeRow{Kind: RowOngoing, Repo: r, Title: OngoingTitle(r)})
 		}
-		if r.Err == nil && r.Loaded && r.HasWorktrees() {
+		if r.Err == nil && r.Loaded && r.ShowWts() && r.HasWorktrees() {
 			rows = a.appendWorktrees(rows, r)
 		}
 		switch {
@@ -251,7 +251,7 @@ func (a *App) appendWorktrees(rows []ChangeRow, r *Repo) []ChangeRow {
 
 // appendStashes 加上仓库的贮藏（有的话）：一个分组标题，下面每条一行；展开的那条下面是它的文件。
 func appendStashes(rows []ChangeRow, r *Repo) []ChangeRow {
-	if len(r.Extra.Stashes) == 0 {
+	if len(r.Extra.Stashes) == 0 || !r.ShowStashes() { // 设置里没开"在 Git 栏显示贮藏"
 		return rows
 	}
 	rows = append(rows, ChangeRow{Kind: RowStashes, Repo: r, Title: i18n.T("贮藏"), Count: len(r.Extra.Stashes), Group: GroupStash})

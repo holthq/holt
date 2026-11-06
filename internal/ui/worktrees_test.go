@@ -35,6 +35,7 @@ func TestWorktreeBlock(t *testing.T) {
 	head := r.Git("rev-parse", "HEAD")
 
 	a, tt, wait := newUI(t, testutil.Workspace(t, r.Root), termState(t, false))
+	showGroups(a)
 	a.Exec("view.git")
 	pr := a.Repos[0]
 	a.RefreshRepo(pr, app.WhyManual)
@@ -172,6 +173,7 @@ func TestWorktreeKeys(t *testing.T) {
 	f.Commit("工作树里的提交")
 
 	a, tt, wait := newUI(t, testutil.Workspace(t, ra.Root, r.Root), termState(t, false))
+	showGroups(a)
 	a.Exec("view.git")
 	pa, pr := a.Repos[0], a.Repos[1]
 	a.RefreshRepo(pa, app.WhyManual)

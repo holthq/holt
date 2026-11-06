@@ -109,6 +109,7 @@ func TestWtExpandAndNeedsYou(t *testing.T) {
 	m.Commit("主分支的提交")
 
 	a, wait := newTestApp(t, wsFile(t, "需要你", m.Root))
+	showGroups(a)
 	r := a.Repos[0]
 	a.RefreshRepo(r, WhyOpen)
 	wait("读状态", idle(r))

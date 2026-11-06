@@ -61,22 +61,23 @@ type Repo struct {
 	taskStamp string       // Tasks 是按那几个文件的哪个样子扫的（tasks.Stamp）
 
 	// Git 工作树（worktrees.go）
-	Worktrees  []Worktree         // 这个仓库的别的工作树（不含自己）：主的在最前，别的按提交时间倒序
-	Linked     bool               // 自己是链接的工作树（git worktree add 出来的）
-	MainRoot   string             // 链接的工作树：主工作树的目录（主仓库是 bare 时为空）
-	WtOpen     bool               // Git 栏里"工作树"块展开着（记在会话的 wtOpen）
-	wtAuto     bool               // 有工作树在等你、在跑或可合并：组收着也接着算状态、盯着目录（SyncWtAuto 每帧对）
-	WtInfo     map[string]*WtInfo // 工作树路径 → 懒算的改动数、领先 / 落后；nil 为还没算（块展开时算，重读状态时重算）
-	WtLoading  bool               // 正在算 WtInfo
-	WtErr      error              // 上一次读工作树列表失败的原因
-	wtGen      int                // 每次算 WtInfo 递增，旧的结果作废
-	real       string             // Root 解开符号链接（认"已打开"用；第一次读完状态才有）
-	nested     []string           // 套在 Root 下面的别的工作树（仓库内路径），文件树不显示
-	Excluded   int                // 按 files.exclude 藏掉的文件和目录数（整棵读时数的，exclude.go）
-	exclude    globs.Set          // 文件树最近一次整棵读时按的 files.exclude
-	excludeKey string             // exclude 是哪些模式（比较变了没有）
-	emptyRead  map[string]int     // 大仓库里读过一层找空目录的目录 → 那次文件列表的 Gen（emptylazy.go）
-	emptyAt    [2]int             // lazyEmpty 上次看的时候 Files 的 Gen、Version
+	Worktrees  []Worktree          // 这个仓库的别的工作树（不含自己）：主的在最前，别的按提交时间倒序
+	Linked     bool                // 自己是链接的工作树（git worktree add 出来的）
+	MainRoot   string              // 链接的工作树：主工作树的目录（主仓库是 bare 时为空）
+	WtOpen     bool                // Git 栏里"工作树"块展开着（记在会话的 wtOpen）
+	set        *workspace.Settings // 所在窗口的设置（App.newRepo 给的 &a.St.Settings）：ShowWts / ShowStashes 读它；nil 当默认
+	wtAuto     bool                // 有工作树在等你、在跑或可合并：组收着也接着算状态、盯着目录（SyncWtAuto 每帧对）
+	WtInfo     map[string]*WtInfo  // 工作树路径 → 懒算的改动数、领先 / 落后；nil 为还没算（块展开时算，重读状态时重算）
+	WtLoading  bool                // 正在算 WtInfo
+	WtErr      error               // 上一次读工作树列表失败的原因
+	wtGen      int                 // 每次算 WtInfo 递增，旧的结果作废
+	real       string              // Root 解开符号链接（认"已打开"用；第一次读完状态才有）
+	nested     []string            // 套在 Root 下面的别的工作树（仓库内路径），文件树不显示
+	Excluded   int                 // 按 files.exclude 藏掉的文件和目录数（整棵读时数的，exclude.go）
+	exclude    globs.Set           // 文件树最近一次整棵读时按的 files.exclude
+	excludeKey string              // exclude 是哪些模式（比较变了没有）
+	emptyRead  map[string]int      // 大仓库里读过一层找空目录的目录 → 那次文件列表的 Gen（emptylazy.go）
+	emptyAt    [2]int              // lazyEmpty 上次看的时候 Files 的 Gen、Version
 
 	// Git 栏里展开看文件的贮藏（stash.go，不保存）：一个仓库同时只展开一条
 	StashOpen     string       // 展开着的那条（Stash.Hash），空为都收着
@@ -123,6 +124,20 @@ func NewRepo(root string) *Repo {
 	r.ctx, r.stop = context.WithCancel(context.Background())
 	return r
 }
+
+// newRepo 是这个窗口里一个还没读状态的仓库：NewRepo，再接上窗口的设置（ShowWts / ShowStashes 读它）。
+func (a *App) newRepo(root string) *Repo {
+	r := NewRepo(root)
+	r.set = &a.St.Settings
+	return r
+}
+
+// ShowWts 是设置里开了"在 Git 栏显示工作树"：关着时没有工作树组、"需要你"条和段头的工作树数，
+// 也不算各工作树的状态、不盯它们的目录（WtShown、WtTracked 都是假）。
+func (r *Repo) ShowWts() bool { return r.set != nil && r.set.ShowWorktrees }
+
+// ShowStashes 是设置里开了"在 Git 栏显示贮藏"：关着时没有贮藏组和段头的贮藏数（贮藏照常读、照常能贮藏 / 弹出）。
+func (r *Repo) ShowStashes() bool { return r.set != nil && r.set.ShowStashes }
 
 // ConfirmReq 是等用户确认的一步会改仓库或丢数据的操作。
 type ConfirmReq struct {
@@ -260,6 +275,8 @@ type App struct {
 	SaveDialog func(mygo.SaveDialogOptions) (string, error)   // 系统的存储面板（导出设置）；默认 mygo.Dialog.Save，测试里换掉
 
 	OnSettings    func(s *workspace.Settings) // 外观和语言交给窗口（main 里给；测试里没有）
+	wtShowOn      bool                        // 上次套上的"在 Git 栏显示工作树"（syncShownGroups 比它认出开关变了）
+	stashShowOn   bool                        // 上次套上的"在 Git 栏显示贮藏"
 	OpenSettings  func()                      // 打开设置窗口（⌘,；main 里给）
 	OpenAbout     func()                      // 打开关于窗口（main 里给）
 	SettingsWin   *mygo.Window                // 开着的设置窗口（main 里给，导出 / 导入的面板挂在它上面）；没开、测试里为 nil
@@ -392,6 +409,7 @@ func newApp(wsPath string, roots []string, st workspace.State) *App {
 	a.Search.Sel, a.Search.Hover, a.Search.EditorLines = -1, -1, 2
 	a.Editors()
 	a.excludeOn = st.Settings.Exclude
+	a.wtShowOn, a.stashShowOn = st.Settings.ShowWorktrees, st.Settings.ShowStashes
 	if wsPath == "" {
 		return a
 	}
@@ -404,12 +422,12 @@ func newApp(wsPath string, roots []string, st workspace.State) *App {
 	}
 	for _, root := range roots {
 		if !slices.Contains(a.St.Hidden, root) {
-			a.Repos = append(a.Repos, NewRepo(root))
+			a.Repos = append(a.Repos, a.newRepo(root))
 		}
 	}
 	for _, root := range a.St.Added {
 		if a.RepoFor(root) == nil {
-			a.Repos = append(a.Repos, NewRepo(root))
+			a.Repos = append(a.Repos, a.newRepo(root))
 		}
 	}
 	if s := a.St.Sessions[a.sessionKey()]; s != nil {

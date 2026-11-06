@@ -2191,5 +2191,11 @@
   "需要你": "Needs you",
   "一次只能重命名一项": "Rename one item at a time",
   "只能查看一个文件的历史": "History works on one file at a time",
-  "右键菜单": "Context menu"
+  "右键菜单": "Context menu",
+  "在 Git 栏显示工作树": "Show worktrees in the Git panel",
+  "在 Git 栏显示贮藏": "Show stashes in the Git panel",
+  "工作树组、顶上的“需要你”条和段头的工作树数；关着时都不出现，也不再盯各工作树的目录（默认关）": "The worktree group, the “Needs you” bar at the top and the worktree count on repo headers; when off none of these appear and worktree folders are no longer watched (off by default)",
+  "贮藏组和段头的贮藏数；关着时贮藏还在，贮藏、弹出贮藏照常能用（默认关）": "The stash group and the stash count on repo headers; when off your stashes are kept and Stash / Pop Stash still work (off by default)",
+  "正在提交": "committing",
+  "还没写提交信息": "no commit message"
 }
