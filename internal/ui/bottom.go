@@ -543,11 +543,11 @@ func newTermButton(a *app.App, c *wui.Context, r *app.Repo) {
 			a.NewTerminal(r, "")
 		}
 	}
-	b.ContextMenu(func(m *wui.Menu) { profileItems(a, m, r) })
+	ctxMenu(a, c, b, menuOwner{"termProfiles", r.Root}, func(m menu) { profileItems(a, m, r) })
 }
 
 // profileItems 是「+」右键菜单的几项：默认的 shell，再是设置里的每个终端配置；没有配置时最后一行灰着说去哪加。
-func profileItems(a *app.App, m *wui.Menu, r *app.Repo) {
+func profileItems(a *app.App, m menu, r *app.Repo) {
 	if m.Item(i18n.T("默认")).Chosen() {
 		a.NewTerminal(r, "")
 	}

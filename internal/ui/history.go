@@ -649,8 +649,8 @@ func commitCard(a *app.App, c *wui.Context, r *app.Repo, cm git.Commit, left flo
 				web = i18n.Tf("在 %s 打开", w.Site())
 			}
 			squareButton(c, iconExternal, web, web, 24, iconRow, !w.OK() || !r.Extra.Pushed(cm.Hash), func() { a.OpenWeb(w.Commit(cm.Hash)) })
-			squareButton(c, iconMore, i18n.T("更多"), i18n.T("更多：完整哈希、邮箱、时间、父提交和提交的操作"), 24, iconRow, false, func() {}).
-				Menu(func(m *wui.Menu) { commitMoreMenu(a, m, r, cm) })
+			more := squareButton(c, iconMore, i18n.T("更多"), i18n.T("更多：完整哈希、邮箱、时间、父提交和提交的操作"), 24, iconRow, false, func() {})
+			menuButton(a, c, more, menuOwner{"commitMore", r.Root + "\x00" + cm.Hash}, func(m menu) { commitMoreMenu(a, m, r, cm) })
 		})
 		switch {
 		case h.FilesLoading:
@@ -674,7 +674,7 @@ func histHeadCommit(r *app.Repo) (git.Commit, bool) {
 }
 
 // commitMoreMenu 是卡片上"更多"的菜单：完整哈希、作者和邮箱、精确时间、父提交（点了复制），然后是提交的右键菜单。
-func commitMoreMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
+func commitMoreMenu(a *app.App, m menu, r *app.Repo, cm git.Commit) {
 	copyItem := func(label, text string) {
 		if m.Item(label).Chosen() {
 			copyText(text)
@@ -697,7 +697,7 @@ func commitMoreMenu(a *app.App, m *wui.Menu, r *app.Repo, cm git.Commit) {
 		copyItem(i18n.Tf("父提交 %s", strings.Join(ps, " ")), strings.Join(cm.Parents, " "))
 	}
 	m.Separator()
-	commitMenu(a, nativeMenu(m), r, cm)
+	commitMenu(a, m, r, cm)
 }
 
 // fileCount 是"N 个文件 · +A −D"，都没有行数（只有二进制）时只写个数。

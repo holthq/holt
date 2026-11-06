@@ -117,7 +117,8 @@ func zoomStatus(a *app.App, c *wui.Context) {
 	if x.Hovered() {
 		x.TextColor(t.Text)
 	}
-	x.Menu(func(m *wui.Menu) {
+	menuButton(a, c, x, menuOwner{"zoom", ""}, func(m menu) {
+		z := a.St.Settings.ZoomPercent() // 每帧重建：按现在的
 		for _, s := range workspace.ZoomSteps {
 			if m.Item(fmt.Sprintf("%d%%", s)).Checked(s == z).Chosen() {
 				a.SetZoom(s)

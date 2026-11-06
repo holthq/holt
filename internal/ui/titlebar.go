@@ -75,7 +75,7 @@ func wsButton(a *app.App, c *wui.Context) {
 		wui.Text(c, name).FontSize(12.5).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Margin(0, 0, textNudge, 0)
 		wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(t.TextMuted)
 	})
-	b.Menu(func(m *wui.Menu) { wsMenu(a, nativeMenu(m)) })
+	menuButton(a, c, b, menuOwner{"workspace", ""}, func(m menu) { wsMenu(a, m) })
 }
 
 // breadcrumb 是当前标签的位置：仓库 › 目录 › 文件，目录太深时中间收成"…"，位置不够时见 crumbFit。

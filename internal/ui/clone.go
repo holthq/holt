@@ -1,6 +1,9 @@
 package ui
 
 import (
+	"fmt"
+	"slices"
+
 	wui "github.com/egoist/mygo/ui"
 
 	"github.com/lemoeade/grove/internal/app"
@@ -75,11 +78,16 @@ func cloneRows(a *app.App, c *wui.Context) {
 	wui.Column(c).Shrink(0).Padding(0, 4, 2, 4).Children(func() {
 		for _, cl := range a.Clones {
 			kc := c.Key(cl)
-			wui.Column(kc).Radius(5).Clip().Background(t.Text.Alpha(0.04)).ContextMenu(func(m *wui.Menu) {
+			box := wui.Column(kc).Radius(5).Clip().Background(t.Text.Alpha(0.04)).Tooltip(cl.URL)
+			ctxMenu(a, kc, box, menuOwner{"clone", fmt.Sprintf("%p", cl)}, func(m menu) {
+				if !slices.Contains(a.Clones, cl) { // 菜单开着时克隆完了 / 取消了：关掉
+					return
+				}
 				if m.Item(i18n.T("取消克隆")).Chosen() {
 					a.CancelClone(cl)
 				}
-			}).Tooltip(cl.URL).Children(func() {
+			})
+			box.Children(func() {
 				wui.Row(kc).Padding(5, 6, 5, 8).Gap(6).AlignItems(wui.Center).MinWidth(0).Children(func() {
 					wui.Spinner(kc)
 					wui.Text(kc, cl.Name).FontSize(sideFont).FontWeight(600).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)

@@ -80,6 +80,10 @@
 - 输入回调里 `Context.Now()` 不是事件的时间，用 `InputEvent.Time`。
 - `SetMenuPresentation(PopoverMenus)` 下 `ContextMenu` / `Menu` 的菜单每帧重建（系统菜单是打开时的快照）：开着时状态变了，项跟着变灰；
   测试里"选了打开时还能用、现在不能用的项"这种场景不再有，`Tester.Menu` / `ChooseMenuItem` 照样能用。
+  Grove 画的菜单（`app.PopMenu`）也每帧重建：建菜单时按打开那一帧的下标取切片（搜索结果的 `s.Res.Matches[sr.Match]`），
+  菜单开着时结果变少就越界。先核对还在、还是那一个，不在了什么也不加（菜单关掉）。
+- 在树建完以后（`root` 的末尾）换掉列表的状态（换工作区）会让这一帧的布局在 `layoutList` 里空指针：动作要在建树之前做（Grove 菜单的选中项在 `root` 开头执行）。
+- 行装了 `menuPress`（`HandleInput`）以后接输入的是行，不是列表的格子：`tt.Click(名字)` 报"不是输入目标"，用 `clickRow`。
 - 双击：List 的行用 `RowDoubleClicked`，普通元素用 `DoubleClicked`。
 - 行里的子元素一旦 `Clicked()` / `Pressed()` / `Drag`，会消耗该事件，列表无法再收到。不要为了获取修饰键而给行添加 `Clicked()`。
   文件树的做法：只让选中的行当拖动源（没选中的按下还是列表的拖选）；选中行的点击由 `TreeRowClicked` 记下，列表构建完成后，`ApplyTreeClick`

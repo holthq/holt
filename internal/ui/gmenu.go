@@ -146,8 +146,8 @@ func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, own
 	}
 }
 
-// menuDo 给建菜单的函数里"等列表建完再做"的动作（搜索结果的 do）用：Grove 菜单选中的项是在整棵树建完之后、
-// gmenuView 里再跑一遍建菜单的函数时执行的，列表早建完了，直接做。建菜单时捕获的 do 是打开菜单那一帧的，
+// menuDo 给建菜单的函数里"等列表建完再做"的动作（搜索结果的 do）用：Grove 菜单选中的项是在下一帧建树之前、
+// gmenuRunChoice 里再跑一遍建菜单的函数时执行的，这时候不在建列表，直接做。建菜单时捕获的 do 是打开菜单那一帧的，
 // 那一帧的列表早就过去了，交给它的动作没人执行。
 func menuDo(fn func()) { fn() }
 
@@ -233,8 +233,19 @@ func menuOwned(a *app.App, owner any) bool {
 	return a.Menu.IsOpen() && a.Menu.Owner == owner
 }
 
-// gmenuView 画开着的菜单（在 root 里，所有东西之后）；刚选了一项的话先执行它。
-func gmenuView(a *app.App, c *wui.Context) {
+// gmenuRunChoice 执行上一帧之后在菜单里选了的项（在 root 的开头、建树之前），报选了没有。
+func gmenuRunChoice(a *app.App, c *wui.Context) bool {
+	m := &a.Menu
+	if !m.Chosen() {
+		return false
+	}
+	m.RunChoice()
+	c.Invalidate()
+	return true
+}
+
+// gmenuView 画开着的菜单（在 root 里，所有东西之后）；chose 是这一帧开头执行了选中的项（gmenuRunChoice）。
+func gmenuView(a *app.App, c *wui.Context, chose bool) {
 	m := &a.Menu
 	m.EndFrame() // 这一帧的树已经建完，能开菜单的地方都登记了
 	if k := a.MenuKeyAt; k != nil {
@@ -247,11 +258,6 @@ func gmenuView(a *app.App, c *wui.Context) {
 			m.OpenByKey(k.Owner, k.Build, k.X, k.Y, root.W, root.H, c.Now())
 			c.Invalidate()
 		}
-	}
-	chose := m.Chosen()
-	if chose {
-		m.RunChoice()
-		c.Invalidate()
 	}
 	if !m.IsOpen() {
 		if a.MenuByKey && a.MenuShown > 0 && !chose {

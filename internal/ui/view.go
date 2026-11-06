@@ -28,6 +28,9 @@ func root(a *app.App, c *wui.Context) {
 	// mygo 自己建的菜单（编辑器的右键菜单、文本框和可选中文字的编辑菜单）和还没换成 Grove 菜单的 ContextMenu / Menu
 	// 画在窗口里（issue #58），不和 Grove 画的菜单混着出系统菜单；菜单栏、程序坞菜单还是系统的
 	c.SetMenuPresentation(wui.PopoverMenus)
+	// Grove 菜单上一帧之后选了的项在建树之前执行（和系统菜单在下一帧建到那个元素时执行差不多）：换工作区、重搜这类
+	// 换掉列表状态的动作要是在树建完以后做，这一帧的布局还拿着旧的列表
+	chose := gmenuRunChoice(a, c)
 	a.BindShortcuts(c)
 	a.SyncMenu()
 	a.AutoSaveTick()
@@ -47,7 +50,7 @@ func root(a *app.App, c *wui.Context) {
 		})
 		statusBar(a, c.Key("status"))
 	})
-	gmenuView(a, c) // 文件树的右键菜单：选了的项在这里执行，所以在 pending 之前
+	gmenuView(a, c, chose) // Grove 画的菜单（右键、按钮的）
 	dialogs(a, c)
 	pending(a, c)
 	if a.Toast != "" {

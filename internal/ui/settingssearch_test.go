@@ -155,8 +155,11 @@ func TestZoomKeys(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("150%"); err != nil {
-		t.Fatalf("缩放菜单：%v %q", err, tt.Menu())
+	if !a.Menu.IsOpen() {
+		t.Fatal("缩放那格该开 Grove 菜单")
+	}
+	if err := chooseMenu(t, tt, "150%"); err != nil {
+		t.Fatalf("缩放菜单：%v %q", err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	if a.St.Settings.Zoom != 150 || !chip(150) {

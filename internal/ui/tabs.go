@@ -791,7 +791,8 @@ func searchDocBar(a *app.App, c *wui.Context, d *docs.Doc) {
 		wui.Icon(c, iconSearchDoc).FontSize(iconRow).TextColor(t.TextMuted)
 		wui.Text(c, i18n.T("双击、回车或 ⌘点一行，打开那个文件到那一行")).FontSize(11.5).TextColor(t.TextMuted).
 			SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
-		linkButton(c, i18n.Tn("上下文 %d 行", d.SearchLines), i18n.T("每处前后显示几行（之后开的搜索编辑器也用它）")).Menu(func(m *wui.Menu) {
+		lines := linkButton(c, i18n.Tn("上下文 %d 行", d.SearchLines), i18n.T("每处前后显示几行（之后开的搜索编辑器也用它）"))
+		menuButton(a, c, lines, menuOwner{"searchLines", fmt.Sprintf("%p", d)}, func(m menu) {
 			for _, n := range app.SearchContexts {
 				if m.Item(i18n.Tn("%d 行", n)).Checked(n == d.SearchLines).Chosen() {
 					a.SetSearchLines(d, n)
