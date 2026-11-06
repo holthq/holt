@@ -330,6 +330,7 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 `files.Tree` 由 `git ls-files` 建（带模式位，`LsFilesModes`，认得出符号链接和子模块），未跟踪的文件来自 status。普通文件夹用 `Walk`。树里每个仓库是一段，段头贴顶；展开的目录记在会话 `dirs` 里。
 
 文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）、Git 栏段头的右键菜单和分支菜单、标题栏分支胶囊的菜单是 Grove 自己画的（issue #48、#58），不用系统菜单
+右键一行时菜单用 `PopMenu.OpenRow` 开：在指针的横坐标、那一行底下展开，下面放不下翻到那一行上面，不盖住它；比 `MenuRowMax`（64）高的（列表空白处）按指针处开。菜单开着时右键别的登记过的地方也一样。
 （窗口靠下时会折成带滚动箭头的，见 `docs/mygo-pitfalls.md`），也不用 mygo 的 `PopoverMenu`（不能按住右键拖到项上松开、子菜单没有延迟和安全三角、
 灰项说不了原因、点外面那一下会落到底下）：
 

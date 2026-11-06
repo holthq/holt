@@ -279,8 +279,14 @@ func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
 	// 右键行下面的空白处：空白处的菜单
 	last := a.TreeSpans[len(a.TreeRows())-1]
 	p := popMenus(t, tt)[0].Panel
-	by := max(float64(last.Y+last.H+30), p.Y+p.H+20) // 别落在开着的菜单上
-	tt.RightClickAt(last.X+20, float32(by))
+	bx, by := float64(last.X+4), float64(last.Y+last.H+30) // 别落在开着的菜单上
+	if bx >= p.X && bx < p.X+p.W { // 菜单在行底下展开，盖住了左边：点它右边
+		bx = p.X + p.W + 10
+	}
+	if bx >= float64(last.X+last.W) {
+		t.Fatalf("测不到：空白处都被菜单盖着（菜单 %+v）", p)
+	}
+	tt.RightClickAt(float32(bx), float32(by))
 	tt.Frame()
 	if o, ok := a.Menu.Owner.(treeOwner); !a.Menu.IsOpen() || !ok || !o.Blank {
 		t.Fatalf("右键空白处该开空白处的菜单：open=%v owner=%+v", a.Menu.IsOpen(), a.Menu.Owner)

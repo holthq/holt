@@ -99,7 +99,7 @@ func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func
 				a.TreeTip.Dismiss()
 				root := c.Root().Bounds()
 				gmenuMeasure(a, c)
-				m.Open(owner, build, x, y, root.W, root.H, true, ev.Time)
+				m.OpenRow(owner, build, x, y, app.MenuRect{X: b.X, Y: b.Y, W: b.W, H: b.H}, root.W, root.H, true, ev.Time)
 				held = true
 				return true
 			}

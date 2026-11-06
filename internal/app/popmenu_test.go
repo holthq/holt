@@ -390,15 +390,15 @@ func TestPopMenuRightClickElsewhere(t *testing.T) {
 	k.now = k.now.Add(time.Second)
 	k.m.Up(100, 100, 1, k.now) // 刚开的那一下松开（太快，菜单留着）
 
-	// 右键另一行：新菜单对着它、开在指针处
+	// 右键另一行：新菜单对着它、在指针的横坐标、那一行底下展开
 	if !k.m.Down(10, 210, 1, k.now) {
 		t.Fatal("右键外面也要吞掉（新菜单接着这一下的拖和松开）")
 	}
 	if !k.m.IsOpen() || k.m.Owner != "row2" {
 		t.Fatalf("右键别的行该在那里开新菜单：open=%v owner=%v", k.m.IsOpen(), k.m.Owner)
 	}
-	if r := k.m.Levels()[0].Rect; r.X != 10 || r.Y != 210 {
-		t.Fatalf("新菜单该开在指针处：%+v", r)
+	if r := k.m.Levels()[0].Rect; r.X != 10 || r.Y != 220 {
+		t.Fatalf("新菜单该开在那一行底下：%+v", r)
 	}
 	// 新菜单是按着右键开的：拖到项上过一会儿松开选它
 	k.now = k.now.Add(300 * time.Millisecond)
@@ -467,5 +467,34 @@ func TestPopMenuOpenByKey(t *testing.T) {
 	k.m.Close()
 	if _, ok := k.m.TargetAt(5, 5); !ok {
 		t.Fatal("关菜单不该清掉登记的地方")
+	}
+}
+
+// 右键一行（OpenRow）：菜单在指针的横坐标、这一行底下展开，不盖住它；靠窗口底下放不下时翻到这一行上面。
+// 太高的（列表空白处）和指针不在行里的照旧按指针处开。
+func TestPopMenuOpenRow(t *testing.T) {
+	k := newPopKit(t)
+	row := MenuRect{X: 0, Y: 90, W: 300, H: 24}
+	k.m.OpenRow("row", k.build, 100, 100, row, 1000, 800, true, k.now)
+	r := k.m.Levels()[0].Rect
+	if r.X != 100 || r.Y != row.Y+row.H {
+		t.Fatalf("该在行底下（y=%v）展开：%+v", row.Y+row.H, r)
+	}
+	low := MenuRect{X: 0, Y: 760, W: 300, H: 24}
+	k.m.OpenRow("row", k.build, 100, 770, low, 1000, 800, true, k.now)
+	r = k.m.Levels()[0].Rect
+	if r.Y+r.H != low.Y {
+		t.Fatalf("靠底下该翻到行上面（底边 %v）：%+v", low.Y, r)
+	}
+	k.m.OpenRow("blank", k.build, 100, 100, MenuRect{Y: 0, W: 300, H: 600}, 1000, 800, true, k.now)
+	if r := k.m.Levels()[0].Rect; r.Y != 100 {
+		t.Fatalf("空白处按指针处开：%+v", r)
+	}
+	// 菜单开着时右键另一行（登记的目标）：新菜单也在那一行底下
+	k.m.AddTarget(MenuRect{X: 0, Y: 300, W: 300, H: 24}, 1, "other", k.build)
+	k.m.EndFrame()
+	k.m.Down(50, 310, 1, k.now)
+	if r := k.m.Levels()[0].Rect; !k.m.IsOpen() || r.Y != 324 {
+		t.Fatalf("右键别的行：新菜单该在它底下（324）：%+v", r)
 	}
 }

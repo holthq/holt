@@ -125,6 +125,7 @@ type PopMenu struct {
 	winW    float32
 	winH    float32
 	ax, ay  float32 // 打开时指针的位置
+	row     MenuRect // 右键的那一行（OpenRow）：菜单从它底下展开、往上翻时到它上面，不盖住它；H 为 0 是没有
 
 	root   []MenuEntry
 	path   []int // 开着的子菜单：path[i] 是第 i 层里开着子菜单的那项
@@ -210,6 +211,20 @@ func (m *PopMenu) Open(owner any, build func(MenuSink), x, y, winW, winH float32
 		held: held, openAt: now, downLvl: -1, downIdx: -1, px: x, py: y, hasPtr: true, hotSince: now,
 		targets: m.targets, nextTargets: m.nextTargets}
 	m.Refresh(winW, winH)
+}
+
+// MenuRowMax 是 OpenRow 当成"一行"的最高：再高的（列表的空白处、整块面板）按指针处开。
+const MenuRowMax = 64
+
+// OpenRow 同 Open，右键的是 row 那一行（窗口坐标）：菜单在指针的横坐标、这一行的底下展开，下面放不下翻到这一行上面，
+// 不盖住右键的那一行（Finder、VS Code 的树那样）。row 比 MenuRowMax 高的不算行，按指针处开。
+func (m *PopMenu) OpenRow(owner any, build func(MenuSink), x, y float32, row MenuRect, winW, winH float32, held bool, now time.Time) {
+	m.Open(owner, build, x, y, winW, winH, held, now)
+	if !m.open || row.H <= 0 || row.H > MenuRowMax || y < row.Y || y > row.Y+row.H {
+		return
+	}
+	m.row = row
+	m.layout()
 }
 
 // OpenByKey 是键盘（⇧F10、菜单键）打开的：在 (x, y) 打开，第一个能选的项高亮着，↑↓ 回车马上能用。
@@ -324,11 +339,15 @@ func (m *PopMenu) layout() {
 		var x, y float32
 		if lv == 0 {
 			x, y = m.ax, m.ay
+			top := m.ay
+			if m.row.H > 0 { // 从右键的那一行底下展开，翻上去时到它上面
+				y, top = m.row.Y+m.row.H, m.row.Y
+			}
 			if x+w > m.winW-MenuMargin {
 				x = m.ax - w
 			}
 			if y+h > m.winH-MenuMargin {
-				y = m.ay - h
+				y = top - h
 			}
 		} else {
 			p := m.levels[lv-1]
@@ -549,7 +568,7 @@ func (m *PopMenu) Down(x, y float32, button int, now time.Time) bool {
 		m.Close()
 		if button == 1 {
 			if t, ok := m.TargetAt(x, y); ok {
-				m.Open(t.Owner, t.Build, x, y, winW, winH, true, now)
+				m.OpenRow(t.Owner, t.Build, x, y, t.Rect, winW, winH, true, now)
 			}
 		}
 		return true
