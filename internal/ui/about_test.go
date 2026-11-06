@@ -185,7 +185,7 @@ func TestAboutView(t *testing.T) {
 	a.LastCrash = filepath.Join(a.LogDir, "crash-20261029-120000.log")
 	licenses, _ := filepath.Abs("../../resources/licenses")
 
-	tt := wui.NewTester(AboutView(a, licenses), 460, 600)
+	tt := wui.NewTester(AboutView(a, licenses), 460, 640)
 	tt.SetLocale(i18n.Locale())
 	for _, s := range []string{"Grove", i18n.Tf("版本 %s", version.App), version.Mygo(), a.LogDir, "mygo", "purego", "SIL OFL 1.1"} {
 		if !tt.HasText(s) {
@@ -199,7 +199,7 @@ func TestAboutView(t *testing.T) {
 	if !slices.Equal(shown, []string{a.LogDir, a.LastCrash, licenses}) {
 		t.Errorf("打开的是 %q", shown)
 	}
-	for _, f := range []string{"README.txt", "mygo.txt", "ghostty.txt", "go.txt", "go-text-typesetting.txt", "purego.txt", "regexp2.txt", "mermaid.txt", "mathjax.txt", "jetbrains-mono-nerd-font.txt"} {
+	for _, f := range []string{"README.txt", "phosphor.txt", "simple-icons.txt", "mygo.txt", "ghostty.txt", "go.txt", "go-text-typesetting.txt", "purego.txt", "regexp2.txt", "mermaid.txt", "mathjax.txt", "jetbrains-mono-nerd-font.txt"} {
 		if _, err := os.Stat(filepath.Join(licenses, f)); err != nil {
 			t.Errorf("许可目录里少了 %s", f)
 		}

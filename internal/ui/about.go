@@ -22,6 +22,8 @@ var thirdParty = [][2]string{
 	{"regexp2", "MIT"},
 	{"Mermaid", "MIT"},
 	{"MathJax", "Apache-2.0"},
+	{"Phosphor Icons", "MIT"},
+	{"Simple Icons", "CC0-1.0"},
 }
 
 // AboutView 是关于窗口：图标、版本、编进来的 mygo 和 Go 的版本、日志目录（崩溃和错误日志）、第三方许可。

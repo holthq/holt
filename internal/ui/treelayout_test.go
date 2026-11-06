@@ -117,19 +117,19 @@ func TestStickyLayersGeometry(t *testing.T) {
 // 行里的类型徽章 14 宽（标签上的还是 11.5）、离名字 6。名字都是 n 开头，墨迹的左边一样。
 func TestTreeSizes(t *testing.T) {
 	repo := testutil.NewRepo(t, "proj")
-	repo.Write("a/n1.go", "package a\n")
-	repo.Write("a/b/n2.go", "package b\n")
-	repo.Write("a/b/c/n3.go", "package c\n")
-	repo.Write("n0.go", "package main\n")
+	repo.Write("a/n1.cs", "package a\n")
+	repo.Write("a/b/n2.cs", "package b\n")
+	repo.Write("a/b/c/n3.cs", "package c\n")
+	repo.Write("n0.cs", "package main\n")
 	repo.Commit("init")
 	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
 	a.ShowSidebar(workspace.ModeFiles)
 	r := a.Current()
 	a.EnsureFiles(r)
 	wait("文件树", func() bool { return r.Files.Loaded })
-	r.Files.Reveal("a/b/c/n3.go")
+	r.Files.Reveal("a/b/c/n3.cs")
 	tt.Move(700, 400)
-	wait("深的文件", func() bool { return tt.HasText("n3.go") })
+	wait("深的文件", func() bool { return tt.HasText("n3.cs") })
 	const scale = 2
 	tt.SetScale(scale)
 	tt.Frame()
@@ -158,8 +158,8 @@ func TestTreeSizes(t *testing.T) {
 		}
 		return row, span(runs[0]), span(runs[1])
 	}
-	// 彩色的（树里没有底块）："Go" 两个字母在 16 宽的格子里居中，格子离名字 Gap 6（加上字形左边那一点）
-	if _, b, n := ink("n3.go"); b[1]-b[0] > 15 || n[0]-b[1] < 6 || n[0]-b[1] > 6+(16-(b[1]-b[0]))/2+1.5 {
+	// 彩色的（树里没有底块）："C#" 两个字母在 16 宽的格子里居中，格子离名字 Gap 6（加上字形左边那一点）
+	if _, b, n := ink("n3.cs"); b[1]-b[0] > 15 || n[0]-b[1] < 6 || n[0]-b[1] > 6+(16-(b[1]-b[0]))/2+1.5 {
 		t.Errorf("彩色图标 %.1f–%.1f、名字从 %.1f 起：要在 16 宽的格子里居中、格子离名字 6", b[0], b[1], n[0])
 	}
 	// 下面量的是线形（徽章）
@@ -168,10 +168,10 @@ func TestTreeSizes(t *testing.T) {
 	tt.Frame()
 	tt.Frame()
 	img = tt.Image()
-	r0, _, n0 := ink("n0.go")
-	_, _, n1 := ink("n1.go")
-	r2, _, n2 := ink("n2.go")
-	r3, b3, n3 := ink("n3.go")
+	r0, _, n0 := ink("n0.cs")
+	_, _, n1 := ink("n1.cs")
+	r2, _, n2 := ink("n2.cs")
+	r3, b3, n3 := ink("n3.cs")
 	if n3[0] < 104 || n3[0] > 105.5 {
 		t.Errorf("深 4 级的文件名从 %.1f 起，应该是 104（加上字形左边那一点）", n3[0])
 	}

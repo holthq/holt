@@ -15,7 +15,7 @@ import (
 //   - 空闲、没有 agent：不画。
 
 // iconAgentSpin 是运行中的转圈：22% 的底圈加从 12 点顺时针 3/4 圈的弧。
-var iconAgentSpin = icon(`<circle cx="12" cy="12" r="9" opacity="0.22"/><path d="M12 3a9 9 0 1 1-9 9"/>`)
+var iconAgentSpin = icon("spinner-ring")
 
 // agentWaitColor 是"等你"圆点的琥珀色。
 func agentWaitColor(t *wui.Theme) wui.Color {

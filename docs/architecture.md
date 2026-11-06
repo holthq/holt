@@ -410,6 +410,8 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
 
 文件按状态上色（改了、新加、冲突、被忽略），`TreeNoStatusColors` 关掉。图标默认是 `ui/fileicons.go` 的彩色小方块（按扩展名；文件树和"打开的编辑器"那一档 `iconTool` 用 `quietGlyphOf`：不画底块、颜色往次级字色混 `quietMix`，一屏几十个不那么重），`TreeIconsPlain` 换成线条图标；目录图标按里面有没有改动淡淡上色（`folderTint`）。
 
+界面图标是 `ui/icons/` 里的 SVG（Phosphor 2.1.1，MIT，文件名就是图标名），`icons.go` 用 `go:embed` 读，`icon("git-branch")` 取一个。要新图标就把 Phosphor 的 Regular 放进这个目录。`lang-*.svg` 是语言的单色 logo（Simple Icons，每个 logo 的许可不一样，见 `resources/licenses/simple-icons.txt`），没有能用的 logo 的语言（C#、Objective-C、Vue、SQL、proto）还是字母徽章；`TestIconFilesUsed` 查目录里没有没人用的文件。
+
 侧栏顶上可以加一段“打开的编辑器”（`ShowOpenEditors`，默认关，`app/openeditors.go`）：按组列出所有标签，最多显示 `OpenEditorsMax` 9 行高，多了滚；收起状态在 `Panels` 里。这一段不另存列表，每帧从 `AllDocs()` 现算。
 
 ## 编辑器

@@ -124,7 +124,11 @@ func TestTitleBarAlign(t *testing.T) {
 			continue
 		}
 		in := wui.Rect{X: rect.X + 1.5, Y: 1.5, W: rect.W - 3, H: barHeight - 3} // 不扫边框
-		if desc, ok := rowRuns(img, in, scale, bg, mid, 2.5); !ok || desc == "" {
+		gap := float32(2.5)
+		if label == "Git 操作" {
+			gap = 3 // 三个点隔着 2.5 pt，一个点又比 rowRuns 跳过的宽度窄：连成一块才量得到
+		}
+		if desc, ok := rowRuns(img, in, scale, bg, mid, gap); !ok || desc == "" {
 			t.Errorf("%s 没对齐中线 %.1f：%s", label, mid, desc)
 		}
 	}

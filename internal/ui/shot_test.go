@@ -692,7 +692,7 @@ func TestScreenshotHistoryGraph(t *testing.T) {
 
 // TestScreenshotFileIcons 是文件类型图标的截图（WORKBENCH_SHOT=目录 时才跑），临时仓库：
 //
-//	file-icons.png  文件树里各种文件（编程语言是字母徽章），左浅色右深色（只截侧栏）
+//	file-icons.png  文件树里各种文件（编程语言是 logo 或字母徽章），左浅色右深色（只截侧栏）
 func TestScreenshotFileIcons(t *testing.T) {
 	dir := os.Getenv("WORKBENCH_SHOT")
 	if dir == "" {

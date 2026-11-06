@@ -216,7 +216,7 @@ func main() {
 			aboutWin = mygo.NewWindow(mygo.WindowOptions{
 				Title:           i18n.T("关于 Grove"),
 				Width:           460,
-				Height:          600,
+				Height:          640,
 				MinWidth:        400,
 				MinHeight:       420,
 				StateKey:        "about",

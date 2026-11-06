@@ -11,27 +11,27 @@ import (
 )
 
 // 文件类型图标：文件树、编辑器标签、快速打开、搜索结果、面包屑都用 fileGlyph。默认是彩色底块：
-// 图标见方的圆角块填上类别色的淡色，上面是同色的 Lucide 线性图标，代码文件换成语言的两三个等宽字母（Go、Py、TS……，不描边）；
-// 设置里的"图标风格：线形"是单色线性图标（代码文件是描边圆角方块里的字母徽章，Zed / Seti 那一路）。
+// 图标见方的圆角块填上类别色的淡色，上面是同色的线性图标，代码文件是语言的单色 logo，没有 logo 的语言是两三个等宽字母（C#、SQL……，不描边）；
+// 设置里的"图标风格：线形"是单色线性图标，没有 logo 的语言是描边圆角方块里的字母徽章（Zed / Seti 那一路）。
 // 颜色按类别一组十来个（代码按语言取 GitHub linguist 的主色、压到和强调色差不多的饱和度，深色主题亮一档），
 // 不是每种语言一个色。目录是实心的文件夹，颜色按目录名查表（folderTint）。不用系统的 Finder 图标（mygo.Shell.FileIcon）：
-// 源码文件全是白纸、位图、和线性图标不搭；也不用各家的 logo（商标、多色，和线性图标不搭）。
+// 源码文件全是白纸、位图、和线性图标不搭。语言的 logo 是 Simple Icons 的单色版，跟着类别色走，不用各家的彩色原版。
 
 var (
-	iconCodeXML   = icon(`<path d="m18 16 4-4-4-4"/><path d="m6 8-4 4 4 4"/><path d="m14.5 4-5 16"/>`)
-	iconPalette   = icon(`<path d="M12 22a1 1 0 0 1 0-20 10 9 0 0 1 10 9 5 5 0 0 1-5 5h-2.25a1.75 1.75 0 0 0-1.4 2.8l.3.4a1.75 1.75 0 0 1-1.4 2.8z"/><circle cx="13.5" cy="6.5" r=".5" fill="currentColor"/><circle cx="17.5" cy="10.5" r=".5" fill="currentColor"/><circle cx="6.5" cy="12.5" r=".5" fill="currentColor"/><circle cx="8.5" cy="7.5" r=".5" fill="currentColor"/>`)
-	iconBraces    = icon(`<path d="M8 3H7a2 2 0 0 0-2 2v5a2 2 0 0 1-2 2 2 2 0 0 1 2 2v5c0 1.1.9 2 2 2h1"/><path d="M16 21h1a2 2 0 0 0 2-2v-5c0-1.1.9-2 2-2a2 2 0 0 1-2-2V5a2 2 0 0 0-2-2h-1"/>`)
-	iconLock      = icon(`<rect width="18" height="11" x="3" y="11" rx="2" ry="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/>`)
-	iconFileText  = icon(`<path d="M15 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V7Z"/><path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M10 9H8"/><path d="M16 13H8"/><path d="M16 17H8"/>`) // 外框和 iconFile 一样
-	iconBook      = icon(`<path d="M12 7v14"/><path d="M3 18a1 1 0 0 1-1-1V4a1 1 0 0 1 1-1h5a4 4 0 0 1 4 4 4 4 0 0 1 4-4h5a1 1 0 0 1 1 1v13a1 1 0 0 1-1 1h-6a3 3 0 0 0-3 3 3 3 0 0 0-3-3z"/>`)
-	iconScale     = icon(`<path d="M12 3v18"/><path d="m19 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M3 7h1a17 17 0 0 0 8-2 17 17 0 0 0 8 2h1"/><path d="m5 8 3 8a5 5 0 0 1-6 0zV7"/><path d="M7 21h10"/>`)
-	iconType      = icon(`<path d="M12 4v16"/><path d="M4 7V5a1 1 0 0 1 1-1h14a1 1 0 0 1 1 1v2"/><path d="M9 20h6"/>`)
-	iconMusic     = icon(`<path d="M9 18V5l12-2v13"/><circle cx="6" cy="18" r="3"/><circle cx="18" cy="16" r="3"/>`)
-	iconFilm      = icon(`<rect width="18" height="18" x="3" y="3" rx="2"/><path d="M7 3v18"/><path d="M3 7.5h4"/><path d="M3 12h18"/><path d="M3 16.5h4"/><path d="M17 3v18"/><path d="M17 7.5h4"/><path d="M17 16.5h4"/>`)
-	iconContainer = icon(`<path d="M22 7.7c0-.6-.4-1.2-.8-1.5l-6.3-3.9a1.72 1.72 0 0 0-1.7 0l-10.3 6c-.5.2-.9.8-.9 1.4v6.6c0 .5.4 1.2.8 1.5l6.3 3.9a1.72 1.72 0 0 0 1.7 0l10.3-6c.5-.3.9-1 .9-1.5Z"/><path d="M10 21.9V14L2.1 9.1"/><path d="m10 14 11.9-6.9"/><path d="M14 19.8v-8.1"/><path d="M18 17.5V9.4"/>`)
-	iconHammer    = icon(`<path d="m15 12-9.373 9.373a1 1 0 0 1-3.001-3L12 9"/><path d="m18 15 4-4"/><path d="m21.5 11.5-1.914-1.914A2 2 0 0 1 19 8.172v-.344a2 2 0 0 0-.586-1.414l-1.657-1.657A6 6 0 0 0 12.516 3H9l1.243 1.243A6 6 0 0 1 12 8.485V10l2 2h1.172a2 2 0 0 1 1.414.586L18.5 14.5"/>`)
-	iconSettings  = icon(`<path d="M14 17H5"/><path d="M19 7h-9"/><circle cx="17" cy="17" r="3"/><circle cx="7" cy="7" r="3"/>`) // settings-2
-	iconPackage   = icon(`<path d="M11 21.73a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73z"/><path d="M12 22V12"/><polyline points="3.29 7 12 12 20.71 7"/><path d="m7.5 4.27 9 5.15"/>`)
+	iconCodeXML   = icon("brackets-angle")
+	iconPalette   = icon("palette")
+	iconBraces    = icon("brackets-curly")
+	iconLock      = icon("lock")
+	iconFileText  = icon("file-text") // 外框和 iconFile 一样
+	iconBook      = icon("book")
+	iconScale     = icon("scales")
+	iconType      = icon("text-aa")
+	iconMusic     = icon("music-notes-simple")
+	iconFilm      = icon("film-strip")
+	iconContainer = icon("cube")
+	iconHammer    = icon("hammer")
+	iconSettings  = icon("sliders-horizontal")
+	iconPackage   = icon("package")
 )
 
 // tint 是一类文件图标的颜色：浅色、深色主题各一个；都是零值就用主题的颜色（of）。faint 的底块更淡（灰的那类）。
@@ -70,8 +70,8 @@ var (
 	tintDoc   = tint{of: func(t *wui.Theme) wui.Color { return t.Text.Alpha(0.62) }}       // 文档：正文色偏灰
 )
 
-// fileKind 是一类文件的图标：badge 不空时画这几个字母的徽章（代码文件，按语言），icon 是线性图标（代码文件也记着 iconCode，
-// 是它们的类别）。
+// fileKind 是一类文件的图标：badge 不空时画这几个字母的徽章（没有 logo 的语言，icon 记着 iconCode，
+// 是它们的类别），否则画 icon：线性图标或语言的 logo。
 type fileKind struct {
 	icon  *wui.SVG
 	tint  tint
@@ -119,32 +119,36 @@ func init() {
 			fileExts[e] = k
 		}
 	}
-	// 代码按语言一个徽章；jsx / tsx 跟 JS / TS、h 跟 C、hpp 跟 C++，颜色还是原来那一类
-	lang := func(badge string, k tint, exts ...string) { add(fileKind{iconCode, k, badge}, exts...) }
-	lang("Go", tintCyan, "go")
-	lang("Dt", tintCyan, "dart")
-	lang("JS", tintCyan, "jsx")
-	lang("Py", tintBlue, "py", "pyi")
-	lang("Lua", tintBlue, "lua")
-	lang("TS", tintBlue, "ts", "tsx", "mts", "cts")
-	lang("Rs", tintOrange, "rs")
-	lang("Sw", tintOrange, "swift")
-	lang("Jv", tintOrange, "java")
-	lang("Sc", tintOrange, "scala")
-	lang("Kt", tintPurple, "kt", "kts")
-	lang("php", tintPurple, "php")
-	lang("Rb", tintRed, "rb")
-	lang("C", tintSlate, "c", "h")
-	lang("C++", tintSlate, "cc", "cpp", "cxx", "hpp", "hh")
-	lang("OC", tintSlate, "m", "mm")
-	lang("C#", tintSlate, "cs")
-	lang("Zig", tintSlate, "zig")
-	lang("JS", tintYellow, "js", "mjs", "cjs")
-	lang("Vue", tintGreen, "vue")
-	lang("Sv", tintGreen, "svelte")
-	lang("SQL", tintKhaki, "sql")
-	lang("Pb", tintKhaki, "proto")
-	lang("GQL", tintKhaki, "graphql")
+	// 代码按语言：lang 是语言的 logo，letters 是没有能用的 logo 的语言（Vue 的许可不许商用）。
+	// jsx / tsx 是 React，h 跟 C、hpp 跟 C++；颜色是那一类的类别色，logo 也是单色的
+	lang := func(logo *wui.SVG, k tint, exts ...string) { add(fileKind{icon: logo, tint: k}, exts...) }
+	letters := func(badge string, k tint, exts ...string) { add(fileKind{iconCode, k, badge}, exts...) }
+	react := icon("lang-react")
+	lang(icon("lang-go"), tintCyan, "go")
+	lang(icon("lang-dart"), tintCyan, "dart")
+	lang(react, tintCyan, "jsx")
+	lang(icon("lang-python"), tintBlue, "py", "pyi")
+	lang(icon("lang-lua"), tintBlue, "lua")
+	lang(icon("lang-typescript"), tintBlue, "ts", "mts", "cts")
+	lang(react, tintBlue, "tsx")
+	lang(icon("lang-rust"), tintOrange, "rs")
+	lang(icon("lang-swift"), tintOrange, "swift")
+	lang(icon("lang-java"), tintOrange, "java")
+	lang(icon("lang-scala"), tintOrange, "scala")
+	lang(icon("lang-kotlin"), tintPurple, "kt", "kts")
+	lang(icon("lang-php"), tintPurple, "php")
+	lang(icon("lang-ruby"), tintRed, "rb")
+	lang(icon("lang-c"), tintSlate, "c", "h")
+	lang(icon("lang-cpp"), tintSlate, "cc", "cpp", "cxx", "hpp", "hh")
+	lang(icon("lang-zig"), tintSlate, "zig")
+	lang(icon("lang-javascript"), tintYellow, "js", "mjs", "cjs")
+	lang(icon("lang-svelte"), tintGreen, "svelte")
+	lang(icon("lang-graphql"), tintKhaki, "graphql")
+	letters("OC", tintSlate, "m", "mm")
+	letters("C#", tintSlate, "cs")
+	letters("Vue", tintGreen, "vue")
+	letters("SQL", tintKhaki, "sql")
+	letters("Pb", tintKhaki, "proto")
 	add(fileKind{icon: iconTerminal, tint: tintGreen}, "sh", "bash", "zsh", "fish", "ps1", "bat", "cmd")
 	add(fileKind{icon: iconCodeXML, tint: tintOrange}, "html", "htm")
 	add(fileKind{icon: iconPalette, tint: tintPurple}, "css", "scss", "sass", "less")
@@ -266,7 +270,7 @@ func quietGlyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 	return g
 }
 
-// 字母徽章（"图标风格：线形"）：图标见方的格子里一个描边的圆角方块，和 Lucide 图标的外框（24 格里 3–21）差不多大；
+// 字母徽章（"图标风格：线形"）：图标见方的格子里一个描边的圆角方块，和线性图标的外框（24 格里 3–21）差不多大；
 // 字母是等宽粗体。三个字母的放不下：方块横着放宽到 wide（两边各出格子 0.5，文件名还是对齐的），字小一档、字距收紧。
 // 两套尺寸：iconRow（标签、快速打开、面包屑、搜索结果）和 iconTool（文件树），按比例放大。
 type badgeDims struct{ box, wide, radius, stroke, font, font3 float32 }
@@ -312,7 +316,7 @@ func fileGlyphSize(a *app.App, c *wui.Context, name string, on, dim bool, size f
 	})
 }
 
-// plainGlyph 是线形的类型图标：代码文件是描边的字母徽章，别的是 color 色的线性图标。
+// plainGlyph 是线形的类型图标：没有 logo 的语言是描边的字母徽章，别的是 color 色的图标。
 func plainGlyph(c *wui.Context, k fileKind, color wui.Color, size float32) wui.Element {
 	if k.badge == "" {
 		return wui.Icon(c, k.icon).FontSize(size).TextColor(color)
@@ -335,16 +339,10 @@ func plainGlyph(c *wui.Context, k fileKind, color wui.Color, size float32) wui.E
 	})
 }
 
-// 实心的图标：填 currentColor、不描边（彩色底块风格里文件树的目录）。轮廓取自 Lucide 的 folder / folder-open，
-// 打开的是后片半透明、前片实心。
-func solid(body string) *wui.SVG {
-	return wui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor" stroke="none">` + body + `</svg>`))
-}
-
+// 实心的文件夹：彩色底块风格里文件树的目录。
 var (
-	iconFolderFill     = solid(`<path d="M20 20a2 2 0 0 0 2-2V8a2 2 0 0 0-2-2h-7.9a2 2 0 0 1-1.69-.9L9.6 3.9A2 2 0 0 0 7.93 3H4a2 2 0 0 0-2 2v13a2 2 0 0 0 2 2Z"/>`)
-	iconFolderOpenFill = solid(`<path opacity=".5" d="M4 20a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h3.9a2 2 0 0 1 1.69.9l.81 1.2a2 2 0 0 0 1.67.9H18a2 2 0 0 1 2 2v2H9.24a2 2 0 0 0-1.74 1.1Z"/>` +
-		`<path d="M7.5 11.1A2 2 0 0 1 9.24 10H20a2 2 0 0 1 1.94 2.5l-1.54 6a2 2 0 0 1-1.95 1.5H4a2 2 0 0 1-1.77-1.07Z"/>`)
+	iconFolderFill     = icon("folder-fill")
+	iconFolderOpenFill = icon("folder-open-fill")
 )
 
 // folderTints 是常见目录名（小写）的颜色；不在表里的是灰的实心夹。node_modules 那组记成 tintMuted，画出来和不在表里的一样灰

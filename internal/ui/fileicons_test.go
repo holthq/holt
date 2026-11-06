@@ -7,20 +7,21 @@ import (
 )
 
 // TestFileIcons 查文件名 → 图标：完整文件名、开头、最后一段扩展名、大小写不敏感、不认识的回默认；
-// 颜色两种主题都不是零值，深色的比浅色亮。编程语言是字母徽章（图标还是 iconCode）。
+// 颜色两种主题都不是零值，深色的比浅色亮。没有 logo 的语言是字母徽章（图标还是 iconCode）。
 func TestFileIcons(t *testing.T) {
 	light, dark := wui.LightTheme(), wui.DarkTheme()
+	logoGo := fileExts["go"].icon
 	for _, c := range []struct {
 		name string
 		want *wui.SVG
 	}{
-		{"main.go", iconCode},
-		{"internal/app/app.go", iconCode},
-		{"MAIN.GO", iconCode},
+		{"main.go", logoGo},
+		{"internal/app/app.go", logoGo},
+		{"MAIN.GO", logoGo},
 		{"script.sh", iconTerminal},
 		{"index.html", iconCodeXML},
 		{"style.scss", iconPalette},
-		{"app.tsx", iconCode},
+		{"app.tsx", fileExts["jsx"].icon}, // React
 		{"schema.sql", iconCode},
 		{"config.yaml", iconBraces},
 		{"tsconfig.json", iconBraces},
@@ -36,7 +37,7 @@ func TestFileIcons(t *testing.T) {
 		{"README.zh-CN.md", iconBook},
 		{"LICENSE", iconScale},
 		{"LICENSE-MIT", iconScale},
-		{"license.go", iconCode}, // 不是许可证
+		{"license.go", logoGo}, // 不是许可证
 		{"CHANGELOG.md", iconHistory},
 		{"changelog.json", iconBraces},
 		{"logo.PNG", iconImage},
@@ -101,7 +102,7 @@ func TestFileIcons(t *testing.T) {
 	}
 }
 
-// TestFileBadges 查编程语言 → 字母徽章和类别色：同一门语言的几个扩展名一样（jsx 跟 JS、tsx 跟 TS、h / hpp 跟 C / C++），
+// TestFileBadges 查编程语言 → logo 或字母徽章和类别色：同一门语言的几个扩展名一样（h / hpp 跟 C / C++），
 // 字母最多 3 个；不是编程语言的没有徽章。
 func TestFileBadges(t *testing.T) {
 	light := wui.LightTheme()
@@ -109,20 +110,15 @@ func TestFileBadges(t *testing.T) {
 		name, badge string
 		tint        *tint // nil：不查颜色
 	}{
-		{"main.go", "Go", &tintCyan},
-		{"a.py", "Py", &tintBlue}, {"a.pyi", "Py", &tintBlue},
-		{"a.ts", "TS", &tintBlue}, {"a.tsx", "TS", &tintBlue}, {"a.mts", "TS", &tintBlue},
-		{"a.js", "JS", &tintYellow}, {"a.mjs", "JS", &tintYellow}, {"a.jsx", "JS", &tintCyan},
-		{"lib.rs", "Rs", &tintOrange}, {"App.swift", "Sw", &tintOrange}, {"Main.java", "Jv", &tintOrange},
-		{"a.kt", "Kt", &tintPurple}, {"build.gradle.kts", "Kt", &tintPurple}, {"a.scala", "Sc", &tintOrange},
-		{"index.php", "php", &tintPurple}, {"Rakefile.rb", "Rb", &tintRed}, {"init.lua", "Lua", &tintBlue},
-		{"main.dart", "Dt", &tintCyan}, {"build.zig", "Zig", &tintSlate},
-		{"a.c", "C", &tintSlate}, {"a.h", "C", &tintSlate},
-		{"a.cpp", "C++", &tintSlate}, {"a.cc", "C++", &tintSlate}, {"a.hpp", "C++", &tintSlate},
+		{"main.go", "", &tintCyan}, {"MAIN.GO", "", &tintCyan}, {"main.dart", "", &tintCyan},
+		{"a.py", "", &tintBlue}, {"a.ts", "", &tintBlue}, {"a.tsx", "", &tintBlue}, {"init.lua", "", &tintBlue},
+		{"a.js", "", &tintYellow}, {"a.jsx", "", &tintCyan},
+		{"lib.rs", "", &tintOrange}, {"App.swift", "", &tintOrange}, {"Main.java", "", &tintOrange}, {"a.scala", "", &tintOrange},
+		{"a.kt", "", &tintPurple}, {"index.php", "", &tintPurple}, {"Rakefile.rb", "", &tintRed},
+		{"a.c", "", &tintSlate}, {"a.cpp", "", &tintSlate}, {"build.zig", "", &tintSlate},
+		{"App.svelte", "", &tintGreen}, {"q.graphql", "", &tintKhaki},
 		{"a.cs", "C#", &tintSlate}, {"a.m", "OC", &tintSlate}, {"a.mm", "OC", &tintSlate},
-		{"App.vue", "Vue", &tintGreen}, {"App.svelte", "Sv", &tintGreen},
-		{"schema.sql", "SQL", &tintKhaki}, {"api.proto", "Pb", &tintKhaki}, {"q.graphql", "GQL", &tintKhaki},
-		{"MAIN.GO", "Go", &tintCyan},
+		{"App.vue", "Vue", &tintGreen}, {"schema.sql", "SQL", &tintKhaki}, {"api.proto", "Pb", &tintKhaki},
 		{"run.sh", "", &tintGreen}, {"a.json", "", &tintKhaki}, {"a.md", "", nil}, {"go.mod", "", &tintCyan}, {"a.xyz", "", nil},
 	} {
 		k := fileKindOf(c.name)
@@ -133,12 +129,20 @@ func TestFileBadges(t *testing.T) {
 			t.Errorf("%q：颜色 %v，要 %v", c.name, k.tint.color(light), c.tint.color(light))
 		}
 	}
+	for _, same := range [][]string{{"py", "pyi"}, {"ts", "mts", "cts"}, {"js", "mjs", "cjs"}, {"jsx", "tsx"}, {"c", "h"},
+		{"cpp", "cc", "cxx", "hpp", "hh"}, {"kt", "kts"}} {
+		for _, ext := range same[1:] {
+			if fileExts[ext].icon != fileExts[same[0]].icon {
+				t.Errorf(".%s 和 .%s 的 logo 不一样", ext, same[0])
+			}
+		}
+	}
 	for ext, k := range fileExts {
 		if len(k.badge) > 3 {
 			t.Errorf(".%s 的徽章 %q 超过 3 个字母", ext, k.badge)
 		}
-		if k.badge != "" && k.icon != iconCode {
-			t.Errorf(".%s 有徽章但图标不是 iconCode", ext)
+		if (k.badge != "") != (k.icon == iconCode) {
+			t.Errorf(".%s：徽章 %q，图标是 iconCode 要和有徽章一致", ext, k.badge)
 		}
 	}
 }

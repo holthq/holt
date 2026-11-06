@@ -27,8 +27,9 @@ func TestFileGlyph(t *testing.T) {
 				badge string
 				font  float32
 			}{
-				{"main.go", tintCyan.color(th), alpha, "Go", size * tileFont2},
-				{"a.cpp", tintSlate.color(th), alpha, "C++", size * tileFont3},
+				{"main.go", tintCyan.color(th), alpha, "", 0},
+				{"a.cs", tintSlate.color(th), alpha, "C#", size * tileFont2},
+				{"a.sql", tintKhaki.color(th), alpha, "SQL", size * tileFont3},
 				{"run.sh", tintGreen.color(th), alpha, "", 0},
 				{"a.json", tintKhaki.color(th), alpha, "", 0},
 				{"logo.png", tintPink.color(th), alpha, "", 0},
@@ -71,6 +72,7 @@ func TestFileGlyph(t *testing.T) {
 
 	repo := testutil.NewRepo(t, "proj")
 	repo.Write("main.go", "package main\n")
+	repo.Write("a.cs", "class A {}\n")
 	repo.Write("run.sh", "echo\n")
 	repo.Write("a.xyz", "?\n")
 	repo.Commit("init")
@@ -114,7 +116,7 @@ func TestFileGlyph(t *testing.T) {
 	a.SettingsChanged()
 	tt.Frame()
 	tt.Frame()
-	for _, name := range []string{"main.go", "run.sh"} {
+	for _, name := range []string{"a.cs", "run.sh"} {
 		// 线形：字母徽章 14 宽（描边的方块），线性图标没有块，格子左边 1 pt 是底色
 		if w, _, mid := box(name); w > 15 || (name == "run.sh" && mid > 20) {
 			t.Errorf("线形的 %s 还画着底块：宽 %.1f、左边离底色 %d", name, w, mid)
@@ -244,8 +246,8 @@ func TestQuietGlyph(t *testing.T) {
 			}
 			seen[g.ink] = name
 		}
-		if g := quietGlyphOf(th, "main.go", false, false, iconTool); g.kind.badge != "Go" || g.weight != quietWeight {
-			t.Errorf("dark=%v main.go：徽章 %q、字重 %d", dark, g.kind.badge, g.weight)
+		if g := quietGlyphOf(th, "a.cs", false, false, iconTool); g.kind.badge != "C#" || g.weight != quietWeight {
+			t.Errorf("dark=%v a.cs：徽章 %q、字重 %d", dark, g.kind.badge, g.weight)
 		}
 		if g := quietGlyphOf(th, "README.md", false, false, iconTool); g.ink != glyphOf(th, "README.md", false, false, iconTool).ink {
 			t.Errorf("dark=%v README.md：文档本来是正文灰，不该再混", dark)

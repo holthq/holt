@@ -4,6 +4,7 @@ import (
 	"go/ast"
 	"go/parser"
 	"go/token"
+	"os"
 	"path/filepath"
 	"strings"
 	"testing"
@@ -120,4 +121,26 @@ func exprString(e ast.Expr) string {
 		return x.Name
 	}
 	return "（表达式）"
+}
+
+// icons/ 里每个文件都有 icon("名字") 用着：换图标时旧文件别留下，打进包里白占地方。
+func TestIconFilesUsed(t *testing.T) {
+	var src strings.Builder
+	for _, name := range []string{"icons.go", "fileicons.go", "agents.go"} {
+		b, err := os.ReadFile(name)
+		if err != nil {
+			t.Fatal(err)
+		}
+		src.Write(b)
+	}
+	files, err := iconFS.ReadDir("icons")
+	if err != nil {
+		t.Fatal(err)
+	}
+	for _, f := range files {
+		name := strings.TrimSuffix(f.Name(), ".svg")
+		if !strings.Contains(src.String(), `icon("`+name+`")`) {
+			t.Errorf("icons/%s 没人用", f.Name())
+		}
+	}
 }
