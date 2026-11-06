@@ -108,7 +108,7 @@ func breadcrumb(a *app.App, c *wui.Context, tb wui.Element) {
 	}
 	row.Children(func() {
 		// 标签的类型（文件、Diff、历史版本）的图标挨着最后的文件名那段
-		// 文件按类型上色，编程语言是 logo 或字母徽章（fileGlyph）
+		// 文件按类型上色（fileGlyph）
 		ic := iconFile
 		switch d.Kind {
 		case docs.Diff:

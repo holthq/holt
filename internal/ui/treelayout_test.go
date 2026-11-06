@@ -114,7 +114,7 @@ func TestStickyLayersGeometry(t *testing.T) {
 }
 
 // 文件树的尺寸（照 VS Code 量的）：行距 22、每级缩进 10、深 4 级的文件名从 104 起、
-// 行里的类型徽章 14 宽（标签上的还是 11.5）、离名字 6。名字都是 n 开头，墨迹的左边一样。
+// 行里的类型图标在 16 宽的格子里、离名字 6。名字都是 n 开头，墨迹的左边一样。
 func TestTreeSizes(t *testing.T) {
 	repo := testutil.NewRepo(t, "proj")
 	repo.Write("a/n1.cs", "package a\n")
@@ -134,7 +134,7 @@ func TestTreeSizes(t *testing.T) {
 	tt.SetScale(scale)
 	tt.Frame()
 	img := tt.Image()
-	// ink 是那一行（Find 到的是整行）里的徽章和名字两块墨迹（DIP）
+	// ink 是那一行（Find 到的是整行）里的图标和名字两块墨迹（DIP）
 	ink := func(name string) (row wui.Rect, badge, text [2]float32) {
 		t.Helper()
 		row, ok := tt.Find(name)
@@ -144,7 +144,7 @@ func TestTreeSizes(t *testing.T) {
 		bg := img.RGBAAt(int((row.X+row.W-20)*scale), int((row.Y+row.H/2)*scale))
 		runs := inkRuns(img, wui.Rect{X: row.X + 1, Y: row.Y + 1, W: row.W - 30, H: row.H - 2}, scale, bg, 3)
 		if len(runs) != 2 {
-			t.Fatalf("%s 那行的墨迹不是徽章、名字两块：%v", name, runs)
+			t.Fatalf("%s 那行的墨迹不是图标、名字两块：%v", name, runs)
 		}
 		span := func(r inkRun) [2]float32 { return [2]float32{float32(r.x0) / scale, float32(r.x1+1) / scale} }
 		// 彩色的（默认，树里没有底块，图形往次级色混过）：名字前面那一截按差过 20 量（不扫参考线）
@@ -158,11 +158,11 @@ func TestTreeSizes(t *testing.T) {
 		}
 		return row, span(runs[0]), span(runs[1])
 	}
-	// 彩色的（树里没有底块）："C#" 两个字母在 16 宽的格子里居中，格子离名字 Gap 6（加上字形左边那一点）
+	// 彩色的（树里没有底块）：图标在 16 宽的格子里居中，格子离名字 Gap 6（加上字形左边那一点）
 	if _, b, n := ink("n3.cs"); b[1]-b[0] > 15 || n[0]-b[1] < 6 || n[0]-b[1] > 6+(16-(b[1]-b[0]))/2+1.5 {
 		t.Errorf("彩色图标 %.1f–%.1f、名字从 %.1f 起：要在 16 宽的格子里居中、格子离名字 6", b[0], b[1], n[0])
 	}
-	// 下面量的是线形（徽章）
+	// 下面量的是线形
 	a.St.Settings.TreeIconsPlain = true
 	a.SettingsChanged()
 	tt.Frame()
@@ -183,11 +183,11 @@ func TestTreeSizes(t *testing.T) {
 	if d := r2.Y - r3.Y; d != treeRowH || r0.H != treeRowH {
 		t.Errorf("行距 %.1f、行高 %.1f，应该都是 %d", d, r0.H, treeRowH)
 	}
-	if w := b3[1] - b3[0]; w < 13.5 || w > 15 {
-		t.Errorf("徽章宽 %.1f，应该是 14", w)
+	if w := b3[1] - b3[0]; w > 15 {
+		t.Errorf("图标宽 %.1f，放不进 16 的格子", w)
 	}
-	if gap := n3[0] - b3[1]; gap < 6 || gap > 8 {
-		t.Errorf("徽章离名字 %.1f，应该是 7（徽章在 16 的格子里居中，离右边 1，再加 Gap 6）", gap)
+	if gap := n3[0] - b3[1]; gap < 6 || gap > 6+(16-(b3[1]-b3[0]))/2+1.5 {
+		t.Errorf("图标离名字 %.1f，应该是图标在 16 的格子里居中，再加 Gap 6", gap)
 	}
 }
 

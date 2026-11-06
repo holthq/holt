@@ -7,8 +7,9 @@ import (
 )
 
 // icons/ 是界面的图标：Phosphor 2.1.1（MIT）的 Regular，实心的文件夹是 Fill，填 currentColor，跟随文字颜色。
-// lang-*.svg 是语言的单色 logo，来自 Simple Icons 13.21.0，四周加了和 Phosphor 差不多的空；各自的许可见
-// resources/licenses/simple-icons.txt，加新的要先查那个 logo 自己的许可（Vue 的不许商用，所以没有）。
+// lang-*.svg 是语言的单色图标：Go、C#、Objective-C、Vue、SQL、proto 是自己画的，别的来自 Simple Icons 13.21.0，
+// 四周加了和 Phosphor 差不多的空；各自的许可见 resources/licenses/simple-icons.txt，加新的要先查那个 logo 自己的
+// 许可（Vue 的不许商用，所以是自己画的 V，不是官方那个）。
 // 别的文件名就是 Phosphor 的图标名。不是 Phosphor 原样的只有三个：sidebar-right / sidebar-bottom 是 sidebar-simple
 // 翻过去、转过去的（三个区域开关要一样的画法），spinner-ring 是运行中的转圈，线宽和别的图标一样。
 //

@@ -42,7 +42,7 @@ type Settings struct {
 	// 默认开，存反面（老版本存的是正面的 treeStatusColors、默认关，LoadState 认）
 	TreeNoStatusColors bool `json:"treeNoStatusColors,omitempty"` // 不按 git 状态给文件名着色（默认改了黄、新的绿、删了灰加删除线、冲突红，有改动的目录名也黄）
 	// 默认彩色底块，存反面
-	TreeIconsPlain bool   `json:"treeIconsPlain,omitempty"` // 图标风格"线形"：单色线性图标、描边的字母徽章、强调色线框的目录（默认是彩色底块、按名字着色的实心目录）
+	TreeIconsPlain bool   `json:"treeIconsPlain,omitempty"` // 图标风格"线形"：单色图标、线框的目录（默认是彩色底块、按名字着色的实心目录）
 	Exclude        string `json:"exclude,omitempty"`        // 隐藏的文件（glob，逗号分开）：和工作区文件、仓库 .vscode/settings.json 的 files.exclude 并在一起（app/exclude.go）
 	// 默认关，存正面
 	ShowOpenEditors bool `json:"showOpenEditors,omitempty"` // 侧栏文件模式上面一段“打开的编辑器”：所有组的标签各一行（app/openeditors.go）

@@ -18,7 +18,6 @@ var sizedIcons = map[string]struct {
 }{
 	"squareButton":  {5, 8}, // squareButton(c, ic, label, tip, size, iconSize, disabled, fn)
 	"fileGlyphSize": {5, 6}, // fileGlyphSize(a, c, name, on, dim, size)
-	"plainGlyph":    {3, 4}, // plainGlyph(c, kind, color, size)
 	"chevron":       {1, 6}, // chevron(c, size, open, name, color, toggle)
 }
 
@@ -64,7 +63,7 @@ func TestIconSizes(t *testing.T) {
 			if _, lit := arg.(*ast.BasicLit); !lit {
 				for name := range sizedIcons {
 					if inFunc(f, call, name) {
-						return true // 那个函数自己的参数或按它算出来的（往下传给 plainGlyph 的也是），调用的地方另外查
+						return true // 那个函数自己的参数或按它算出来的，调用的地方另外查
 					}
 				}
 			}

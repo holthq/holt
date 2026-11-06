@@ -206,7 +206,7 @@ func SettingsView(a *app.App) func(c *wui.Context) {
 					done()
 				})
 			}},
-			{3, "图标风格", "彩色底块是类别色的淡色圆角块上一个同色的图标或语言字母，目录按名字上色；线形是单色的线框图标。文件树、标签、快速打开、搜索结果都跟着换", func(c *wui.Context, l, d string) {
+			{3, "图标风格", "彩色底块是类别色的淡色圆角块上一个同色的图标，目录按名字上色、带用途符号；线形是单色的线框图标。文件树、标签、快速打开、搜索结果都跟着换", func(c *wui.Context, l, d string) {
 				style := "" // 存的是 treeIconsPlain（零值 = 默认的彩色底块）
 				if s.TreeIconsPlain {
 					style = "plain"

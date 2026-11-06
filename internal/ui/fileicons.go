@@ -11,11 +11,11 @@ import (
 )
 
 // 文件类型图标：文件树、编辑器标签、快速打开、搜索结果、面包屑都用 fileGlyph。默认是彩色底块：
-// 图标见方的圆角块填上类别色的淡色，上面是同色的线性图标，代码文件是语言的单色 logo，没有 logo 的语言是两三个等宽字母（C#、SQL……，不描边）；
-// 设置里的"图标风格：线形"是单色线性图标，没有 logo 的语言是描边圆角方块里的字母徽章（Zed / Seti 那一路）。
+// 图标见方的圆角块填上类别色的淡色，上面是同色的线性图标，代码文件是语言的单色图标；
+// 设置里的"图标风格：线形"是单色的图标，不画底块，目录是线框。
 // 颜色按类别一组十来个（代码按语言取 GitHub linguist 的主色、压到和强调色差不多的饱和度，深色主题亮一档），
-// 不是每种语言一个色。目录是实心的文件夹，颜色按目录名查表（folderTint）。不用系统的 Finder 图标（mygo.Shell.FileIcon）：
-// 源码文件全是白纸、位图、和线性图标不搭。语言的 logo 是 Simple Icons 的单色版，跟着类别色走，不用各家的彩色原版。
+// 不是每种语言一个色。目录是自己画的实心文件夹，颜色和用途符号按目录名查表（folderKinds）。不用系统的 Finder 图标（mygo.Shell.FileIcon）：
+// 源码文件全是白纸、位图、和线性图标不搭。语言图标是单色的，跟着类别色走，不用各家的彩色原版。
 
 var (
 	iconCodeXML   = icon("brackets-angle")
@@ -70,12 +70,10 @@ var (
 	tintDoc   = tint{of: func(t *wui.Theme) wui.Color { return t.Text.Alpha(0.62) }}       // 文档：正文色偏灰
 )
 
-// fileKind 是一类文件的图标：badge 不空时画这几个字母的徽章（没有 logo 的语言，icon 记着 iconCode，
-// 是它们的类别），否则画 icon：线性图标或语言的 logo。
+// fileKind 是一类文件的图标：线性图标或语言图标，和它的类别色。
 type fileKind struct {
-	icon  *wui.SVG
-	tint  tint
-	badge string
+	icon *wui.SVG
+	tint tint
 }
 
 // fileNames 按完整文件名（小写）查。
@@ -119,10 +117,8 @@ func init() {
 			fileExts[e] = k
 		}
 	}
-	// 代码按语言：lang 是语言的 logo，letters 是没有能用的 logo 的语言（Vue 的许可不许商用）。
-	// jsx / tsx 是 React，h 跟 C、hpp 跟 C++；颜色是那一类的类别色，logo 也是单色的
+	// 代码按语言一个图标：jsx / tsx 是 React，h 跟 C、hpp 跟 C++；图标是单色的，颜色是那一类的类别色
 	lang := func(logo *wui.SVG, k tint, exts ...string) { add(fileKind{icon: logo, tint: k}, exts...) }
-	letters := func(badge string, k tint, exts ...string) { add(fileKind{iconCode, k, badge}, exts...) }
 	react := icon("lang-react")
 	lang(icon("lang-go"), tintCyan, "go")
 	lang(icon("lang-dart"), tintCyan, "dart")
@@ -144,11 +140,11 @@ func init() {
 	lang(icon("lang-javascript"), tintYellow, "js", "mjs", "cjs")
 	lang(icon("lang-svelte"), tintGreen, "svelte")
 	lang(icon("lang-graphql"), tintKhaki, "graphql")
-	letters("OC", tintSlate, "m", "mm")
-	letters("C#", tintSlate, "cs")
-	letters("Vue", tintGreen, "vue")
-	letters("SQL", tintKhaki, "sql")
-	letters("Pb", tintKhaki, "proto")
+	lang(icon("lang-objc"), tintSlate, "m", "mm")
+	lang(icon("lang-csharp"), tintSlate, "cs")
+	lang(icon("lang-vue"), tintGreen, "vue")
+	lang(icon("lang-sql"), tintKhaki, "sql")
+	lang(icon("lang-proto"), tintKhaki, "proto")
 	add(fileKind{icon: iconTerminal, tint: tintGreen}, "sh", "bash", "zsh", "fish", "ps1", "bat", "cmd")
 	add(fileKind{icon: iconCodeXML, tint: tintOrange}, "html", "htm")
 	add(fileKind{icon: iconPalette, tint: tintPurple}, "css", "scss", "sass", "less")
@@ -197,13 +193,10 @@ func fileColor(t *wui.Theme, name string, onAccent bool) wui.Color {
 }
 
 // 彩色底块（默认）：size 见方、圆角 size × tileRadius 的块，填图形颜色的 tileAlpha（深色主题 tileAlphaDark，
-// 灰的那类 tileFaint）；上面的线性图标 size × tileIcon（取整到 2 倍屏的整像素居中），字母不描边，两个字母 size × tileFont2、
-// 三个 size × tileFont3。在实心选中块上图形是 AccentText、底块是它的 tileOnAccent。
+// 灰的那类 tileFaint）；上面的线性图标 size × tileIcon（取整到 2 倍屏的整像素居中）。在实心选中块上图形是 AccentText、底块是它的 tileOnAccent。
 const (
 	tileRadius    = 0.22
 	tileIcon      = 0.72
-	tileFont2     = 0.5
-	tileFont3     = 0.42
 	tileAlpha     = 0.16
 	tileAlphaDark = 0.22
 	tileFaint     = 0.10
@@ -211,27 +204,22 @@ const (
 )
 
 // 文件树（iconTool 那档：文件树、打开的编辑器）里的彩色图标是"安静"的（#20）：一屏几十个同色底块太重，
-// 所以不画底块，图形照旧按类别取色、往次级字色混 quietMix（饱和度和亮度都降下来），字母徽章不用粗体。
+// 所以不画底块，图形照旧按类别取色、往次级字色混 quietMix（饱和度和亮度都降下来）。
 // 类别还是靠颜色和图形分得开；标签、快速打开、面包屑这些一行一两个的地方（iconRow）照旧画底块。
-const (
-	quietMix    = 0.35
-	quietWeight = 600
-)
+const quietMix = 0.35
 
-// glyph 是一个类型图标怎么画（彩色底块）：size 见方的底块（圆角 radius，颜色 tile），上面 ink 色的线性图标（icon 大）
-// 或字母（font 大、字距 spacing）。
+// glyph 是一个类型图标怎么画（彩色底块）：size 见方的底块（圆角 radius，颜色 tile），上面 ink 色的图标（icon 大）。
 type glyph struct {
-	kind                fileKind
-	size, radius        float32
-	tile, ink           wui.Color
-	icon, font, spacing float32
-	weight              int
+	kind         fileKind
+	size, radius float32
+	tile, ink    wui.Color
+	icon         float32
 }
 
 // glyphOf 是文件 name 在主题 t 下 size 见方的彩色底块：on 为画在实心选中块上，dim 为灰显的行（被忽略的、没初始化的子模块）。
 func glyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 	k := fileKindOf(name)
-	g := glyph{kind: k, size: size, radius: size * tileRadius, ink: k.tint.color(t), spacing: -0.25, weight: 700}
+	g := glyph{kind: k, size: size, radius: size * tileRadius, ink: k.tint.color(t)}
 	alpha := float32(tileAlpha)
 	if t.Dark {
 		alpha = tileAlphaDark
@@ -252,10 +240,6 @@ func glyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 	// 图标四周的空取整（每边 size 的 14%，取整后两边一样）：2 倍屏上图标的格子落在整像素上
 	pad := float32(math.Round(float64(size * (1 - tileIcon))))
 	g.icon = size - pad
-	g.font = size * tileFont2
-	if len(k.badge) > 2 {
-		g.font, g.spacing = size*tileFont3, -0.5
-	}
 	return g
 }
 
@@ -263,22 +247,12 @@ func glyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 // 选中块上、灰显的行和 glyphOf 一样（本来就是单色的）。
 func quietGlyphOf(t *wui.Theme, name string, on, dim bool, size float32) glyph {
 	g := glyphOf(t, name, on, dim, size)
-	g.tile, g.weight = wui.Transparent, quietWeight
+	g.tile = wui.Transparent
 	if !on && !dim && g.kind.tint.of == nil {
 		g.ink = g.ink.Mix(t.TextMuted, quietMix)
 	}
 	return g
 }
-
-// 字母徽章（"图标风格：线形"）：图标见方的格子里一个描边的圆角方块，和线性图标的外框（24 格里 3–21）差不多大；
-// 字母是等宽粗体。三个字母的放不下：方块横着放宽到 wide（两边各出格子 0.5，文件名还是对齐的），字小一档、字距收紧。
-// 两套尺寸：iconRow（标签、快速打开、面包屑、搜索结果）和 iconTool（文件树），按比例放大。
-type badgeDims struct{ box, wide, radius, stroke, font, font3 float32 }
-
-var (
-	badgeRow  = badgeDims{box: 11.5, wide: 14, radius: 3, stroke: 1.25, font: 7.5, font3: 6.5}
-	badgeTool = badgeDims{box: 14, wide: 17, radius: 3.5, stroke: 1.5, font: 9, font3: 8}
-)
 
 // fileGlyph 画文件 name（可以带目录）的图标，iconRow 见方（标签、快速打开、面包屑、搜索结果）；on 为这一行画在实心的强调色底上
 // （onAccent）。调用方可以接着设 Shrink / Margin / Tooltip。
@@ -298,7 +272,7 @@ func fileGlyphSize(a *app.App, c *wui.Context, name string, on, dim bool, size f
 				color = t.AccentText.Alpha(0.75)
 			}
 		}
-		return plainGlyph(c, fileKindOf(name), color, size)
+		return wui.Icon(c, fileKindOf(name).icon).FontSize(size).TextColor(color)
 	}
 	g := glyphOf(t, name, on, dim, size)
 	if size >= iconTool {
@@ -306,79 +280,128 @@ func fileGlyphSize(a *app.App, c *wui.Context, name string, on, dim bool, size f
 	}
 	return wui.Row(c).Size(size, size).Shrink(0).Radius(g.radius).Background(g.tile).
 		AlignItems(wui.Center).Justify(wui.Center).Children(func() {
-		if g.kind.badge == "" {
-			wui.Icon(c, g.kind.icon).FontSize(g.icon).TextColor(g.ink).Shrink(0)
-			return
-		}
-		// 字母是装饰：读屏读后面的文件名
-		wui.Text(c, g.kind.badge).Font(mono()).FontSize(g.font).FontWeight(g.weight).LetterSpacing(g.spacing).
-			TextColor(g.ink).SingleLine().Shrink(0).Role(wui.RoleNone)
+		wui.Icon(c, g.kind.icon).FontSize(g.icon).TextColor(g.ink).Shrink(0)
 	})
 }
 
-// plainGlyph 是线形的类型图标：没有 logo 的语言是描边的字母徽章，别的是 color 色的图标。
-func plainGlyph(c *wui.Context, k fileKind, color wui.Color, size float32) wui.Element {
-	if k.badge == "" {
-		return wui.Icon(c, k.icon).FontSize(size).TextColor(color)
-	}
-	d := badgeRow
-	if size >= iconTool {
-		d = badgeTool
-	}
-	w, font, spacing := d.box, d.font, float32(-0.25)
-	if len(k.badge) > 2 {
-		w, font, spacing = d.wide, d.font3, -0.5
-	}
-	return wui.Row(c).Size(size, size).Shrink(0).AlignItems(wui.Center).Justify(wui.Center).Children(func() {
-		wui.Row(c).Size(w, d.box).Shrink(0).Radius(d.radius).Border(d.stroke, color).
-			AlignItems(wui.Center).Justify(wui.Center).Children(func() {
-			// 徽章的字母是装饰：读屏读后面的文件名
-			wui.Text(c, k.badge).Font(mono()).FontSize(font).FontWeight(700).LetterSpacing(spacing).
-				TextColor(color).SingleLine().Shrink(0).Role(wui.RoleNone)
-		})
-	})
-}
-
-// 实心的文件夹：彩色底块风格里文件树的目录。
-var (
-	iconFolderFill     = icon("folder-fill")
-	iconFolderOpenFill = icon("folder-open-fill")
+// 文件树里的目录是自己画的实心文件夹（256 格，和 Phosphor 一样的外框），上面抠出目录用途的符号，所以全靠一个
+// 颜色：图形跟着 folderColor 走。收起时是一层；展开时前面一层往下翻开，后面一层淡一点。
+const (
+	folderClosed    = "M24 64a20 20 0 0 1 20-20h50.7a20 20 0 0 1 14.1 5.9L128 68h84a20 20 0 0 1 20 20v100a20 20 0 0 1-20 20H44a20 20 0 0 1-20-20Z"
+	folderBackOpen  = `<path opacity=".45" d="M24 64a20 20 0 0 1 20-20h50.7a20 20 0 0 1 14.1 5.9L128 68h68a20 20 0 0 1 20 20v12H24Z"/>`
+	folderFrontOpen = "M63 96H234a14 14 0 0 1 13.4 18l-26.5 86a17 17 0 0 1-16.2 12H38a14 14 0 0 1-13.4-18l25-86A14 14 0 0 1 63 96Z"
 )
 
-// folderTints 是常见目录名（小写）的颜色；不在表里的是灰的实心夹。node_modules 那组记成 tintMuted，画出来和不在表里的一样灰
-// （记着是为了别的规则不给它们上色）。bin 算脚本（绿）：被忽略的构建输出整个灰，轮不到这张表。
-var folderTints = map[string]tint{}
+// 目录用途的符号，抠在文件夹上（闭合的路径，和文件夹一起 evenodd）。
+const (
+	symCode   = "M112 112 76 150l36 38 16-15-22-23 22-23ZM144 112l36 38-36 38-16-15 22-23-22-23Z"
+	symTest   = "M84 148l16-16 22 22 38-40 16 16-54 56Z"
+	symScript = "M80 112l46 38-46 38-14-17 26-21-26-21ZM134 170h50v20h-50Z"
+	symDocs   = "M80 112h96v20H80ZM80 142h96v20H80ZM80 172h60v20H80Z"
+	symConfig = "M76 122h54v16H76ZM162 122h18v16h-18ZM130 130a16 16 0 1 0 32 0a16 16 0 1 0-32 0ZM126 162h54v16h-54ZM76 162h18v16H76ZM94 170a16 16 0 1 0 32 0a16 16 0 1 0-32 0Z"
+	symData   = "M78 124c0-12 22-20 50-20s50 8 50 20-22 20-50 20-50-8-50-20ZM78 152c10 8 28 12 50 12s40-4 50-12v14c0 12-22 22-50 22s-50-10-50-22Z"
+	symCI     = "M104 110l66 40-66 40Z"
+	symBuild  = "M116 106h24v36h26l-38 46-38-46h26Z"
+	symAssets = "M76 190l36-58 22 34 14-18 32 42Z"
+	symI18n   = "M116 108h24l34 84h-25l-6-17h-30l-6 17H82ZM128 136l-8 21h16Z"
+	symStyles = "M128 104c22 30 38 48 38 66a38 38 0 0 1-76 0c0-18 16-36 38-66Z"
+	symUI     = "M78 110h100v24H78ZM78 142h40v48H78ZM128 142h50v48h-50Z"
+	symTool   = "M165 118l-20 19-12-12 19-20a32 32 0 0 0-41 42l-32 32a12 12 0 0 0 17 17l32-32a32 32 0 0 0 42-41Z"
+	symHook   = "M140 104v56a14 14 0 0 1-28 0h10l-21-32-21 32h10a36 36 0 0 0 76 0v-56Z"
+	symType   = "M84 108h88v22h-32v60h-24v-60H84Z"
+	symWeb    = "M76 108h104v62H76ZM112 176h32v14h-32Z"
+	symServer = "M78 106h100v38H78ZM78 152h100v38H78ZM92 120h14v10H92ZM92 166h14v10H92Z"
+	symLock   = "M88 140h80v50H88ZM100 140v-12a28 28 0 0 1 56 0v12h-18v-12a10 10 0 0 0-20 0v12Z"
+	symBox    = "M78 108h100v26H78ZM86 140h84v50H86ZM112 150h32v12h-32Z"
+	symPlugin = "M86 126h28a16 16 0 1 1 28 0h28v28a16 16 0 1 1 0 28v8H86Z"
+	symFlask  = "M112 104h32v12h-6v26l36 48H82l36-48v-26h-6Z"
+	symBolt   = "M140 102 92 156h32l-10 38 50-58h-34Z"
+	symClock  = "M128 104a44 44 0 1 0 0 88a44 44 0 1 0 0-88ZM128 120a28 28 0 1 1 0 56a28 28 0 1 1 0-56ZM120 128h14v18h16v14h-30Z"
+	symCloud  = "M96 188a30 30 0 0 1-4-60 38 38 0 0 1 72-8 34 34 0 0 1 2 68Z"
+	symStar   = "M128 102l14 30 33 4-24 23 6 33-29-16-29 16 6-33-24-23 33-4Z"
+	symPhone  = "M98 104h60v86H98ZM110 116h36v52h-36Z"
+)
+
+// folderIcons 是一种目录的两个图标，sym 是抠在上面的符号，空的是普通的文件夹。
+type folderIcons struct{ closed, open *wui.SVG }
+
+func newFolderIcons(sym string) folderIcons {
+	svg := func(under, body string) *wui.SVG {
+		return wui.MustParseSVG([]byte(`<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" fill="currentColor">` + under +
+			`<path fill-rule="evenodd" d="` + body + sym + `"/></svg>`))
+	}
+	return folderIcons{svg("", folderClosed), svg(folderBackOpen, folderFrontOpen)}
+}
+
+// folderKind 是一种目录的颜色和图标。
+type folderKind struct {
+	tint  tint
+	icons folderIcons
+}
+
+// plainFolder 是不在表里的目录：普通的文件夹。
+var plainFolder = newFolderIcons("")
+
+// folderKinds 是常见目录名（小写）的颜色和符号；不在表里的是灰的普通文件夹。node_modules 那组记成 tintMuted，
+// 画出来和不在表里的一样，记着是为了别的规则不给它们上色。bin 算脚本（绿）：被忽略的构建输出整个灰，
+// 这里不用管。
+var folderKinds = map[string]folderKind{}
 
 func init() {
-	for k, names := range map[*tint][]string{
-		&tintBlue:   {"src", "lib", "internal", "pkg", "cmd", "app", "core", "api", "server", "services", "handlers", "routes"},
-		&tintGreen:  {"test", "tests", "spec", "specs", "__tests__", "testdata", "e2e", "scripts", "tools", "bin"},
-		&tintKhaki:  {"docs", "doc", "documentation", "wiki", "config", "configs", "conf", "settings", ".config", "migrations", "db", "database", "sql", "models"},
-		&tintSlate:  {".github", ".gitlab", ".circleci", "ci", ".vscode", ".idea", ".claude"},
-		&tintMuted:  {"node_modules", "vendor", "third_party", "deps", ".cargo", ".venv", "venv"},
-		&tintOrange: {"build", "dist", "out", "target", "obj", ".next", ".nuxt"},
-		&tintPink:   {"assets", "images", "img", "public", "static", "media", "fonts", "icons"},
-		&tintPurple: {"i18n", "locales", "lang", "translations", "styles", "css", "themes"},
-		&tintCyan:   {"ui", "components", "views", "pages", "widgets", "layouts"},
+	for _, g := range []struct {
+		tint  tint
+		sym   string
+		names []string
+	}{
+		{tintBlue, symCode, []string{"src", "source", "lib", "internal", "pkg", "cmd", "app", "core", "api", "handlers", "routes", "controllers"}},
+		{tintBlue, symServer, []string{"server", "servers", "backend", "services"}},
+		{tintBlue, symBox, []string{"packages", "modules", "crates", "libs", "workspaces"}},
+		{tintBlue, symType, []string{"types", "typings", "@types", "interfaces", "schemas", "dto"}},
+		{tintGreen, symTest, []string{"test", "tests", "spec", "specs", "__tests__", "e2e"}},
+		{tintGreen, symFlask, []string{"testdata", "fixtures", "mocks", "__mocks__", "stubs"}},
+		{tintGreen, symScript, []string{"scripts", "tools", "bin"}},
+		{tintGreen, symPhone, []string{"android", "ios", "mobile"}},
+		{tintKhaki, symDocs, []string{"docs", "doc", "documentation", "wiki"}},
+		{tintKhaki, symConfig, []string{"config", "configs", "conf", "settings", ".config"}},
+		{tintKhaki, symData, []string{"migrations", "db", "database", "sql", "models", "data", "datasets"}},
+		{tintSlate, symCI, []string{".github", ".gitlab", ".circleci", "ci"}},
+		{tintSlate, symConfig, []string{".vscode", ".idea", ".claude"}},
+		{tintSlate, symClock, []string{"logs", "log", "tmp", "temp", "cache", ".cache"}},
+		{tintMuted, "", []string{"node_modules", "vendor", "third_party", "deps", ".cargo", ".venv", "venv"}},
+		{tintOrange, symBuild, []string{"build", "dist", "out", "target", "obj", ".next", ".nuxt"}},
+		{tintOrange, symBolt, []string{"jobs", "workers", "tasks", "events", "queues", "bench", "benchmarks", "perf"}},
+		{tintPink, symAssets, []string{"assets", "images", "img", "public", "static", "media", "fonts", "icons", "resources", "res"}},
+		{tintPurple, symI18n, []string{"i18n", "locales", "lang", "translations"}},
+		{tintPurple, symStyles, []string{"styles", "css", "themes"}},
+		{tintPurple, symPlugin, []string{"plugins", "extensions", "addons", "integrations", "middleware"}},
+		{tintPurple, symData, []string{"store", "stores", "state", "redux"}},
+		{tintCyan, symUI, []string{"ui", "components", "views", "pages", "widgets", "layouts", "templates"}},
+		{tintCyan, symWeb, []string{"web", "www", "client", "frontend"}},
+		{tintCyan, symHook, []string{"hooks", "composables", ".husky"}},
+		{tintCyan, symCloud, []string{"deploy", "deployment", "infra", "infrastructure", "k8s", "kubernetes", "terraform", "helm", "docker", ".docker"}},
+		{tintYellow, symTool, []string{"utils", "util", "utilities", "helpers", "common", "shared"}},
+		{tintYellow, symStar, []string{"examples", "example", "samples", "demo", "demos", "playground"}},
+		{tintRed, symLock, []string{"auth", "security", "secrets", "certs", "keys"}},
 	} {
-		for _, n := range names {
-			folderTints[n] = *k
+		k := folderKind{g.tint, newFolderIcons(g.sym)}
+		for _, n := range g.names {
+			folderKinds[n] = k
 		}
 	}
 }
 
-// folderTint 是目录 dirs（合并行的每一段，最深的在最后）的颜色：从最深的一段往上找第一个在表里的名字（小写）；
-// 都不在表里（或是 node_modules 那组）ok 为假。
-func folderTint(dirs []string) (k tint, ok bool) {
+// folderKindOf 是目录 dirs（合并行的每一段，最深的在最后）的颜色和符号：从最深的一段往上找第一个在表里的名字。
+// ok 为要上色；node_modules 那组和没找到的不上，图标是普通的文件夹。
+func folderKindOf(dirs []string) (k folderKind, ok bool) {
 	for i := len(dirs) - 1; i >= 0; i-- {
-		if k, ok = folderTints[strings.ToLower(path.Base(dirs[i]))]; ok {
-			return k, !k.faint
+		if k, ok = folderKinds[strings.ToLower(path.Base(dirs[i]))]; ok {
+			return k, !k.tint.faint
 		}
 	}
-	return tint{}, false
+	return folderKind{icons: plainFolder}, false
 }
 
-// folderColor 是彩色底块风格里目录的颜色：表里有的按名字（folderTint），没有的灰；被忽略的更淡；on（实心选中块上）是 AccentText。
+// folderColor 是彩色底块风格里目录的颜色：表里有的按名字（folderKindOf），没有的灰；被忽略的更淡；on（实心选中块上）是 AccentText。
 func folderColor(t *wui.Theme, dirs []string, ignored, on bool) wui.Color {
 	switch {
 	case on && ignored:
@@ -388,13 +411,13 @@ func folderColor(t *wui.Theme, dirs []string, ignored, on bool) wui.Color {
 	case ignored:
 		return t.TextMuted.Alpha(0.5)
 	}
-	if k, ok := folderTint(dirs); ok {
-		return k.color(t)
+	if k, ok := folderKindOf(dirs); ok {
+		return k.tint.color(t)
 	}
 	return t.TextMuted.Alpha(0.8)
 }
 
-// folderGlyph 画文件树里目录的图标（iconTool 见方）：彩色底块风格是按名字着色的实心夹（folderColor），
+// folderGlyph 画文件树里目录的图标（iconTool 见方）：彩色底块风格是按名字着色、带用途符号的实心夹（folderKinds），
 // 线形是灰的线框夹（被忽略的更淡）。dirs 是合并行的每一段（不合并就是它自己），open 为展开着，on 为画在实心选中块上。
 func folderGlyph(a *app.App, c *wui.Context, dirs []string, open, ignored, on bool) wui.Element {
 	t := c.Theme()
@@ -413,9 +436,10 @@ func folderGlyph(a *app.App, c *wui.Context, dirs []string, open, ignored, on bo
 		}
 		return wui.Icon(c, ic).FontSize(iconTool).TextColor(col)
 	}
-	ic := iconFolderFill
+	k, _ := folderKindOf(dirs)
+	ic := k.icons.closed
 	if open {
-		ic = iconFolderOpenFill
+		ic = k.icons.open
 	}
 	return wui.Icon(c, ic).FontSize(iconTool).TextColor(folderColor(t, dirs, ignored, on))
 }

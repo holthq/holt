@@ -1066,7 +1066,7 @@
   "当前文件的大纲": "Outline of the current file",
   "当前标签不是能改的文件，插不了片段": "The current tab isn’t an editable file, so snippets can’t be inserted",
   "彩色底块": "Colored tiles",
-  "彩色底块是类别色的淡色圆角块上一个同色的图标或语言字母，目录按名字上色；线形是单色的线框图标。文件树、标签、快速打开、搜索结果都跟着换": "Colored tiles show an icon or language letters in the category color on a light rounded square of the same hue, with folders colored by name; Outline uses single-color line icons. Applies to the file tree, tabs, Quick Open and search results",
+  "彩色底块是类别色的淡色圆角块上一个同色的图标，目录按名字上色、带用途符号；线形是单色的线框图标。文件树、标签、快速打开、搜索结果都跟着换": "Colored tiles show an icon in the category color on a light rounded square of the same hue, with folders colored by name and marked by purpose; Outline uses single-color line icons. Applies to the file tree, tabs, Quick Open and search results",
   "快捷键": "Shortcuts",
   "快速打开": "Quick Open",
   "快速打开…": "Quick Open…",

@@ -12,13 +12,14 @@ Simple Icons 的说明里提醒，整体 CC0 不代表每个 logo 都是 CC0）�
   Zig         CC BY-SA 4.0   Zig Software Foundation  https://github.com/ziglang/logo
   Ruby        CC BY-SA 2.5   Yukihiro Matsumoto       https://www.ruby-lang.org/en/about/logo/
   JavaScript  MIT            Christopher Williams     https://github.com/voodootikigod/logo.js（全文在下面）
-  Go、Dart、React、Python、Lua、TypeScript、Swift、OpenJDK、Scala、Kotlin、C、C++、Svelte、GraphQL：
+  Dart、React、Python、Lua、TypeScript、Swift、OpenJDK、Scala、Kotlin、C、C++、Svelte、GraphQL：
               没有单独的许可记录，各家的品牌规定见它们的官网
 
 CC BY-SA 4.0：https://creativecommons.org/licenses/by-sa/4.0/
 CC BY-SA 2.5：https://creativecommons.org/licenses/by-sa/2.5/
 
-Vue 的 logo 是 CC BY-NC-SA 4.0（不许商用），Grove 没有用，.vue 文件还是字母。
+Vue 的 logo 是 CC BY-NC-SA 4.0（不许商用），Grove 没有用。lang-vue、lang-go、lang-csharp、lang-objc、
+lang-sql、lang-proto 是 Grove 自己画的，不来自 Simple Icons。
 
 ---- JavaScript logo ----
 

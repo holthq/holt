@@ -11,7 +11,7 @@ import (
 )
 
 // 彩色底块：glyphOf 在浅色、深色主题，13 和 16 两档下的底块大小、圆角、淡色和图形——
-// 代码文件两个、三个字母，线性图标的几类，不认识的和点文件是更淡的灰底块；实心选中块上是 AccentText；灰显的行是灰的。
+// 语言图标和线性图标的几类，不认识的和点文件是更淡的灰底块；实心选中块上是 AccentText；灰显的行是灰的。
 // 文件树里画出来：彩色那种在树里没有底块（见 TestQuietGlyph），线形也没有块。
 func TestFileGlyph(t *testing.T) {
 	for _, th := range []*wui.Theme{wui.LightTheme(), wui.DarkTheme()} {
@@ -24,18 +24,16 @@ func TestFileGlyph(t *testing.T) {
 				name  string
 				ink   wui.Color
 				alpha float32
-				badge string
-				font  float32
 			}{
-				{"main.go", tintCyan.color(th), alpha, "", 0},
-				{"a.cs", tintSlate.color(th), alpha, "C#", size * tileFont2},
-				{"a.sql", tintKhaki.color(th), alpha, "SQL", size * tileFont3},
-				{"run.sh", tintGreen.color(th), alpha, "", 0},
-				{"a.json", tintKhaki.color(th), alpha, "", 0},
-				{"logo.png", tintPink.color(th), alpha, "", 0},
-				{"README.md", tintDoc.color(th), alpha, "", 0},
-				{"a.xyz", th.TextMuted, tileFaint, "", 0},
-				{".gitignore", th.TextMuted, tileFaint, "", 0},
+				{"main.go", tintCyan.color(th), alpha},
+				{"a.cs", tintSlate.color(th), alpha},
+				{"a.sql", tintKhaki.color(th), alpha},
+				{"run.sh", tintGreen.color(th), alpha},
+				{"a.json", tintKhaki.color(th), alpha},
+				{"logo.png", tintPink.color(th), alpha},
+				{"README.md", tintDoc.color(th), alpha},
+				{"a.xyz", th.TextMuted, tileFaint},
+				{".gitignore", th.TextMuted, tileFaint},
 			} {
 				g := glyphOf(th, c.name, false, false, size)
 				where := c.name + map[bool]string{false: "（浅色）", true: "（深色）"}[th.Dark]
@@ -45,14 +43,8 @@ func TestFileGlyph(t *testing.T) {
 				if g.ink != c.ink || g.tile != c.ink.Alpha(c.alpha) {
 					t.Errorf("%s %v：图形 %v、底块 %v，要 %v 和它的 %v", where, size, g.ink, g.tile, c.ink, c.alpha)
 				}
-				if g.kind.badge != c.badge {
-					t.Errorf("%s：字母 %q，要 %q", where, g.kind.badge, c.badge)
-				}
-				if c.badge != "" && g.font != c.font {
-					t.Errorf("%s %v：字号 %v，要 %v", where, size, g.font, c.font)
-				}
-				// 线性图标每边空 2（取整），2 倍屏上落在整像素
-				if c.badge == "" && size-g.icon != 4 {
+				// 图标每边空 2（取整），2 倍屏上落在整像素
+				if size-g.icon != 4 {
 					t.Errorf("%s %v：图标 %v，要 %v", where, size, g.icon, size-4)
 				}
 			}
@@ -117,7 +109,7 @@ func TestFileGlyph(t *testing.T) {
 	tt.Frame()
 	tt.Frame()
 	for _, name := range []string{"a.cs", "run.sh"} {
-		// 线形：字母徽章 14 宽（描边的方块），线性图标没有块，格子左边 1 pt 是底色
+		// 线形：图标没有块，格子左边 1 pt 是底色
 		if w, _, mid := box(name); w > 15 || (name == "run.sh" && mid > 20) {
 			t.Errorf("线形的 %s 还画着底块：宽 %.1f、左边离底色 %d", name, w, mid)
 		}
@@ -141,9 +133,9 @@ func TestFolderTint(t *testing.T) {
 		{[]string{"src", "src/main", "src/main/java"}, &tintBlue}, // 最深的两段不在表里，往上找到 src
 		{[]string{"node_modules"}, nil}, {[]string{"vendor"}, nil}, {[]string{"foo"}, nil}, {[]string{"foo", "foo/bar"}, nil},
 	} {
-		k, ok := folderTint(c.dirs)
-		if ok != (c.want != nil) || ok && k.color(light) != c.want.color(light) {
-			t.Errorf("%q：%v %v，要 %v", c.dirs, k.color(light), ok, c.want)
+		k, ok := folderKindOf(c.dirs)
+		if ok != (c.want != nil) || ok && k.tint.color(light) != c.want.color(light) {
+			t.Errorf("%q：%v %v，要 %v", c.dirs, k.tint.color(light), ok, c.want)
 		}
 	}
 	for _, th := range []*wui.Theme{light, dark} {
@@ -179,7 +171,7 @@ func TestFolderTint(t *testing.T) {
 	tt.Move(700, 400)
 	const scale = 2
 	tt.SetScale(scale)
-	// fill 是 dir 那行目录图标正中的像素和那行的底色
+	// fill 是 dir 那行目录图标左下角（用途符号的外面）的像素和那行的底色
 	fill := func(dir string) (px, bg color.RGBA) {
 		t.Helper()
 		tt.Frame()
@@ -199,7 +191,7 @@ func TestFolderTint(t *testing.T) {
 				t.Fatalf("%s 那行的墨迹不是箭头、目录、名字：%v", dir, runs)
 			}
 			ic := runs[1]
-			return img.RGBAAt((ic.x0+ic.x1)/2, (ic.top+ic.bottom)/2), bg
+			return img.RGBAAt(ic.x0+(ic.x1-ic.x0)/8, ic.top+(ic.bottom-ic.top)*3/4), bg
 		}
 		t.Fatalf("没有 %s 那行", dir)
 		return
@@ -211,7 +203,7 @@ func TestFolderTint(t *testing.T) {
 		want wui.Color
 	}{{"src", tintBlue.color(th)}, {"docs", tintKhaki.color(th)}, {"internal/ui", tintCyan.color(th)}} {
 		if px, _ := fill(c.dir); inkDist(px, rgba(c.want)) > 30 {
-			t.Errorf("%s 的实心夹正中是 %v，要 %v", c.dir, px, c.want)
+			t.Errorf("%s 的实心夹是 %v，要 %v", c.dir, px, c.want)
 		}
 	}
 	foo, _ := fill("foo")
@@ -223,11 +215,11 @@ func TestFolderTint(t *testing.T) {
 	a.St.Settings.TreeIconsPlain = true
 	a.SettingsChanged()
 	if px, bg := fill("src"); inkDist(px, bg) > 25 {
-		t.Errorf("线形的目录正中是 %v，底色 %v：应该是空心的", px, bg)
+		t.Errorf("线形的目录里面是 %v，底色 %v：应该是空心的", px, bg)
 	}
 }
 
-// 文件树里的彩色图标是"安静"的（#20）：没有底块，图形是类别色往次级字色混 quietMix、字母不用粗体；
+// 文件树里的彩色图标是"安静"的（#20）：没有底块，图形是类别色往次级字色混 quietMix；
 // Go / Markdown / JSON / 图片几类还是各是各的颜色。选中块上、灰显的和 glyphOf 一样。标签那一档（iconRow）照旧有底块。
 func TestQuietGlyph(t *testing.T) {
 	for _, th := range []*wui.Theme{wui.LightTheme(), wui.DarkTheme()} {
@@ -245,9 +237,6 @@ func TestQuietGlyph(t *testing.T) {
 				t.Errorf("dark=%v %s 和 %s 一个颜色，分不开类型", dark, name, prev)
 			}
 			seen[g.ink] = name
-		}
-		if g := quietGlyphOf(th, "a.cs", false, false, iconTool); g.kind.badge != "C#" || g.weight != quietWeight {
-			t.Errorf("dark=%v a.cs：徽章 %q、字重 %d", dark, g.kind.badge, g.weight)
 		}
 		if g := quietGlyphOf(th, "README.md", false, false, iconTool); g.ink != glyphOf(th, "README.md", false, false, iconTool).ink {
 			t.Errorf("dark=%v README.md：文档本来是正文灰，不该再混", dark)
