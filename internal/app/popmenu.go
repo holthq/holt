@@ -124,7 +124,7 @@ type PopMenu struct {
 	Measure func(s string) float32
 	winW    float32
 	winH    float32
-	ax, ay  float32 // 打开时指针的位置
+	ax, ay  float32  // 打开时指针的位置
 	row     MenuRect // 右键的那一行（OpenRow）：菜单从它底下展开、往上翻时到它上面，不盖住它；H 为 0 是没有
 
 	root   []MenuEntry

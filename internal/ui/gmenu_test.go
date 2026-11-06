@@ -280,7 +280,7 @@ func TestTreeGroveMenuRightClickElsewhere(t *testing.T) {
 	last := a.TreeSpans[len(a.TreeRows())-1]
 	p := popMenus(t, tt)[0].Panel
 	bx, by := float64(last.X+4), float64(last.Y+last.H+30) // 别落在开着的菜单上
-	if bx >= p.X && bx < p.X+p.W { // 菜单在行底下展开，盖住了左边：点它右边
+	if bx >= p.X && bx < p.X+p.W {                         // 菜单在行底下展开，盖住了左边：点它右边
 		bx = p.X + p.W + 10
 	}
 	if bx >= float64(last.X+last.W) {
