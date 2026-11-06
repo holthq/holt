@@ -37,7 +37,7 @@ func queueButton(a *app.App, c *wui.Context, r *app.Repo) {
 			wui.Text(c, i18n.Tf("排队 %d", n)).FontSize(10.5).TextColor(t.TextMuted).SingleLine().Margin(0, 0, textNudge, 0)
 		}
 	})
-	b.Menu(func(m *wui.Menu) { queueMenu(a, nativeMenu(m), r) })
+	menuButton(a, c, b, menuOwner{"queue", r.Root}, func(m menu) { queueMenu(a, m, r) })
 }
 
 // queueMenu 是仓库的 git 队列：正在跑的那条（能取消）、排着的（能移出队列），全部抓取 / 拉取在跑时还能停止。

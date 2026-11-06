@@ -284,10 +284,11 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 				a.UseRepo(r)
 				a.Pull(r)
 			})
-			syncButton(c, "push", iconPush, i18n.Tf("推送 %s", r.Name), s.pushTip, "↑", 0, s.pushOff, s.pushing, func() {
+			push := syncButton(c, "push", iconPush, i18n.Tf("推送 %s", r.Name), s.pushTip, "↑", 0, s.pushOff, s.pushing, func() {
 				a.UseRepo(r)
 				a.Push(r)
-			}).ContextMenu(func(m *wui.Menu) { pushMenu(a, m, r) })
+			})
+			ctxMenu(a, c, push, menuOwner{"push", r.Root}, func(m menu) { pushMenu(a, m, r) })
 		}
 	})
 }

@@ -166,6 +166,14 @@ func openMenuBelow(a *app.App, c *wui.Context, b wui.Rect, owner menuOwner, buil
 	c.Invalidate()
 }
 
+// menuButton 让 b 点了（鼠标或空格 / 回车）在它下面开 Grove 菜单（按钮的菜单用它代替 Menu），返回 b。
+func menuButton(a *app.App, c *wui.Context, b wui.Element, owner menuOwner, build func(menu)) wui.Element {
+	if b.Clicked() {
+		openMenuBelow(a, c, b.Bounds(), owner, build)
+	}
+	return b
+}
+
 // menuZ 是 owner 那块盖在谁上面：空白处（列表）0、行 1、合并行的一段 2，钉在顶上的再加 2（盖着底下滚过去的行）。
 func menuZ(owner any) int {
 	o, ok := owner.(treeOwner)

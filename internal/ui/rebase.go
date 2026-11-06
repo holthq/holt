@@ -2,6 +2,7 @@ package ui
 
 import (
 	wui "github.com/egoist/mygo/ui"
+	"strconv"
 
 	"github.com/lemoeade/grove/internal/app"
 	"github.com/lemoeade/grove/internal/docs"
@@ -67,16 +68,26 @@ func rebaseRow(a *app.App, row wui.ListRow, p *docs.RebasePlan, i int, locked bo
 	wui.Column(c).Padding(4, 6, 4, 8).Gap(4).Children(func() {
 		wui.Row(c).Gap(8).AlignItems(wui.Center).Children(func() {
 			wui.Textf(c, "%d", i+1).Font(mono()).FontSize(11).TextColor(muted).Width(20).Shrink(0)
-			wui.MenuButton(c, s.Action.String(), func(m *wui.Menu) {
+			// 动作选择：点开是 Grove 菜单（当前的打勾，不能合并的灰着）
+			act := wui.ButtonBase(c).Width(84).Height(22).Shrink(0).Padding(0, 4, 0, 8).Gap(4).AlignItems(wui.Center).
+				Radius(5).Border(1, t.Border).Label(i18n.Tf("第 %d 行做什么：%s", i+1, s.Action)).Tooltip(s.Action.Text()).Disabled(locked)
+			if act.Hovered() && !locked {
+				act.Background(toolFill(t, 0.06))
+			}
+			act.Children(func() {
+				wui.Text(c, s.Action.String()).Font(mono()).FontSize(11.5).SingleLine().Grow(1).MinWidth(0)
+				wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(t.TextMuted)
+			})
+			step := i
+			menuButton(a, c, act, menuOwner{"rebase", strconv.Itoa(step)}, func(m menu) {
 				for k, x := range docs.RebaseActions {
-					it := m.Item(i18n.Tf("%s — %s（按 %s）", x, x.Text(), rebaseKeyNames[k])).Checked(s.Action == x).
-						Disabled(x.Melds() && !app.CanMeld(p, i))
+					it := m.Item(i18n.Tf("%s — %s（按 %s）", x, x.Text(), rebaseKeyNames[k])).Checked(p.Steps[step].Action == x).
+						Disabled(x.Melds() && !app.CanMeld(p, step))
 					if it.Chosen() {
-						a.SetRebaseAction(p, i, x)
+						a.SetRebaseAction(p, step, x)
 					}
 				}
-			}).Label(i18n.Tf("第 %d 行做什么：%s", i+1, s.Action)).Tooltip(s.Action.Text()).Disabled(locked).
-				Font(mono()).FontSize(11.5).Width(84).Shrink(0)
+			})
 			wui.Text(c, s.Commit.Short).Font(mono()).FontSize(11).TextColor(mark).SingleLine().Shrink(0)
 			subject := wui.Text(c, s.Commit.Subject).FontSize(12.5).FontWeight(500).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
 			if s.Action == docs.RebaseDrop {

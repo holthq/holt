@@ -229,10 +229,10 @@ func TestEncodingBar(t *testing.T) {
 		t.Fatalf("Big5 应能编辑、没有条：只读 %v", w.St.ReadOnly)
 	}
 	mustClickRow(t, tt, "编码 Big5")
-	if m := tt.Menu(); !slices.Contains(m, "用别的编码重新打开") || !slices.Contains(m, "Shift_JIS") || !slices.Contains(m, "转成 UTF-8…") || slices.Contains(m, "自动识别编码重新打开") {
+	if m := shownMenu(t, tt); !slices.Contains(m, "用别的编码重新打开") || !slices.Contains(m, "Shift_JIS") || !slices.Contains(m, "转成 UTF-8…") || slices.Contains(m, "自动识别编码重新打开") {
 		t.Fatalf("状态栏编码的菜单：%q", m)
 	}
-	if err := tt.ChooseMenuItem("UTF-8"); err != nil {
+	if err := chooseMenu(t, tt, "UTF-8"); err != nil {
 		t.Fatal(err)
 	}
 	wait("按 UTF-8 重开", func() bool {
@@ -242,7 +242,7 @@ func TestEncodingBar(t *testing.T) {
 		t.Error("解不通的应只读、不能转")
 	}
 	mustClickRow(t, tt, "换编码…")
-	if err := tt.ChooseMenuItem("GB18030"); err != nil {
+	if err := chooseMenu(t, tt, "GB18030"); err != nil {
 		t.Fatal(err)
 	}
 	wait("按 GB18030 重开", func() bool {
@@ -252,7 +252,7 @@ func TestEncodingBar(t *testing.T) {
 		t.Errorf("Big5 的“，”（A1 41）这些落在 GB18030 的用户区，应只读：只读 %v，%q", w.St.ReadOnly, w.ForcedEnc)
 	}
 	mustClickRow(t, tt, "编码 GB18030")
-	if err := tt.ChooseMenuItem("自动识别编码重新打开"); err != nil {
+	if err := chooseMenu(t, tt, "自动识别编码重新打开"); err != nil {
 		t.Fatal(err)
 	}
 	wait("自动识别", func() bool {

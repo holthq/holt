@@ -41,12 +41,12 @@ func worktreesHeader(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 		more.Children(func() {
 			wui.Icon(c, iconMore).FontSize(iconRow).TextColor(fg)
 		})
-		more.Menu(func(m *wui.Menu) { worktreesMenu(a, m, r) })
+		menuButton(a, c, more, menuOwner{"worktrees", r.Root}, func(m menu) { worktreesMenu(a, m, r) })
 	})
 }
 
 // worktreesMenu 是工作树块头"更多"的菜单。
-func worktreesMenu(a *app.App, m *wui.Menu, r *app.Repo) {
+func worktreesMenu(a *app.App, m menu, r *app.Repo) {
 	if m.Item(i18n.T("刷新工作树")).Disabled(r.Loading).Chosen() {
 		a.RefreshWorktrees(r)
 	}

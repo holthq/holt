@@ -21,8 +21,8 @@ func slowOp(a *app.App, r *app.Repo) {
 // choose 选开着的菜单里的一项。
 func choose(t *testing.T, tt *wui.Tester, item ...string) {
 	t.Helper()
-	if err := tt.ChooseMenuItem(item...); err != nil {
-		t.Fatalf("选 %q: %v；菜单=%q", item, err, tt.Menu())
+	if err := chooseMenu(t, tt, item...); err != nil {
+		t.Fatalf("选 %q: %v；菜单=%q", item, err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	tt.Frame()
@@ -67,7 +67,7 @@ func TestQueueUI(t *testing.T) {
 		t.Errorf("标题栏和 Git 栏段头应各有一个\"排队 1\"：%d", n)
 	}
 	mustClick(t, tt, "demo 的 git 队列")
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	for _, want := range []string{"正在跑：$ git -c alias.slow=!sleep 30 slow", "取消慢命令", "排队 1 条", "1. 移出队列：暂存全部"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("队列菜单里没有 %q：%q", want, menu)
@@ -151,7 +151,7 @@ func TestRecentWorkspacesUI(t *testing.T) {
 	claimed()
 
 	mustClick(t, tt, "工作区 乙")
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	for _, want := range []string{"打开文件夹…", "打开工作区文件…", "最近的工作区", itemA, "清除最近工作区", "添加仓库…"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("工作区菜单里没有 %q：%q", want, menu)
@@ -191,10 +191,10 @@ func TestRecentWorkspacesUI(t *testing.T) {
 	choose(t, tt, "清除最近工作区")
 	mustText(t, tt, "已清除最近工作区")
 	mustClick(t, tt, "工作区 乙")
-	if menu := tt.Menu(); slices.Contains(menu, itemA) || slices.Contains(menu, itemB) {
+	if menu := shownMenu(t, tt); slices.Contains(menu, itemA) || slices.Contains(menu, itemB) {
 		t.Errorf("清除后还列着：%q", menu)
 	}
-	if err := tt.ChooseMenuItem("清除最近工作区"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "清除最近工作区"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("清除后\"清除最近工作区\"应变灰：%v", err)
 	}
 	tt.CloseMenu()

@@ -630,7 +630,7 @@ func encodingBar(a *app.App, c *wui.Context, d *docs.Doc) {
 		BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		wui.Icon(c, iconAlert).FontSize(iconRow).TextColor(t.Warning)
 		wui.Text(c, msg).FontSize(11.5).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
-		linkButton(c, i18n.T("换编码…"), i18n.T("用别的编码重新打开")).Menu(func(m *wui.Menu) { encodingChoices(a, m, d) })
+		menuButton(a, c, linkButton(c, i18n.T("换编码…"), i18n.T("用别的编码重新打开")), menuOwner{"reopenEnc", d.Where()}, func(m menu) { encodingChoices(a, m, d) })
 		if d.Convertible() && linkButton(c, i18n.T("转成 UTF-8…"), i18n.T("按 UTF-8 重写这个文件，之后可以编辑")).Clicked() {
 			a.ConvertUTF8(d)
 		}
@@ -638,7 +638,7 @@ func encodingBar(a *app.App, c *wui.Context, d *docs.Doc) {
 }
 
 // encodingMenu 是状态栏编码那项的菜单（文件、历史版本）：用别的编码重新打开，能转的转成 UTF-8。
-func encodingMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func encodingMenu(a *app.App, m menu, d *docs.Doc) {
 	encodingChoices(a, m, d)
 	if d.Convertible() {
 		m.Separator()
@@ -649,7 +649,7 @@ func encodingMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
 }
 
 // encodingChoices 是"用别的编码重新打开"那几项：当前的打勾，手动选过的多一项"自动识别"。
-func encodingChoices(a *app.App, m *wui.Menu, d *docs.Doc) {
+func encodingChoices(a *app.App, m menu, d *docs.Doc) {
 	m.Item(i18n.T("用别的编码重新打开")).Disabled(true)
 	cur := d.Enc.Family()
 	for i, g := range docs.ChoiceGroups {
@@ -672,7 +672,7 @@ func encodingChoices(a *app.App, m *wui.Menu, d *docs.Doc) {
 
 // languageMenu 是状态栏语言那项的菜单："纯文本"和 mygo 认识的语言（按英文名排，中文界面也一样），当前的打勾；
 // 手动选过的多一项"按文件名自动识别"。
-func languageMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func languageMenu(a *app.App, m menu, d *docs.Doc) {
 	cur := ""
 	if l := d.Buf.Language(); l != nil {
 		cur = l.Name
@@ -699,7 +699,7 @@ func languageMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
 }
 
 // eolMenu 是状态栏换行那项的菜单（能保存的文件）：LF / CRLF，换了算改过，保存时按它写。
-func eolMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func eolMenu(a *app.App, m menu, d *docs.Doc) {
 	cur := d.Buf.LineEnding()
 	for _, e := range [...]struct{ label, eol string }{{"LF", "\n"}, {"CRLF", "\r\n"}} {
 		if m.Item(e.label).Checked(cur == e.eol).Chosen() {
@@ -710,7 +710,7 @@ func eolMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
 
 // indentMenu 是状态栏缩进那项的菜单：这个文件用的缩进（和设置里的几样一样，当前的打勾），能保存的文件还能把每行开头的
 // 缩进转成空格 / Tab。
-func indentMenu(a *app.App, m *wui.Menu, d *docs.Doc) {
+func indentMenu(a *app.App, m menu, d *docs.Doc) {
 	cur := a.DocIndent(d)
 	for _, v := range workspace.Indents {
 		label := i18n.T(indentNames[v])
@@ -1129,12 +1129,12 @@ func docStatus(a *app.App, c *wui.Context, d *docs.Doc) {
 		if l := d.Buf.Language(); l != nil {
 			lang = l.Name
 		}
-		item(lang).Label(i18n.Tf("语言 %s", lang)).Tooltip(i18n.T("按哪种语言高亮、缩进和注释；点开可以换一种")).
-			Menu(func(m *wui.Menu) { languageMenu(a, m, d) })
+		menuButton(a, c, item(lang).Label(i18n.Tf("语言 %s", lang)).Tooltip(i18n.T("按哪种语言高亮、缩进和注释；点开可以换一种")),
+			menuOwner{"status.lang", d.Where()}, func(m menu) { languageMenu(a, m, d) })
 		if d.Kind == docs.File {
 			ind := a.IndentLabel(d)
-			item(ind).Label(i18n.Tf("缩进 %s", ind)).Tooltip(i18n.T("这个文件的缩进；点开可以换，或把缩进转成空格 / Tab")).
-				Menu(func(m *wui.Menu) { indentMenu(a, m, d) })
+			menuButton(a, c, item(ind).Label(i18n.Tf("缩进 %s", ind)).Tooltip(i18n.T("这个文件的缩进；点开可以换，或把缩进转成空格 / Tab")),
+				menuOwner{"status.indent", d.Where()}, func(m menu) { indentMenu(a, m, d) })
 		}
 		if d.Kind != docs.TermText && d.Kind != docs.SearchDoc && d.Kind != docs.SettingsDoc {
 			eol := "LF"
@@ -1143,13 +1143,13 @@ func docStatus(a *app.App, c *wui.Context, d *docs.Doc) {
 			}
 			x := item(eol).Tooltip(i18n.T("换行符"))
 			if d.Editable() {
-				x.Label(i18n.Tf("换行 %s", eol)).Tooltip(i18n.T("换行符；点开可以换成 LF 或 CRLF，保存时按它写")).
-					Menu(func(m *wui.Menu) { eolMenu(a, m, d) })
+				menuButton(a, c, x.Label(i18n.Tf("换行 %s", eol)).Tooltip(i18n.T("换行符；点开可以换成 LF 或 CRLF，保存时按它写")),
+					menuOwner{"status.eol", d.Where()}, func(m menu) { eolMenu(a, m, d) })
 			}
 			enc := item(d.Enc.Label()).Tooltip(i18n.T("文件的编码；保存按同样的编码写回"))
 			if d.Kind == docs.File || d.Kind == docs.Version {
-				enc.Label(i18n.Tf("编码 %s", d.Enc.Label())).Tooltip(i18n.T("文件的编码；点开可以用别的编码重新打开")).
-					Menu(func(m *wui.Menu) { encodingMenu(a, m, d) })
+				menuButton(a, c, enc.Label(i18n.Tf("编码 %s", d.Enc.Label())).Tooltip(i18n.T("文件的编码；点开可以用别的编码重新打开")),
+					menuOwner{"status.enc", d.Where()}, func(m menu) { encodingMenu(a, m, d) })
 			}
 		}
 	}

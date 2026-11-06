@@ -40,11 +40,11 @@ func TestStatusBarMenus(t *testing.T) {
 
 	// 语言
 	mustClick(t, tt, "语言 Go")
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	if len(menu) < 4 || menu[0] != "纯文本" || !slices.Contains(menu, "Python") || slices.Contains(menu, "按文件名自动识别") {
 		t.Fatalf("语言菜单 %q", menu)
 	}
-	if err := tt.ChooseMenuItem("Python"); err != nil {
+	if err := chooseMenu(t, tt, "Python"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -53,10 +53,10 @@ func TestStatusBarMenus(t *testing.T) {
 	}
 	mustText(t, tt, "Python")
 	mustClick(t, tt, "语言 Python")
-	if menu := tt.Menu(); menu[len(menu)-1] != "按文件名自动识别" {
+	if menu := shownMenu(t, tt); menu[len(menu)-1] != "按文件名自动识别" {
 		t.Fatalf("手动选过的语言菜单 %q", menu)
 	}
-	if err := tt.ChooseMenuItem("纯文本"); err != nil {
+	if err := chooseMenu(t, tt, "纯文本"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -64,7 +64,7 @@ func TestStatusBarMenus(t *testing.T) {
 		t.Fatalf("纯文本：%v %q 大纲 %d", d.Buf.Language(), d.Lang, syms(d))
 	}
 	mustClick(t, tt, "语言 纯文本")
-	if err := tt.ChooseMenuItem("按文件名自动识别"); err != nil {
+	if err := chooseMenu(t, tt, "按文件名自动识别"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -86,8 +86,8 @@ func TestStatusBarMenus(t *testing.T) {
 
 	// 换行
 	mustClick(t, tt, "换行 LF")
-	if err := tt.ChooseMenuItem("CRLF"); err != nil {
-		t.Fatalf("换行菜单 %v：%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "CRLF"); err != nil {
+		t.Fatalf("换行菜单 %v：%q", err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	if d.Buf.LineEnding() != "\r\n" || !d.Modified() {
@@ -95,13 +95,13 @@ func TestStatusBarMenus(t *testing.T) {
 	}
 	mustText(t, tt, "未保存 · ⌘S")
 	mustClick(t, tt, "换行 CRLF")
-	tt.ChooseMenuItem("LF")
+	chooseMenu(t, tt, "LF")
 	tt.Frame()
 	if d.Modified() {
 		t.Fatal("换回 LF 还算改过")
 	}
 	mustClick(t, tt, "换行 LF")
-	tt.ChooseMenuItem("CRLF")
+	chooseMenu(t, tt, "CRLF")
 	a.Save(d)
 	if got, _ := os.ReadFile(filepath.Join(repo.Root, "a.go")); !strings.HasPrefix(string(got), "package a\r\n\r\n") || d.Modified() {
 		t.Fatalf("按 CRLF 存：%q 改过 %v", got, d.Modified())
@@ -110,10 +110,11 @@ func TestStatusBarMenus(t *testing.T) {
 
 	// 缩进：Go 按语言是 Tab；选 2 个空格只管这个文件；转成空格 / Tab 一步撤销
 	mustClick(t, tt, "缩进 Tab 4")
-	if menu := tt.Menu(); !slices.Equal(menu, []string{"按语言默认", "Tab", "2 个空格", "4 个空格", "8 个空格", "-", "把缩进转成空格", "把缩进转成 Tab"}) {
+	// Grove 菜单的 shownMenu 不列分隔线
+	if menu := shownMenu(t, tt); !slices.Equal(menu, []string{"按语言默认", "Tab", "2 个空格", "4 个空格", "8 个空格", "把缩进转成空格", "把缩进转成 Tab"}) {
 		t.Fatalf("缩进菜单 %q", menu)
 	}
-	if err := tt.ChooseMenuItem("2 个空格"); err != nil {
+	if err := chooseMenu(t, tt, "2 个空格"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -122,7 +123,7 @@ func TestStatusBarMenus(t *testing.T) {
 	}
 	before := d.Buf.String()
 	mustClick(t, tt, "缩进 空格 2")
-	if err := tt.ChooseMenuItem("把缩进转成空格"); err != nil {
+	if err := chooseMenu(t, tt, "把缩进转成空格"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -130,7 +131,7 @@ func TestStatusBarMenus(t *testing.T) {
 		t.Fatalf("转成空格：%q，提示 %q", got, a.Toast)
 	}
 	mustClick(t, tt, "缩进 空格 2")
-	tt.ChooseMenuItem("把缩进转成 Tab")
+	chooseMenu(t, tt, "把缩进转成 Tab")
 	tt.Frame()
 	if d.Buf.String() != before || d.Indent != "tab" || !toasted(a, tt, "2 行的缩进转成了 Tab") {
 		t.Fatalf("转回 Tab：%q %q", d.Buf.String(), d.Indent)
@@ -138,8 +139,11 @@ func TestStatusBarMenus(t *testing.T) {
 	if !d.Buf.Undo() || d.Buf.String() != strings.ReplaceAll(before, "\t", "  ") {
 		t.Errorf("一步撤销：%q", d.Buf.String())
 	}
+	tt.Frame()
 	mustClick(t, tt, "缩进 Tab 4") // 转成 Tab 之后宽度跟语言
-	tt.ChooseMenuItem("按语言默认")
+	if err := chooseMenu(t, tt, "按语言默认"); err != nil {
+		t.Fatalf("%v %q", err, shownMenu(t, tt))
+	}
 	tt.Frame()
 	if d.Indent != "" || d.St.Indent != editor.IndentAuto {
 		t.Errorf("按语言默认（设置也是按语言）不另记：%q", d.Indent)

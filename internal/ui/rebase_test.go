@@ -114,8 +114,8 @@ func TestRebaseTab(t *testing.T) {
 
 	// 动作按钮的菜单：第 2 行 reword，信息框里改
 	mustClick(t, tt, "第 2 行做什么：pick")
-	if err := tt.ChooseMenuItem("reword — 保留，改提交信息（按 R）"); err != nil {
-		t.Fatalf("动作菜单：%v；菜单 %q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "reword — 保留，改提交信息（按 R）"); err != nil {
+		t.Fatalf("动作菜单：%v；菜单 %q", err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	if p.Steps[1].Action != docs.RebaseReword || p.Steps[1].Msg != "c2" {

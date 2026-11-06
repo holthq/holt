@@ -381,13 +381,14 @@ func repoControls(a *app.App, c *wui.Context, r *app.Repo) {
 	}
 	toolButton(c, iconFetch, fetchTip, fetchWhy != "", func() { a.Fetch(r) })
 	toolButton(c, iconPull, s.pullTip, s.pullOff, func() { a.Pull(r) })
-	toolButton(c, iconPush, s.pushTip, s.pushOff, func() { a.Push(r) }).ContextMenu(func(m *wui.Menu) { pushMenu(a, m, r) })
+	push := toolButton(c, iconPush, s.pushTip, s.pushOff, func() { a.Push(r) })
+	ctxMenu(a, c, push, menuOwner{"push", r.Root}, func(m menu) { pushMenu(a, m, r) })
 	more := wui.ButtonBase(c).Label(i18n.T("Git 操作")).Size(toolSize, toolSize).Tooltip(i18n.T("更多 git 操作"))
 	fg := toolStyle(c, more, false, false)
 	more.Children(func() {
 		wui.Icon(c, iconMore).FontSize(iconTool).TextColor(fg)
 	})
-	more.Menu(func(m *wui.Menu) { gitMenu(a, nativeMenu(m), r) })
+	menuButton(a, c, more, menuOwner{"gitMore", r.Root}, func(m menu) { gitMenu(a, m, r) })
 }
 
 // syncState 是一个仓库的拉取 / 推送按钮该怎么画：悬停提示（带 git 命令和领先 / 落后的数）、灰不灰。
@@ -436,11 +437,11 @@ func syncOf(a *app.App, r *app.Repo) syncState {
 }
 
 // pushMenu 是推送按钮的右键菜单：强制推送、同步。
-func pushMenu(a *app.App, m *wui.Menu, r *app.Repo) {
-	if whyItem(nativeMenu(m), i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
+func pushMenu(a *app.App, m menu, r *app.Repo) {
+	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
 		a.PushForce(r)
 	}
-	if whyItem(nativeMenu(m), i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
+	if whyItem(m, i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
 		a.Sync(r)
 	}
 }
