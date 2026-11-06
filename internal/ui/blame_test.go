@@ -121,13 +121,6 @@ func TestBlameGutter(t *testing.T) {
 	}
 }
 
-func abs32(x float32) float32 {
-	if x < 0 {
-		return -x
-	}
-	return x
-}
-
 // editAt 是把第 line 行整行换成 text 的编辑。
 func editAt(d *docs.Doc, line int, text string) editor.Edit {
 	start := d.Buf.Offset(editor.Pos{Line: line})

@@ -161,8 +161,18 @@ func filesView(a *app.App, c *wui.Context, tools bool) {
 			box := wui.Column(c).Grow(1).MinHeight(0).Clip() // 吸顶栈叠在列表上面
 			box.Children(func() {
 				list = sideList(a, c, &a.FileList, len(rows), func(row wui.ListRow) { treeRow(a, row, rows[row.Index], dragOf, g) })
+				// 行记的是上一帧的位置：按列表这一帧滚了多少挪到这一帧，吸顶栈和行同帧（不然滚得快时顶上几层跳）
+				if dy := sideShift(a, &a.FileList); dy != 0 && abs32(dy) < list.Bounds().H {
+					for i, r := range a.TreeSpans {
+						r.Y += dy
+						a.TreeSpans[i] = r
+					}
+				}
 				cmds, lb := treeCommands(a), list.Bounds()
 				menuPress(a, c, list, treeOwner{Blank: true}, func(m menu) { treeMenu(a, m) }, func(ev wui.InputEvent) bool { // 行下面的空白处
+					if sideWheel(a, c, &a.FileList, ev) { // menuPress 换掉了 sideList 装的 HandleInput
+						return true
+					}
 					if isMenuKey(ev) && a.Edit == nil {
 						openTreeMenuByKey(a, c, rows, lb, ev.Time)
 						return true

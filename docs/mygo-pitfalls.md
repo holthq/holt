@@ -72,6 +72,12 @@
 
 ## 列表、点击和拖动
 
+- 列表上 `TrackScroll` 的 `ScrollState.ScrollTo` 滑动期间，`ListState.ScrollTo` / `ScrollIntoView` / `ScrollToEnd` 不起作用：滑动每帧在
+  `adoptScroll` 里把偏移写回滑动的路上，压过列表在布局时挪的。侧栏的滚轮滑动因此自己每帧写 `ScrollState.Y`（`app.SideScroll`）。
+- 鼠标滚轮（非 precise）mygo 一行算 40 DIP，macOS 加速后一次事件好几行，缓动前重后轻（40 的一格第一帧走 11.5，400 走 115），
+  行高 24 的列表看着一顿一顿的；`Tester.Wheel` 发这种滚轮、`Tester.Scroll` 发触控板的。
+- 元素的 `Bounds()` 是上一帧的布局；拿它当行的位置画叠在列表上的东西（吸顶栈）会比行晚一帧，要按列表两帧偏移之差挪一下。
+- 输入回调里 `Context.Now()` 不是事件的时间，用 `InputEvent.Time`。
 - 双击：List 的行用 `RowDoubleClicked`，普通元素用 `DoubleClicked`。
 - 行里的子元素一旦 `Clicked()` / `Pressed()` / `Drag`，会消耗该事件，列表无法再收到。不要为了获取修饰键而给行添加 `Clicked()`。
   文件树的做法：只让选中的行当拖动源（没选中的按下还是列表的拖选）；选中行的点击由 `TreeRowClicked` 记下，列表构建完成后，`ApplyTreeClick`

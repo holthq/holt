@@ -437,13 +437,61 @@ func underBackdrop(a *app.App, c *wui.Context, el wui.Element) {
 
 // sideList 是侧栏的列表（文件树、搜索结果、Git 栏）：选中行左右内缩 4、圆角 5（Finder 侧栏那样）。
 // 列表的选中块用主题的 Radius，所以在一份改了 Radius 的主题下建（listLook，淡底的选中行也在那里）。
+//
+// 滚动（issue #58）：列表 TrackScroll 一份 app.SideScroll。触控板（precise）的照旧交给 mygo；鼠标滚轮的由 sideWheel 接：
+// 一格走一个行高（mygo 一行是 40，等于 1.67 个树行，加速后一次好几行，缓动又前重后轻，一顿一顿的），往累计的目标滑。
+// 列表自己还要接别的输入的（文件树的 menuPress）把 sideWheel 串在自己的 HandleInput 里。
 func sideList(a *app.App, c *wui.Context, st *wui.ListState, n int, rows func(wui.ListRow)) wui.Element {
 	l := newListLook(a, c, rowRadius)
+	s := sideScroll(a, st)
+	if s.Step(c.Now()) {
+		c.AnimationFrame()
+	}
 	var list wui.Element
 	l.build(c, func() {
-		list = wui.List(c, st, n).Grow(1).MinHeight(0).PaddingX(4).PaddingY(2).Rows(l.rows(rows))
+		list = wui.List(c, st, n).Grow(1).MinHeight(0).PaddingX(4).PaddingY(2).TrackScroll(&s.S).Rows(l.rows(rows))
 	})
+	list.Draw(func(*wui.Painter, wui.Rect) { s.Drawn = s.S.Y }) // 画的时候的偏移（布局夹过、列表自己挪过的）
+	list.HandleInput(func(ev wui.InputEvent) bool { return sideWheel(a, c, st, ev) })
 	return list
+}
+
+// sideScroll 是列表 st 的滚动状态（没有就建一份）。
+func sideScroll(a *app.App, st *wui.ListState) *app.SideScroll {
+	if a.SideScrolls == nil {
+		a.SideScrolls = map[*wui.ListState]*app.SideScroll{}
+	}
+	s := a.SideScrolls[st]
+	if s == nil {
+		s = &app.SideScroll{}
+		a.SideScrolls[st] = s
+	}
+	return s
+}
+
+// sideWheel 接侧栏列表 st 上的鼠标滚轮（不是 precise 的；带 ⇧ 横着滚、带 ⌃ 的不接）：一格一个行高，加速的按平方根压、
+// 一次最多 6 行，约 160 ms 滑到累计的目标，连续几格接成一段，到头夹住，反向立刻转向（app.SideScroll）。
+// 系统"减弱动态效果"时直接到位。
+func sideWheel(a *app.App, c *wui.Context, st *wui.ListState, ev wui.InputEvent) bool {
+	if ev.Kind != wui.InputScroll || ev.Precise || ev.Mods&(wui.Shift|wui.Ctrl) != 0 || ev.DY == 0 {
+		return false
+	}
+	s := sideScroll(a, st)
+	rowH := a.TreeRowH
+	if rowH <= 0 {
+		rowH = treeRowH
+	}
+	if !s.Wheel(ev.DY, rowH, ev.Time, c.Preferences().ReduceMotion) {
+		return s.S.MaxY > 0 // 到头了：吞掉（不交给 mygo 再缓动一下）
+	}
+	c.Invalidate()
+	return true
+}
+
+// sideShift 是列表 st 的行这一帧比上一帧画的时候往下挪了多少（滚上去为负）：上一帧记的 Bounds 加上它就是这一帧的位置。
+func sideShift(a *app.App, st *wui.ListState) float32 {
+	s := sideScroll(a, st)
+	return s.Drawn - s.S.Y
 }
 
 // withTheme 让 fn 里建的元素用主题 nt，建完换回原来的。
@@ -634,4 +682,11 @@ func resizer(c *wui.Context, label string, vertical, before bool, size *float32,
 		done()
 	}
 	gapLine(c, b, vertical)
+}
+
+func abs32(x float32) float32 {
+	if x < 0 {
+		return -x
+	}
+	return x
 }

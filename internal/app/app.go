@@ -248,26 +248,27 @@ type App struct {
 	tree         treeCache
 	treeSel      *int // 应用自己选的行，界面画完列表后再设一次（见 setTreeSel）
 	revealLater  *revealReq
-	follow       follow               // 文件树跟随当前文件（FollowCurrent）
-	TreeDragging bool                 // 上一帧文件树里有行在拖（界面写，FollowCurrent 读：拖的时候树不跟着动）
-	TreeDropCopy bool                 // 这一帧拖着停在一个松手会复制的目标上（别的仓库来的、按着 ⌥）（界面写，EndTreeDrop 挪进 TreeCopying）
-	TreeCopying  bool                 // 上一帧的 TreeDropCopy：拖着的行画复制光标
-	TreeDropNone bool                 // 这一帧拖着停在一个不接的地方（只有目录拖到编辑器上）（界面写，EndTreeDrop 挪进 TreeNoDrop）
-	TreeNoDrop   bool                 // 上一帧的 TreeDropNone：拖着的行画不可放的光标
-	dwell        treeDwell            // 拖着停在哪个收起的目录行 / 仓库行上（DwellTree）
-	TreeSpans    map[int]ui.Rect      // 这一帧建了的行上一帧画在哪（窗口坐标），按这一帧的行号：吸顶栈看哪行在顶上、谁被顶出去、光标那行被盖住没有（界面每帧清空重写）
-	TreeRootH    float32              // 上一帧仓库行的高
-	TreeRowH     float32              // 上一帧目录 / 文件行的高
-	TreeClip     []string             // 文件树里 ⌘C 复制的文件 / 目录（绝对路径），⌘V 粘贴它们；应用里记着，不读系统剪贴板
-	rowTips      map[FileKey]rowTip   // 文件树行的悬停提示，仓库刷新之后重算（RowTip）
-	TreeTip      TreeTip              // 文件树行的悬停提示停了多久（treetip.go；界面写）
-	Menu         PopMenu              // Grove 自己画的菜单（文件树和 Git 栏的右键、分支菜单，popmenu.go；界面喂事件）
-	MenuShown    int                  // 菜单开着画了几帧（界面用：画过两帧后接收层没了焦点就是窗口失去了焦点）
-	MenuByKey    bool                 // 菜单是 ⇧F10 / 菜单键开的：没选就关了时键盘回到文件树
-	dirInfos     map[FileKey]*dirInfo // 目录行悬停提示的大小、最近改动（dirtip.go）
-	Edit         *TreeEdit            // 文件树里正在输入的名字（新建 / 重命名），nil 为没有
-	TreeFocused  bool                 // 这一帧文件树有焦点（界面每帧写；⌘N 据此决定建在哪）
-	FocusTree    bool                 // 下一帧把焦点还给文件树（输入框收起之后）
+	follow       follow                        // 文件树跟随当前文件（FollowCurrent）
+	TreeDragging bool                          // 上一帧文件树里有行在拖（界面写，FollowCurrent 读：拖的时候树不跟着动）
+	TreeDropCopy bool                          // 这一帧拖着停在一个松手会复制的目标上（别的仓库来的、按着 ⌥）（界面写，EndTreeDrop 挪进 TreeCopying）
+	TreeCopying  bool                          // 上一帧的 TreeDropCopy：拖着的行画复制光标
+	TreeDropNone bool                          // 这一帧拖着停在一个不接的地方（只有目录拖到编辑器上）（界面写，EndTreeDrop 挪进 TreeNoDrop）
+	TreeNoDrop   bool                          // 上一帧的 TreeDropNone：拖着的行画不可放的光标
+	dwell        treeDwell                     // 拖着停在哪个收起的目录行 / 仓库行上（DwellTree）
+	TreeSpans    map[int]ui.Rect               // 这一帧建了的行上一帧画在哪（窗口坐标），按这一帧的行号：吸顶栈看哪行在顶上、谁被顶出去、光标那行被盖住没有（界面每帧清空重写）
+	SideScrolls  map[*ui.ListState]*SideScroll // 侧栏列表（文件树、Git 栏、搜索结果）的滚轮状态（sideList）
+	TreeRootH    float32                       // 上一帧仓库行的高
+	TreeRowH     float32                       // 上一帧目录 / 文件行的高
+	TreeClip     []string                      // 文件树里 ⌘C 复制的文件 / 目录（绝对路径），⌘V 粘贴它们；应用里记着，不读系统剪贴板
+	rowTips      map[FileKey]rowTip            // 文件树行的悬停提示，仓库刷新之后重算（RowTip）
+	TreeTip      TreeTip                       // 文件树行的悬停提示停了多久（treetip.go；界面写）
+	Menu         PopMenu                       // Grove 自己画的菜单（文件树和 Git 栏的右键、分支菜单，popmenu.go；界面喂事件）
+	MenuShown    int                           // 菜单开着画了几帧（界面用：画过两帧后接收层没了焦点就是窗口失去了焦点）
+	MenuByKey    bool                          // 菜单是 ⇧F10 / 菜单键开的：没选就关了时键盘回到文件树
+	dirInfos     map[FileKey]*dirInfo          // 目录行悬停提示的大小、最近改动（dirtip.go）
+	Edit         *TreeEdit                     // 文件树里正在输入的名字（新建 / 重命名），nil 为没有
+	TreeFocused  bool                          // 这一帧文件树有焦点（界面每帧写；⌘N 据此决定建在哪）
+	FocusTree    bool                          // 下一帧把焦点还给文件树（输入框收起之后）
 
 	Trash    func(path string) error // 移到废纸篓；默认 mygo.Shell.TrashItem，测试里换掉
 	InFinder func(path string)       // 在访达里显示；默认 mygo.Shell.ShowItemInFolder，测试里换掉
