@@ -226,8 +226,14 @@ func gmenuView(a *app.App, c *wui.Context) {
 		// 自己的 key：不然关掉以后同一处建的下一个 Overlay（比如选了一项弹出的出错框的底）会接着这一层的点击，当成点了它
 		catcher := wui.Column(c.Key("treeMenu")).Absolute().Left(0).Top(0).Width(root.W).Height(root.H).Focusable().FocusRing(false)
 		catcher.Label(i18n.T("右键菜单"))
-		catcher.Focus()
 		a.MenuShown++
+		// 第一帧不拿键盘：mygo 在 Overlay 出现的那一帧（fn 跑完以后）记下当时有键盘的元素，接收层消失时把键盘还给它
+		// （restoreFocus）。这一帧就 Focus 的话记下的是接收层自己，关了菜单键盘就没了着落。下一帧马上补上。
+		if a.MenuShown > 1 {
+			catcher.Focus()
+		} else {
+			c.Invalidate()
+		}
 		if a.MenuShown > 2 && !catcher.Focused() { // 窗口失去焦点（或者焦点被别处拿走）
 			m.Close()
 			c.Invalidate()

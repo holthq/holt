@@ -9,6 +9,7 @@ import (
 	wui "github.com/egoist/mygo/ui"
 
 	"github.com/lemoeade/grove/internal/app"
+	"github.com/lemoeade/grove/internal/i18n"
 	"github.com/lemoeade/grove/internal/testutil"
 )
 
@@ -324,5 +325,68 @@ func TestGroveMenuHotContrast(t *testing.T) {
 		if r := contrast(fg, hot); r < 4.5 {
 			t.Errorf("dark=%v：高亮项 %v 上的字 %v 只有 %.2f:1", dark, hot, fg, r)
 		}
+	}
+}
+
+// Grove 菜单关掉以后键盘回到打开它之前有键盘的元素：Esc、点外面、选了一项都一样（右键标签时文件树有键盘）。
+func TestGroveMenuGivesFocusBack(t *testing.T) {
+	alpha, beta, gamma, _ := testutil.ThreeRepos(t)
+	k := newTreeKit(t, alpha.Root, beta.Root, gamma.Root)
+	tt, a := k.tt, k.a
+	r := k.repo("alpha")
+	a.OpenFile(r, "alpha.txt", true)
+	a.OpenFile(r, "notes.md", true)
+	tt.Frame()
+
+	focusTree := func() {
+		t.Helper()
+		a.FocusTree = true
+		tt.Frame()
+		tt.Frame()
+		if !a.TreeFocused {
+			t.Fatal("文件树该有键盘")
+		}
+	}
+	openTab := func() {
+		t.Helper()
+		if err := rightClickRow(tt, i18n.Tf("标签 %s", "notes.md")); err != nil {
+			t.Fatal(err)
+		}
+		tt.Frame()
+		tt.Frame()
+		if !a.Menu.IsOpen() || a.TreeFocused {
+			t.Fatalf("菜单该开着、键盘在菜单上：open=%v tree=%v", a.Menu.IsOpen(), a.TreeFocused)
+		}
+	}
+	back := func(how string) {
+		t.Helper()
+		tt.Frame()
+		tt.Frame()
+		if a.Menu.IsOpen() {
+			t.Fatalf("%s：菜单该关了", how)
+		}
+		if !a.TreeFocused {
+			t.Fatalf("%s：键盘该回到文件树", how)
+		}
+	}
+
+	focusTree()
+	openTab()
+	tt.Key(0, wui.KeyEscape)
+	back("Esc")
+
+	openTab()
+	ms := popMenus(t, tt)
+	p := ms[0].Panel
+	tt.ClickAt(float32(p.X+p.W+40), float32(p.Y+p.H+40))
+	back("点外面")
+
+	openTab()
+	if err := chooseMenu(t, tt, i18n.T("关闭其他")); err != nil {
+		t.Fatal(err)
+	}
+	back("选了一项")
+	if n := len(a.AllDocs()); n != 1 {
+		t.Fatalf("“关闭其他”该只剩一个标签：%d", n)
 	}
 }
