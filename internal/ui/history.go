@@ -61,15 +61,16 @@ func rightBar(a *app.App, c *wui.Context) {
 func histHeader(a *app.App, c *wui.Context, r *app.Repo) {
 	t := c.Theme()
 	line := cardLine(t)
-	wui.Row(c).Height(histHeadH).Padding(0, 8, 0, 14).Gap(4).AlignItems(wui.Center).Shrink(0).Label(i18n.T("历史")).
+	head := wui.Row(c).Height(histHeadH).Padding(0, 8, 0, 14).Gap(4).AlignItems(wui.Center).Shrink(0).Label(i18n.T("历史")).
 		Draw(func(p *wui.Painter, rc wui.Rect) {
 			p.Fill(wui.Rect{X: rc.X, Y: rc.Y + rc.H - 1, W: rc.W, H: 1}, line, 0)
-		}).
-		ContextMenu(func(m *wui.Menu) {
-			if m.Item(i18n.T("提交图")).Checked(!a.St.HistNoGraph).Chosen() {
-				a.ToggleHistGraph()
-			}
-		}).Children(func() {
+		})
+	ctxMenu(a, c, head, menuOwner{"histHeader", ""}, func(m menu) {
+		if m.Item(i18n.T("提交图")).Checked(!a.St.HistNoGraph).Chosen() {
+			a.ToggleHistGraph()
+		}
+	})
+	head.Children(func() {
 		wui.Row(c).Gap(6).AlignItems(wui.Center).Grow(1).MinWidth(0).Children(func() { histTitle(a, c, r) })
 		if a.St.HistAll && a.AllHistLoading() || !a.St.HistAll && r != nil && (r.Hist.Loading || r.Hist.FilesLoading) {
 			wui.Spinner(c)
@@ -961,7 +962,11 @@ func compareRow(a *app.App, row wui.ListRow, r *app.Repo, cp *app.Compare, hr ap
 		return false
 	}
 	toggle := func() { a.ToggleCompare(r) }
-	el := wui.Row(c).Tooltip(compareTip(cp)).ContextMenu(func(m *wui.Menu) {
+	el := wui.Row(c).Tooltip(compareTip(cp))
+	ctxMenuRow(a, c, row, el, menuOwner{"compare", r.Root}, func(m menu) {
+		if r.Hist.Compare != cp { // 菜单开着时比较段没了 / 换了：什么也不加，菜单关掉
+			return
+		}
 		look := i18n.T("收起")
 		if !cp.Open {
 			look = i18n.T("展开")

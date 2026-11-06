@@ -103,11 +103,11 @@ func TestChangeRowActions(t *testing.T) {
 
 	// 多选两行，点其中一行的暂存：两行都暂存（跨仓库）
 	tt.Frame()
-	if err := tt.Click("notes.md"); err != nil {
+	if err := clickRow(tt, "notes.md"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ClickWith(wui.Cmd, "beta.go"); err != nil {
+	if err := clickRowWith(tt, wui.Cmd, "beta.go"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -123,7 +123,7 @@ func TestChangeRowActions(t *testing.T) {
 
 	// 键盘：选中一行（列表有键盘），不悬停也出按钮；空格切换暂存
 	tt.Frame()
-	if err := tt.Click("beta.go"); err != nil {
+	if err := clickRow(tt, "beta.go"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Move(1200, 800)
@@ -137,7 +137,7 @@ func TestChangeRowActions(t *testing.T) {
 		t.Errorf("空格之后没有选中了: %d", a.GitSel)
 	}
 	t.Logf("空格之后选中 %d", a.GitSel)
-	if err := tt.Click("beta.go"); err != nil {
+	if err := clickRow(tt, "beta.go"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -146,14 +146,14 @@ func TestChangeRowActions(t *testing.T) {
 
 	// ⌘⌫：先问（取消不动）
 	tt.Frame()
-	if err := tt.Click("beta.go"); err != nil {
+	if err := clickRow(tt, "beta.go"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	tt.Key(0, wui.KeySpace)
 	wait("空格取消暂存", func() bool { return idle(rb)() && kindOf(rb, "beta.go") == git.Unstaged })
 	tt.Frame()
-	if err := tt.Click("beta.go"); err != nil {
+	if err := clickRow(tt, "beta.go"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -206,7 +206,7 @@ func TestScreenshotRowActions(t *testing.T) {
 	for _, dark := range []bool{false, true} {
 		tt.SetDark(dark)
 		tt.Frame()
-		if err := tt.Click("routes.py"); err != nil { // 选中已暂存的一行，列表有键盘
+		if err := clickRow(tt, "routes.py"); err != nil { // 选中已暂存的一行，列表有键盘
 			t.Fatal(err)
 		}
 		tt.Frame()

@@ -457,7 +457,8 @@ func stashFileRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 	if sel {
 		muted = t.AccentText.Alpha(0.75)
 	}
-	el := wui.Row(c).Padding(3, 8, 3, 44).Gap(8).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
+	el := wui.Row(c).Padding(3, 8, 3, 44).Gap(8).AlignItems(wui.Center)
+	ctxMenuRow(a, c, row, el, cr.Key(), func(m menu) {
 		files := a.StashFileRows(cr)
 		label := i18n.T("只应用这个文件")
 		if len(files) > 1 {
@@ -467,7 +468,7 @@ func stashFileRow(a *app.App, row wui.ListRow, cr app.ChangeRow) {
 			a.ApplyStashFiles(r, files)
 		}
 		m.Separator()
-		changeMenu(a, nativeMenu(m), r, ch)
+		changeMenu(a, m, r, ch)
 	})
 	if el.Hovered() {
 		a.GitHover = row.Index
@@ -510,12 +511,14 @@ func changeRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	if cr.InDir != "" {
 		left, shown.Path = 44, strings.TrimPrefix(ch.Path, cr.InDir)
 	}
-	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, left).Gap(8).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
+	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, left).Gap(8).AlignItems(wui.Center)
+	// 菜单每帧重建：选中的几行（MenuChanges）按当时的多选算，和打开时一样（菜单开着时点不到列表）
+	ctxMenuRow(a, c, row, el, cr.Key(), func(m menu) {
 		if rows := a.MenuChanges(cr); rows != nil {
-			chosenChangeMenu(a, nativeMenu(m), rows)
+			chosenChangeMenu(a, m, rows)
 			return
 		}
-		changeMenu(a, nativeMenu(m), r, ch)
+		changeMenu(a, m, r, ch)
 	})
 	hover := el.Hovered()
 	if hover {
@@ -599,20 +602,21 @@ func dirRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 	}
 	open := r.DirOpen[ch.Path]
 	toggle := func() { a.ToggleUntrackedDir(r, ch.Path) }
-	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, 12).AlignItems(wui.Center).ContextMenu(func(m *wui.Menu) {
+	el := wui.Row(c).Padding(rowPadY, 8, rowPadY, 12).AlignItems(wui.Center)
+	ctxMenuRow(a, c, row, el, cr.Key(), func(m menu) {
 		if rows := a.MenuChanges(cr); rows != nil {
-			chosenChangeMenu(a, nativeMenu(m), rows)
+			chosenChangeMenu(a, m, rows)
 			return
 		}
 		label := i18n.T("展开")
-		if open {
+		if r.DirOpen[ch.Path] { // 每帧重建：按现在的，不按建行时的
 			label = i18n.T("收起")
 		}
 		if m.Item(label).Chosen() {
 			toggle()
 		}
 		m.Separator()
-		changeMenu(a, nativeMenu(m), r, ch)
+		changeMenu(a, m, r, ch)
 	})
 	hover := el.Hovered()
 	if hover {

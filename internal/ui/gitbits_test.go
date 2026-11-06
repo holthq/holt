@@ -193,6 +193,23 @@ func TestCompareRows(t *testing.T) {
 	if !h.Compare.Open || !shows(tt, "c.txt") {
 		t.Fatal("再点标题应展开")
 	}
+	// 右键标题是 Grove 菜单
+	if err := rightClickRow(tt, title); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if tt.Menu() != nil || !a.Menu.IsOpen() {
+		t.Fatalf("比较行的右键该是 Grove 菜单：系统菜单 %q", tt.Menu())
+	}
+	if err := chooseMenu(t, tt, "收起"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	if h.Compare.Open {
+		t.Fatal("右键收起没收")
+	}
+	tt.Advance(time.Second)
+	mustClickRow(t, tt, title)
 
 	a.ToggleHistGraph()
 	tt.Frame()
@@ -480,4 +497,141 @@ func TestUnstagedGroupWithUntracked(t *testing.T) {
 	if s := strings.Join(got, " "); s != "✎ =未暂存2 a.txt new.txt #stash" {
 		t.Errorf("行：%s", s)
 	}
+}
+
+// TestGitRowsGroveMenu：Git 栏的变更行、贮藏里的文件、未跟踪目录行和历史的标题行、比较行的右键是 Grove 画的菜单；
+// 行上装了 menuPress 以后单击（预览）、双击（固定）、点目录行展开照旧；已暂存和未暂存的同一个文件是两份菜单。
+func TestGitRowsGroveMenu(t *testing.T) {
+	repo := testutil.NewRepo(t, "rows")
+	repo.Write("a.txt", "1\n")
+	repo.Write("s.txt", "s\n")
+	repo.Commit("初始")
+	repo.Write("s.txt", "s2\n")
+	repo.Git("add", "s.txt")
+	repo.Write("s.txt", "s3\n") // 已暂存、未暂存各一行
+	repo.Write("st.txt", "藏\n")
+	repo.Git("stash", "push", "-q", "-u", "-m", "藏一个")
+	repo.Write("a.txt", "改\n")
+	repo.Write("s.txt", "s2\n")
+	repo.Git("add", "s.txt")
+	repo.Write("s.txt", "s3\n")
+	repo.Write("dir/x.txt", "x\n")
+	repo.Write("dir/y.txt", "y\n")
+	a, tt, wait := newUI(t, testutil.Workspace(t, repo.Root), "")
+	showGroups(a)
+	r := a.Repos[0]
+	a.Exec("view.git")
+	a.RefreshRepo(r, app.WhyManual)
+	wait("git status", idle(r))
+	if !a.St.RightBar {
+		a.Exec("view.right")
+	}
+	wait("历史", func() bool { return r.Hist.Loaded && !r.Hist.Loading })
+	tt.Frame()
+
+	grove := func(what string, want ...string) {
+		t.Helper()
+		tt.Frame()
+		if tt.Menu() != nil {
+			t.Fatalf("%s：开的是系统菜单 %q", what, tt.Menu())
+		}
+		if !a.Menu.IsOpen() {
+			t.Fatalf("%s：没开 Grove 菜单", what)
+		}
+		m := shownMenu(t, tt)
+		for _, w := range want {
+			if !slices.Contains(m, w) {
+				t.Errorf("%s：菜单里没有 %q：%q", what, w, m)
+			}
+		}
+		closeMenu(t, tt)
+		tt.Frame()
+	}
+	at := func(name string) (float32, float32) {
+		t.Helper()
+		x, y, err := rowCenter(tt, name)
+		if err != nil {
+			t.Fatalf("%v；texts=%q", err, tt.Texts())
+		}
+		return x, y
+	}
+
+	// 已暂存、未暂存的 s.txt 各是一份：右键前面那行，收起它那一组再右键剩下的那行
+	tt.RightClickAt(at("s.txt"))
+	tt.Frame()
+	first, firstMenu := a.Menu.Owner, shownMenu(t, tt)
+	grove("前面那行 s.txt")
+	group := "收起 已暂存"
+	if slices.Contains(firstMenu, "暂存") {
+		group = "收起 未暂存"
+	}
+	mustClickRow(t, tt, group)
+	tt.RightClickAt(at("s.txt"))
+	tt.Frame()
+	if a.Menu.Owner == first || slices.Equal(shownMenu(t, tt), firstMenu) {
+		t.Errorf("已暂存、未暂存的 s.txt 是同一份菜单：%v %q", first, firstMenu)
+	}
+	grove("后面那行 s.txt")
+	mustClickRow(t, tt, strings.Replace(group, "收起", "展开", 1))
+
+	// 单击预览、双击固定照旧
+	tt.Advance(time.Second)
+	tt.ClickAt(at("a.txt"))
+	tt.Frame()
+	if d := a.CurrentDoc(); d == nil || d.Change.Path != "a.txt" || d.Pinned {
+		t.Fatalf("单击变更行应预览 a.txt：%+v", d)
+	}
+	tt.Advance(time.Second)
+	x, y := at("a.txt")
+	tt.ClickAt(x, y)
+	tt.ClickAt(x, y)
+	tt.Frame()
+	if d := a.CurrentDoc(); d == nil || d.Change.Path != "a.txt" || !d.Pinned {
+		t.Fatalf("双击变更行应固定 a.txt：%+v", d)
+	}
+
+	// 多选：右键选中的一行是选中的全部
+	tt.Advance(time.Second)
+	x, y = at("s.txt")
+	tt.ClickAtWith(wui.Cmd, x, y)
+	tt.Frame()
+	if n := len(a.ChosenChanges()); n != 2 {
+		t.Fatalf("⌘点后选中 %d 行", n)
+	}
+	tt.RightClickAt(at("a.txt"))
+	grove("多选", "查看 2 个 Diff", "复制 2 个仓库内路径")
+	tt.RightClickAt(at("dir/"))
+	grove("没选中的目录行", "展开")
+
+	// 未跟踪目录行：单击展开，右键是 Grove 菜单（收起在里面）
+	tt.Key(0, wui.KeyEscape)
+	tt.Advance(time.Second)
+	tt.Frame()
+	mustClickRow(t, tt, "dir/")
+	if !r.DirOpen["dir/"] {
+		t.Fatalf("单击未跟踪目录应展开：%v", r.DirOpen)
+	}
+	if err := rightClickRow(tt, "dir/"); err != nil {
+		t.Fatal(err)
+	}
+	grove("未跟踪目录", "收起")
+
+	// 贮藏里的文件
+	mustClickRow(t, tt, "展开 贮藏")
+	mustClickRow(t, tt, "藏一个")
+	wait("读贮藏的文件", func() bool { return r.StashFilesFor != "" })
+	tt.Frame()
+	if err := rightClickRow(tt, "st.txt"); err != nil {
+		t.Fatal(err)
+	}
+	grove("贮藏里的文件", "只应用这个文件")
+
+	// 历史的标题行：提交图开关
+	graph := !a.St.HistNoGraph
+	mustRightClickRow(t, tt, "历史", "提交图")
+	if !a.St.HistNoGraph != !graph {
+		t.Fatal("右键历史标题行的提交图没切换")
+	}
+	a.ToggleHistGraph()
+	tt.Frame()
 }

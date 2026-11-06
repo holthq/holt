@@ -94,7 +94,7 @@ func TestConflictRowOpensEditor(t *testing.T) {
 	}
 	x, y := row.X+row.W/2, row.Y+row.H/2
 
-	mustClick(t, tt, "c.txt")
+	mustClickRow(t, tt, "c.txt")
 	wait("打开文件", func() bool { d := a.CurrentDoc(); return d != nil && d.Buf != nil })
 	tt.Frame()
 	if d := a.CurrentDoc(); d.Kind != docs.File || d.Rel != "c.txt" {
@@ -107,13 +107,13 @@ func TestConflictRowOpensEditor(t *testing.T) {
 
 	tt.RightClickAt(x, y)
 	tt.Frame()
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	for _, want := range []string{"在编辑器中解决冲突", "查看 Diff（HEAD ↔ 工作区）", "两边的 diff", "标记为已解决"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("冲突行的右键菜单里没有 %q: %q", want, menu)
 		}
 	}
-	if err := tt.ChooseMenuItem("查看 Diff（HEAD ↔ 工作区）"); err != nil {
+	if err := chooseMenu(t, tt, "查看 Diff（HEAD ↔ 工作区）"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -123,7 +123,7 @@ func TestConflictRowOpensEditor(t *testing.T) {
 
 	tt.RightClickAt(x, y)
 	tt.Frame()
-	if err := tt.ChooseMenuItem("两边的 diff"); err != nil {
+	if err := chooseMenu(t, tt, "两边的 diff"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

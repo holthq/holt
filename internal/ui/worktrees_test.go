@@ -215,7 +215,7 @@ func TestWorktreeKeys(t *testing.T) {
 	}
 
 	// 选中 aaa 的最后一项改动（未跟踪的 b.txt），预览 Diff
-	mustClick(t, tt, "b.txt")
+	mustClickRow(t, tt, "b.txt")
 	wait("b.txt 的 Diff", func() bool { d := a.CurrentDoc(); return d != nil && d.Change.Path == "b.txt" })
 	diff := a.CurrentDoc()
 	if cr := selRow(); cr.Kind != app.RowChange || cr.Change.Path != "b.txt" {

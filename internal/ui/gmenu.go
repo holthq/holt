@@ -123,13 +123,14 @@ func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func
 }
 
 // menuOwner 是文件树以外的菜单对着的东西（比较用，要可比较）：哪一类 + 哪个仓库 / 哪一项。
+// ctxMenu / ctxMenuRow 的 owner 也可以是别的可比较的值（Git 栏的行用 app.ChangeKey，已暂存和未暂存的同一个文件是两行）。
 type menuOwner struct{ Kind, Key string }
 
 // ctxMenu 给 el 装上 Grove 画的右键菜单（文件树以外的地方用它代替 ContextMenu）：和文件树的行一样，
 // 右键按下打开、按住拖到项上松开选它，菜单开着时在别处右键换成那里的。el 不能再挂别的 HandleInput。
 //
 // el 有键盘（或键盘在它里面）时 ⇧F10 / 菜单键在它左下角下面开同一份菜单，第一项高亮（menuKeyTarget）。
-func ctxMenu(a *app.App, c *wui.Context, el wui.Element, owner menuOwner, build func(menu)) {
+func ctxMenu(a *app.App, c *wui.Context, el wui.Element, owner any, build func(menu)) {
 	menuPress(a, c, el, owner, build, nil)
 	if el.FocusWithin() {
 		menuKeyTarget(a, el, owner, build)
@@ -138,7 +139,7 @@ func ctxMenu(a *app.App, c *wui.Context, el wui.Element, owner menuOwner, build 
 
 // ctxMenuRow 是列表行上的 ctxMenu：键盘在列表上、这一行是选中的那行时 ⇧F10 / 菜单键开它的菜单
 // （行自己不拿键盘，键盘在列表上）。
-func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, owner menuOwner, build func(menu)) {
+func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, owner any, build func(menu)) {
 	menuPress(a, c, el, owner, build, nil)
 	if row.Selected() && row.ListFocused() {
 		menuKeyTarget(a, el, owner, build)
@@ -151,7 +152,7 @@ func ctxMenuRow(a *app.App, c *wui.Context, row wui.ListRow, el wui.Element, own
 func menuDo(fn func()) { fn() }
 
 // menuKeyTarget 登记这一帧键盘能开菜单的地方（后登记的是里面的，盖掉外面的）；帧末 gmenuView 认 ⇧F10 / 菜单键。
-func menuKeyTarget(a *app.App, el wui.Element, owner menuOwner, build func(menu)) {
+func menuKeyTarget(a *app.App, el wui.Element, owner any, build func(menu)) {
 	b := el.Bounds()
 	a.MenuKeyAt = &app.MenuKeyTarget{Owner: owner, Build: build, X: b.X, Y: b.Y + b.H}
 }
