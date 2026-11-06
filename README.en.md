@@ -25,7 +25,13 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
 - macOS 13 or later, Apple Silicon (arm64).
 - The app is ad-hoc signed and not notarized by Apple: the first time, **right-click Holt → Open** (or run
   `xattr -dr com.apple.quarantine /Applications/Holt.app`). After that, double-clicking works normally.
-- Linux and Windows only compile for now, with no installable build yet; see Platform support below.
+**Other platforms (preview, runtime not verified)**
+
+- Linux: `holt-<version>-linux-amd64.tar.gz` / `-arm64.tar.gz` (extract and run `./install.sh`, which installs into
+  `~/.local`), or `holt_<version>_amd64.deb` / `holt_<version>_arm64.deb` (`sudo dpkg -i …`).
+- Windows: `Holt-<version>-windows-amd64.zip` / `-arm64.zip`; unzip and run `Holt.exe`.
+- These build and pass CI, but have not been verified on real machines yet. On Windows the terminal daemon (`termd`)
+  is a stub, so terminals only run inside the window.
 
 ## Three principles
 
@@ -74,9 +80,10 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
 
 ## Platform support
 
-macOS 13+ on Apple Silicon is supported. Linux and Windows build and pass `go vet` in CI, but their runtime is not
-verified yet: on Windows the terminal daemon (`termd`) is a stub, so terminals only run inside the window. If you want
-to help bring those platforms up, see [CONTRIBUTING.md](CONTRIBUTING.md).
+macOS 13+ on Apple Silicon is supported. Linux and Windows have preview builds (see Download) that compile and pass
+CI, but their runtime has not been verified on real machines yet: on Windows the terminal daemon (`termd`) is a stub,
+so terminals only run inside the window. If you want to help bring those platforms up, see
+[CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Building from source
 
@@ -104,7 +111,7 @@ Settings and sessions are saved in `~/Library/Application Support/Holt/`. Logs a
 ## Known limitations
 
 - No LSP support, so there's no code completion or go-to-definition.
-- Only macOS on Apple Silicon can run it; Linux and Windows only compile.
+- macOS on Apple Silicon is supported; Linux and Windows are previews that have not been verified on real machines.
 - No automatic updates (use Check for Updates in the app menu) and no plugin system.
 
 ## Feedback

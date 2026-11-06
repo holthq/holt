@@ -21,7 +21,12 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 - 需要 macOS 13 或更新版本，Apple Silicon（arm64）。
 - 安装包是 ad-hoc 签名、没有经过 Apple 公证：第一次打开请**右键点 Holt → 打开**，或者运行
   `xattr -dr com.apple.quarantine /Applications/Holt.app`。之后正常双击即可。
-- Linux / Windows 目前只到“能编译”，还没有可用的安装包，见下面的「平台」。
+**其他平台（预览版，运行时未验证）**
+
+- Linux：`holt-<版本>-linux-amd64.tar.gz` / `-arm64.tar.gz`（解压后 `./install.sh`，装到 `~/.local`），
+  或者 `holt_<版本>_amd64.deb` / `holt_<版本>_arm64.deb`（`sudo dpkg -i …`）。
+- Windows：`Holt-<版本>-windows-amd64.zip` / `-arm64.zip`，解压后运行 `Holt.exe`。
+- 这两端能编译、CI 全绿，但还没在真机上验证过；Windows 的终端后台进程（termd）是桩，终端只在窗口里跑。
 
 ## 三条原则
 
@@ -58,8 +63,9 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 
 ## 平台
 
-正式支持 macOS 13+（Apple Silicon）。Linux 和 Windows 在 CI 里能 `go build` / `go vet` 通过，但运行时还没验证：
-Windows 上终端后台进程（termd）是桩，终端只在窗口里跑。想帮忙把这两端跑起来，见 [CONTRIBUTING.md](CONTRIBUTING.md)。
+正式支持 macOS 13+（Apple Silicon）。Linux 和 Windows 也提供预览版安装包（见「下载」），能编译、CI 通过，
+但运行时还没在真机上验证过：Windows 上终端后台进程（termd）是桩，终端只在窗口里跑。想帮忙把这两端跑稳，
+见 [CONTRIBUTING.md](CONTRIBUTING.md)。
 
 ## 从源码构建
 
@@ -86,7 +92,7 @@ mygo 已在 `go.mod` 中声明，无需单独安装。如果本机 Go 版本较�
 ## 已知限制
 
 - 没有 LSP，所以没有自动补全和跳转到定义。
-- 只有 macOS（Apple Silicon）能运行；Linux / Windows 只到能编译。
+- macOS（Apple Silicon）正式支持；Linux / Windows 是预览版，还没在真机上验证。
 - 没有自动更新（应用菜单里可以手动「检查更新」），也没有插件系统。
 
 ## 反馈
