@@ -212,7 +212,7 @@ func TestRecentList(t *testing.T) {
 	mustText(t, tt, "在所有仓库里搜文字")
 }
 
-// 文件树右键目录"在此搜索"、仓库"在此仓库里搜索"、结果文件"只在这个目录里搜"：范围胶囊，× 搜全部。
+// 文件树右键目录"在此搜索"、仓库"在此搜索"、结果文件"只在这个目录里搜"：范围胶囊，× 搜全部。
 func TestSearchInMenu(t *testing.T) {
 	_, ws := replaceRepo(t)
 	a, tt, wait := newUI(t, ws, "")
@@ -249,13 +249,13 @@ func TestSearchInMenu(t *testing.T) {
 		t.Fatalf("只在这个目录里搜：%+v %d", s.Scope, len(s.Res.Matches))
 	}
 
-	// 仓库行右键：在此仓库里搜索
+	// 仓库行右键：在此搜索
 	a.ShowSidebar(workspace.ModeFiles)
 	tt.Frame()
-	mustRightClickRow(t, tt, "demo（仓库）", "在此仓库里搜索")
+	mustRightClickRow(t, tt, "demo（仓库）", "在此搜索")
 	wait("搜索", func() bool { return s.Done && !s.Running && len(s.Res.Matches) == 4 })
 	if s.Scope == nil || s.Scope.Label() != "demo" {
-		t.Fatalf("在此仓库里搜索：%+v", s.Scope)
+		t.Fatalf("仓库行在此搜索：%+v", s.Scope)
 	}
 }
 

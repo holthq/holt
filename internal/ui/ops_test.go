@@ -53,7 +53,7 @@ func TestGitOps(t *testing.T) {
 		t.Fatal(err)
 	}
 	menu := shownMenu(t, tt)
-	for _, want := range []string{"在编辑器中打开", "暂存", "丢弃改动…", "在 Finder 中显示", "复制仓库内路径"} {
+	for _, want := range []string{"打开", "暂存", "丢弃改动…", "在 Finder 中显示", "复制仓库内路径"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("变更右键菜单里没有 %q: %v", want, menu)
 		}

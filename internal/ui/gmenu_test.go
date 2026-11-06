@@ -528,3 +528,77 @@ func menuWithWhy(t *testing.T, tt *wui.Tester, a *app.App) []string {
 	}
 	return out
 }
+
+// 文件和目录的右键菜单顶层不超过 14 项（不常用的在"更多"里），文件行没有新建，破坏性的项标了 Danger。
+func TestFileMenuShape(t *testing.T) {
+	repo := testutil.NewRepo(t, "shape")
+	repo.Write("a.txt", "a\n")
+	repo.Write("docs/b.md", "b\n")
+	repo.Commit("加文件")
+	repo.Write("a.txt", "改\n")
+	k := newTreeKit(t, repo.Root)
+	tt, a := k.tt, k.a
+
+	items := func(name string) []app.MenuEntry {
+		t.Helper()
+		closeMenu(t, tt)
+		if err := rightClickRow(tt, name); err != nil {
+			t.Fatal(err)
+		}
+		tt.Frame()
+		return a.Menu.Levels()[0].Items
+	}
+	count := func(es []app.MenuEntry) (n int) {
+		for _, e := range es {
+			if !e.Sep {
+				n++
+			}
+		}
+		return n
+	}
+	find := func(es []app.MenuEntry, label string) *app.MenuEntry {
+		for i := range es {
+			if es[i].Label == label {
+				return &es[i]
+			}
+		}
+		return nil
+	}
+
+	k.wait("a.txt 有改动", func() bool { return tt.HasText("a.txt") && len(k.repo("shape").Status.Changes) > 0 })
+	f := items("a.txt")
+	if n := count(f); n > 15 { // 13 项，加上有改动时的暂存、丢弃
+		t.Errorf("文件行顶层 %d 项", n)
+	}
+	for _, gone := range []string{"新建文件…", "新建文件夹…", "添加到 .gitignore", "用默认应用打开", "查看本地历史", "选择以进行比较"} {
+		if find(f, gone) != nil {
+			t.Errorf("文件行顶层不该有 %q", gone)
+		}
+	}
+	more := find(f, "更多")
+	if more == nil {
+		t.Fatal("文件行没有更多")
+	}
+	for _, want := range []string{"查看本地历史", "选择以进行比较", "与剪贴板比较", "添加到 .gitignore", "用默认应用打开"} {
+		if find(more.Sub, want) == nil {
+			t.Errorf("更多里没有 %q", want)
+		}
+	}
+	for label, danger := range map[string]bool{"移到废纸篓…": true, "丢弃改动…": true, "重命名…": false, "暂存": false} {
+		if e := find(f, label); e == nil || e.Danger != danger {
+			t.Errorf("%q：%+v，Danger 该是 %v", label, e, danger)
+		}
+	}
+
+	d := items("docs")
+	if n := count(d); n > 14 {
+		t.Errorf("目录行顶层 %d 项", n)
+	}
+	if find(d, "新建文件…") == nil {
+		t.Error("目录行该有新建文件")
+	}
+	if more := find(d, "更多"); more == nil || find(more.Sub, "查看目录历史") == nil || find(more.Sub, "收起所有目录") == nil {
+		t.Errorf("目录的更多：%+v", more)
+	}
+	closeMenu(t, tt)
+}

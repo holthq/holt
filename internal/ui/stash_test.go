@@ -133,7 +133,7 @@ func TestStashAndWeb(t *testing.T) {
 	a.ShowSidebar(workspace.ModeFiles)
 	a.EnsureFiles(r)
 	wait("文件树", func() bool { return r.Files.Loaded && tt.HasText("a.txt") })
-	mustRightClickRow(t, tt, "a.txt", "在 GitHub 打开")
+	mustRightClickRow(t, tt, "a.txt", "更多", "在 GitHub 打开")
 	mustClickRow(t, tt, "初始提交")
 	wait("展开", func() bool { return r.Hist.Expanded != "" && !r.Hist.FilesLoading })
 	mustClickRow(t, tt, "在 GitHub 打开")

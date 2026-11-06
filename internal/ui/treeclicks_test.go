@@ -269,13 +269,13 @@ func TestTreeContextMenus(t *testing.T) {
 	}
 	wait("docs 算好", func() bool { return strings.HasPrefix(tip("docs"), "1 个文件 · 共 ") })
 
-	// 菜单的分组：打开 | 新建 | Git | 访达 | 路径 | 复制粘贴 | 重命名、废纸篓；没跟踪的没有"删除文件…"
+	// 菜单的分组：打开 | 暂存 | 访达和路径 | 复制粘贴 | 重命名、废纸篓 | 更多；没跟踪的没有"删除文件…"
 	if err := rightClickRow(tt, "new.txt"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
 	items := shownMenu(t, tt)
-	order := []string{"打开", "新建文件…", "暂存（git add）", "添加到 .gitignore", "在 Finder 中显示", "复制路径", "复制", "粘贴", "创建副本", "重命名…"}
+	order := []string{"打开", "暂存（git add）", "在 Finder 中显示", "复制路径", "复制", "粘贴", "创建副本", "重命名…", "移到废纸篓…", "更多"}
 	last := -1
 	for _, it := range order {
 		i := slices.Index(items, it)
@@ -305,9 +305,9 @@ func TestTreeContextMenus(t *testing.T) {
 
 	// 添加到 .gitignore：文件、目录各一行，写好了刷新（没开"显示被忽略的文件"时它们从树里没了）
 	gi := filepath.Join(rp.Root, ".gitignore")
-	k.menu("new.txt", "添加到 .gitignore")
+	k.menu("new.txt", "更多", "添加到 .gitignore")
 	wait("忽略 new.txt", func() bool { return idle(rp)() && !tt.HasText("new.txt") && tt.HasText(".gitignore") })
-	k.menu("build", "添加到 .gitignore")
+	k.menu("build", "更多", "添加到 .gitignore")
 	wait("忽略 build", func() bool { return idle(rp)() && !tt.HasText("build") })
 	if b, _ := os.ReadFile(gi); string(b) != "/new.txt\n/build/\n" {
 		t.Fatalf(".gitignore 是 %q", b)
@@ -320,7 +320,7 @@ func TestTreeContextMenus(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := chooseMenu(t, tt, "添加到 .gitignore"); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, "更多", "添加到 .gitignore"); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Fatalf("已经被忽略的，添加到 .gitignore 应该灰着：%v", err)
 	}
 	closeMenu(t, tt)

@@ -56,6 +56,7 @@ func (w wuiItem) Shortcut(mods wui.Modifiers, key wui.Key) menuItem {
 
 // Why 在系统菜单里没有悬停说明：灰着时什么也不加（标签要带原因的，建菜单时用 whyItem / whySub 拼好）。
 func (w wuiItem) Why(why string) menuItem { w.it.Disabled(why != ""); return w }
+func (w wuiItem) Danger() menuItem        { return w } // 系统菜单画不了颜色
 func (w wuiItem) Chosen() bool            { return w.it.Chosen() }
 
 // whyItem 加一项灰着说原因的（why 为空就是普通的一项）：系统菜单把原因括在标签后面（withWhy），
@@ -416,6 +417,11 @@ func gmenuItem(c *wui.Context, t *wui.Theme, it app.MenuEntry, hot bool, textL f
 	case it.Disabled:
 		fg, muted = t.TextMuted.Alpha(0.6), t.TextMuted.Alpha(0.45)
 		row.Disabled(true)
+	case it.Danger:
+		fg, muted = t.Danger, t.Danger.Alpha(0.7)
+		if hot {
+			row.Background(t.Danger.Alpha(0.14))
+		}
 	case hot:
 		bg, text := gmenuHot(t)
 		row.Background(bg)

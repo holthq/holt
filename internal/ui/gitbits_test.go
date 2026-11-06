@@ -599,7 +599,7 @@ func TestGitRowsGroveMenu(t *testing.T) {
 		t.Fatalf("⌘点后选中 %d 行", n)
 	}
 	tt.RightClickAt(at("a.txt"))
-	grove("多选", "查看 2 个 Diff", "复制 2 个仓库内路径")
+	grove("多选", "查看 2 个文件的 diff", "复制 2 个仓库内路径")
 	tt.RightClickAt(at("dir/"))
 	grove("没选中的目录行", "展开")
 

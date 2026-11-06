@@ -77,11 +77,11 @@ func TestTreeMultiSelect(t *testing.T) {
 		}
 		tt.Frame()
 	}
-	menu := func(name string, item string) {
+	menu := func(name string, item ...string) {
 		t.Helper()
 		a.Exec("file.closeAll")
 		tt.Frame()
-		mustRightClickRow(t, tt, name, item)
+		mustRightClickRow(t, tt, name, item...)
 	}
 	treeKey := func(mods wui.Modifiers, key wui.Key) {
 		a.FocusTree = true
@@ -144,12 +144,12 @@ func TestTreeMultiSelect(t *testing.T) {
 	// 用默认应用打开：经 a.ShowPath（不真的打开），打不开的是应用自己的提示
 	var shown []string
 	a.ShowPath = func(p string) error { shown = append(shown, p); return nil }
-	menu("notes.md", "用默认应用打开")
+	menu("notes.md", "更多", "用默认应用打开")
 	if want := []string{filepath.Join(ra.Root, "notes.md")}; !slices.Equal(shown, want) {
 		t.Fatalf("用默认应用打开了 %q", shown)
 	}
 	a.ShowPath = func(string) error { return errors.New("没有能打开它的应用") }
-	menu("notes.md", "用默认应用打开")
+	menu("notes.md", "更多", "用默认应用打开")
 	if !a.AlertOpen || a.AlertTitle != "打不开文件" {
 		t.Fatalf("打不开：alert=%v %q", a.AlertOpen, a.AlertTitle)
 	}

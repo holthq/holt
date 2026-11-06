@@ -84,11 +84,11 @@ func localMenu(a *app.App, m menu, abs string, e lhist.Entry) {
 	if m.Item(i18n.T("与当前比较")).Chosen() {
 		a.OpenLocalCompare(abs, e, true)
 	}
-	if m.Item(i18n.T("在编辑器中打开")).Chosen() {
+	if m.Item(i18n.T("打开")).Chosen() {
 		a.OpenLocalFile(abs, e)
 	}
 	m.Separator()
-	if m.Item(i18n.T("删除这一条")).Chosen() {
+	if m.Item(i18n.T("删除这一条")).Danger().Chosen() {
 		a.DeleteLocal(abs, e)
 	}
 	if m.Item(i18n.T("清除这个文件的本地历史…")).Chosen() {

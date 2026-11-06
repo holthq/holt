@@ -101,7 +101,7 @@ func TestHistoryFilter(t *testing.T) {
 	a.ShowSidebar(workspace.ModeFiles)
 	a.EnsureFiles(r)
 	wait("文件树", func() bool { return r.Files.Loaded && tt.HasText("docs") })
-	mustRightClickRow(t, tt, "docs", "查看目录历史")
+	mustRightClickRow(t, tt, "docs", "更多", "查看目录历史")
 	waitHist("目录历史", "挪 a")
 	mustText(t, tt, "文件历史：docs")
 	a.ToggleDir(r, "docs")

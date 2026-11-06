@@ -144,7 +144,7 @@ func TestRepoMenuAddRemove(t *testing.T) {
 		t.Fatal(err)
 	}
 	menu := tt.Menu()
-	for _, want := range []string{"在此打开终端", "在此仓库里搜索", "在 Finder 中显示", "复制路径", "从列表移除"} {
+	for _, want := range []string{"在此打开终端", "在此搜索", "在 Finder 中显示", "复制路径", "从列表移除"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("右键菜单里没有 %q: %v", want, menu)
 		}

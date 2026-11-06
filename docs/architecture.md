@@ -360,6 +360,8 @@ Grove 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
   所以关了菜单（选了、Esc、点外面）键盘回到打开前的元素。样子：字号 13、项高 24、面板圆角 8、内边距 4、项圆角 5，最小宽 180；勾选位只在这一层有勾选项时留（`MenuLevel.TextL`），没有时字左边留 10；高亮项是字色 8% 的淡填充、字色不变（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
 - 建菜单的函数（`menus.go`）都收 `menu` 接口（`app.MenuSink`），系统菜单（`ContextMenu` / `Menu`）经 `nativeMenu(m)` 适配，所以两边共用；
   灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Grove 画的悬停提示。
+  破坏性的项（废纸篓、丢弃、删除、强推、中止、硬重置、从列表移除）链上 `Danger()`：Grove 画的用 `t.Danger`，悬停填充也是；系统菜单画不了，什么也不做。
+  文件和目录的菜单顶层 14 项以内（`fileMenu`），不常用的进“更多”（`fileMoreItems`）；组序：打开查看 → 暂存 → 访达和路径 → 复制粘贴 → 重命名、废纸篓 → 更多，`changeMenu` 跟这个顺序。
 
 刷新是增量的（`app/treediff.go`）：监听报的 `Change.Dirs` 交给 `fileHints`，后台只对这些目录重新 `ls-files`，`Tree.Diff` 算出加减，回主线程 `Tree.Apply`。变了的目录超过 200 个或 `Full` 时整个重建。后台计算期间若整棵树已被替换（`Gen` 变化），则丢弃结果。
 

@@ -42,6 +42,11 @@ func TestCompareMenu(t *testing.T) {
 			t.Fatalf("右键 %q: %v", name, err)
 		}
 		tt.Frame()
+		if slices.Contains(shownMenu(t, tt), "更多") { // 比较的几项在"更多"里，多选的菜单没有它
+			if err := chooseMenu(t, tt, "更多"); err != nil {
+				t.Fatal(err)
+			}
+		}
 		m := shownMenu(t, tt)
 		closeMenu(t, tt)
 		tt.Frame()
@@ -50,18 +55,18 @@ func TestCompareMenu(t *testing.T) {
 	if m := menu("a.go"); !slices.Contains(m, "选择以进行比较") || !slices.Contains(m, "与剪贴板比较") || slices.ContainsFunc(m, func(s string) bool { return strings.HasPrefix(s, "与 ") && s != "与剪贴板比较" }) {
 		t.Fatalf("没选过时的菜单 %q", m)
 	}
-	mustRightClickRow(t, tt, "a.go", "与剪贴板比较")
+	mustRightClickRow(t, tt, "a.go", "更多", "与剪贴板比较")
 	if !tt.HasText("剪贴板是空的") || len(a.Docs) != 0 {
 		t.Errorf("剪贴板空着：toast %q，标签 %d", a.Toast, len(a.Docs))
 	}
-	mustRightClickRow(t, tt, "a.go", "选择以进行比较")
+	mustRightClickRow(t, tt, "a.go", "更多", "选择以进行比较")
 	if a.CompareSelName() != "a.go" {
 		t.Fatalf("已选 %q", a.CompareSelName())
 	}
 	if m := menu("a.go"); slices.Contains(m, "与 a.go 比较") {
 		t.Errorf("同一个文件上不该有与 a.go 比较：%q", m)
 	}
-	mustRightClickRow(t, tt, "b.go", "与 a.go 比较")
+	mustRightClickRow(t, tt, "b.go", "更多", "与 a.go 比较")
 	d := a.CurrentDoc()
 	if d == nil || d.Kind != docs.Compare || d.Title != "a.go ↔ b.go" {
 		t.Fatalf("当前标签 %+v", d)
@@ -78,7 +83,7 @@ func TestCompareMenu(t *testing.T) {
 	clip = "package a\n\nvar x = 3\n"
 	a.Exec("file.closeAll")
 	tt.Frame()
-	mustRightClickRow(t, tt, "c.go", "与剪贴板比较")
+	mustRightClickRow(t, tt, "c.go", "更多", "与剪贴板比较")
 	wait("和剪贴板比", func() bool { return tt.HasText("文件 ↔ 剪贴板") && tt.HasText("c.go ↔ 剪贴板") })
 
 	a.Exec("file.closeAll")

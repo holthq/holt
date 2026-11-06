@@ -31,6 +31,8 @@ type MenuItem interface {
 	// Why 是灰着的原因（空是没灰），同时设上 Disabled。Grove 画的菜单悬停时用提示说；系统菜单没有悬停说明，
 	// 只能括在标签后面（internal/ui 的 withWhy）。
 	Why(string) MenuItem
+	// Danger 标出破坏性的项（删、丢弃、强推……）：Grove 画的菜单用危险色，系统菜单画不了。
+	Danger() MenuItem
 	Chosen() bool
 }
 
@@ -40,6 +42,7 @@ type MenuEntry struct {
 	Sep      bool
 	Disabled bool
 	Checked  bool
+	Danger   bool   // 破坏性的项，用危险色
 	Why      string // 灰着的原因，悬停时提示
 	Keys     string // 快捷键（⇧⌘C 这样），右对齐、淡色
 	Sub      []MenuEntry
@@ -819,6 +822,7 @@ func (p popItem) Why(why string) MenuItem {
 	e.Why, e.Disabled = why, why != ""
 	return p
 }
+func (p popItem) Danger() MenuItem { p.e().Danger = true; return p }
 func (p popItem) Chosen() bool {
 	e := p.e()
 	return p.s.choose != 0 && e.seq == p.s.choose && e.Label == p.s.label && !e.Disabled && !e.HasSub

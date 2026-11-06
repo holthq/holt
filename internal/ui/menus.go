@@ -79,7 +79,7 @@ func gitMenu(a *app.App, m menu, r *app.Repo) {
 	if whyItem(m, push, app.PushWhy(r)).Chosen() {
 		a.Push(r)
 	}
-	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
+	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Danger().Chosen() {
 		a.PushForce(r)
 	}
 	if whyItem(m, i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
@@ -92,7 +92,7 @@ func gitMenu(a *app.App, m menu, r *app.Repo) {
 	if whyItem(m, i18n.T("取消全部暂存"), app.UnstageAllWhy(r)).Chosen() {
 		a.UnstageAll(r)
 	}
-	if whyItem(m, i18n.T("丢弃所有未暂存改动…"), app.DiscardAllWhy(r)).Chosen() {
+	if whyItem(m, i18n.T("丢弃所有未暂存改动…"), app.DiscardAllWhy(r)).Danger().Chosen() {
 		a.DiscardAll(r)
 	}
 	m.Separator()
@@ -191,7 +191,7 @@ func branchMenu(a *app.App, m menu, r *app.Repo) {
 	if onBranch && cur.Upstream == "" && app.HasRemote(r, "origin") && m.Item(i18n.T("发布到 origin（推送并设置上游）")).Chosen() {
 		a.Push(r)
 	}
-	m.Submenu(i18n.T("删除分支"), func(m menu) { deleteBranchItems(a, m, r) })
+	m.Submenu(i18n.T("删除分支"), func(m menu) { deleteBranchItems(a, m, r) }).Danger()
 	if remote > 0 {
 		m.Submenu(i18n.T("删除远程分支"), func(m menu) {
 			n := 0
@@ -330,7 +330,7 @@ func tagItems(a *app.App, m menu, r *app.Repo) {
 	}).Disabled(pushWhy != "")
 	m.Submenu(i18n.T("删除标签"), func(m menu) {
 		tagList(m, r, func(t git.Tag) { a.OpenDeleteTag(r, t) })
-	}).Disabled(len(r.Tags) == 0)
+	}).Disabled(len(r.Tags) == 0).Danger()
 }
 
 // tagList 是"推送标签 / 删除标签"子菜单里的标签名（新的在前，最多 60 个），选了一个就 pick 它。
@@ -366,7 +366,7 @@ func remoteItems(a *app.App, m menu, r *app.Repo) {
 		if m.Item(i18n.Tf("把 %s 改名…", rm.Name)).Chosen() {
 			a.OpenRenameRemote(r, rm.Name)
 		}
-		if m.Item(i18n.Tf("删除 %s…", rm.Name)).Chosen() {
+		if m.Item(i18n.Tf("删除 %s…", rm.Name)).Danger().Chosen() {
 			a.DeleteRemote(r, rm.Name) // 它先问
 		}
 	}
@@ -385,7 +385,7 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 	if m.Item(i18n.T("在此打开终端")).Chosen() {
 		a.NewTerminal(r, r.Root)
 	}
-	if m.Item(i18n.T("在此仓库里搜索")).Chosen() {
+	if m.Item(i18n.T("在此搜索")).Chosen() {
 		a.SearchIn(r, "")
 	}
 	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
@@ -414,7 +414,7 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 		if op.SkipArgs() != nil && m.Item(op.SkipLabel()+"…").Chosen() {
 			a.SkipOngoing(r)
 		}
-		if m.Item(op.AbortLabel() + "…").Chosen() {
+		if m.Item(op.AbortLabel() + "…").Danger().Chosen() {
 			a.AbortOngoing(r)
 		}
 	}
@@ -431,7 +431,7 @@ func repoMenu(a *app.App, m menu, r *app.Repo, tree bool) {
 	m.Separator()
 	m.Submenu(i18n.T("更多"), func(m menu) { repoMoreItems(a, m, r, tree) })
 	m.Separator()
-	if m.Item(i18n.T("从列表移除")).Chosen() {
+	if m.Item(i18n.T("从列表移除")).Danger().Chosen() {
 		a.RemoveReq = r
 	}
 }
@@ -492,9 +492,9 @@ func newItems(a *app.App, m menu, r *app.Repo, dir string) {
 	}
 }
 
-// fileMenu 是文件树里文件和目录的右键菜单。分组：打开（目录是展开 / 收起、终端、搜索、历史）| 新建 | Git |
-// 访达、默认应用、网页 | 路径 | 复制粘贴 | 重命名、废纸篓。指向目录的链接能展开，别的当文件（重命名、删掉的是链接）；
-// 链接里面的行见 linkedMenu。
+// fileMenu 是文件树里文件和目录的右键菜单。顶层只放常用的（14 项以内），不常用的收进"更多"。
+// 分组：打开查看（目录是展开 / 收起、终端、搜索、新建）| 暂存（有改动才有）| 访达和路径 |
+// 复制粘贴 | 重命名、废纸篓 | 更多。指向目录的链接能展开，别的和文件一样。链接里面的行见 linkedMenu。
 func fileMenu(a *app.App, m menu, r *app.Repo, row files.Row) {
 	if row.Sub != 0 {
 		submoduleMenu(a, m, r, row.Path)
@@ -515,16 +515,6 @@ func fileMenu(a *app.App, m menu, r *app.Repo, row files.Row) {
 		}
 		if m.Item(label).Chosen() {
 			a.ToggleDir(r, row.Path)
-		}
-		if m.Item(i18n.T("收起所有目录")).Chosen() {
-			a.CollapseAll()
-		}
-		if isLink {
-			if m.Item(i18n.T("查看文件历史")).Disabled(row.Code == '?' || r.Plain).Chosen() {
-				a.ShowFileHistory(r, row.Path, false)
-			}
-		} else if m.Item(i18n.T("查看目录历史")).Disabled(r.Plain).Chosen() {
-			a.ShowFileHistory(r, row.Path, true)
 		}
 		if m.Item(i18n.T("在此打开终端")).Chosen() {
 			a.NewTerminal(r, full)
@@ -549,45 +539,23 @@ func fileMenu(a *app.App, m menu, r *app.Repo, row files.Row) {
 		if m.Item(i18n.T("查看文件历史")).Disabled(row.Code == '?' || r.Plain).Chosen() {
 			a.ShowFileHistory(r, row.Path, false)
 		}
-		localHistItem(a, m, filepath.Join(r.Root, filepath.FromSlash(row.Path)))
-		if tks := a.TasksOf(r, row.Path); len(tks) > 0 { // 仓库根的 package.json / Makefile / justfile……：挑一个在终端里跑
-			m.Submenu(i18n.T("运行"), func(m menu) {
-				for _, tk := range tks {
-					if m.Item(tk.Cmd).Chosen() {
-						a.RunTask(r, tk)
-					}
-				}
-			})
-		}
-		m.Separator()
-		compareItems(a, m, r, row.Path)
-		m.Separator()
-		newItems(a, m, r, files.DirOf(row.Path))
 	}
-	if !r.Plain {
-		m.Separator()
-		if !asDir {
-			for _, ch := range r.Status.Changes {
-				if ch.Path == row.Path && ch.Kind != git.InCommit {
-					stageItems(a, m, r, ch, true)
+	if !r.Plain && !asDir {
+		sep := true
+		for _, ch := range r.Status.Changes {
+			if ch.Path == row.Path && ch.Kind != git.InCommit {
+				if sep {
+					m.Separator()
+					sep = false
 				}
+				stageItems(a, m, r, ch, true)
 			}
-		}
-		if m.Item(i18n.T("添加到 .gitignore")).Disabled(!app.CanIgnore([]app.TreeRow{tr})).Chosen() {
-			a.IgnoreRows([]app.TreeRow{tr})
 		}
 	}
 	m.Separator()
 	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
 		a.InFinder(full)
 	}
-	if !row.Dir && m.Item(i18n.T("用默认应用打开")).Chosen() {
-		openWithDefault(a, full)
-	}
-	if w := a.WebOf(r); w.OK() && m.Item(i18n.Tf("在 %s 打开", w.Site())).Disabled(row.Code == '?' || row.Code == 'A').Chosen() {
-		a.OpenWeb(w.File(r.WebRef(), row.Path, asDir))
-	}
-	m.Separator()
 	if m.Item(i18n.T("复制路径")).Chosen() {
 		copyText(full)
 	}
@@ -600,8 +568,59 @@ func fileMenu(a *app.App, m menu, r *app.Repo, row files.Row) {
 	if shortcut(m.Item(i18n.T("重命名…")), "tree.rename").Chosen() {
 		a.StartRename(r, row.Path, asDir)
 	}
-	if shortcut(m.Item(i18n.T("移到废纸篓…")), "tree.trash").Chosen() {
+	if shortcut(m.Item(i18n.T("移到废纸篓…")).Danger(), "tree.trash").Chosen() {
 		a.TrashPath(r, row.Path, asDir)
+	}
+	m.Separator()
+	m.Submenu(i18n.T("更多"), func(m menu) { fileMoreItems(a, m, tr, full) })
+}
+
+// fileMoreItems 是文件和目录菜单的"更多"子菜单：目录的收起和历史，文件的本地历史、运行、比较 |
+// .gitignore | 默认应用、网页。
+func fileMoreItems(a *app.App, m menu, tr app.TreeRow, full string) {
+	r, row := tr.Repo, tr.Row
+	isLink := tr.DirLink()
+	if row.Dir {
+		if m.Item(i18n.T("收起所有目录")).Chosen() {
+			a.CollapseAll()
+		}
+		if isLink {
+			if m.Item(i18n.T("查看文件历史")).Disabled(row.Code == '?' || r.Plain).Chosen() {
+				a.ShowFileHistory(r, row.Path, false)
+			}
+		} else if m.Item(i18n.T("查看目录历史")).Disabled(r.Plain).Chosen() {
+			a.ShowFileHistory(r, row.Path, true)
+		}
+	} else {
+		localHistItem(a, m, full)
+		if tks := a.TasksOf(r, row.Path); len(tks) > 0 { // 仓库根的 package.json / Makefile / justfile……：挑一个跑
+			m.Submenu(i18n.T("运行"), func(m menu) {
+				for _, tk := range tks {
+					if m.Item(tk.Cmd).Chosen() {
+						a.RunTask(r, tk)
+					}
+				}
+			})
+		}
+		m.Separator()
+		compareItems(a, m, r, row.Path)
+	}
+	if !r.Plain {
+		m.Separator()
+		if m.Item(i18n.T("添加到 .gitignore")).Disabled(!app.CanIgnore([]app.TreeRow{tr})).Chosen() {
+			a.IgnoreRows([]app.TreeRow{tr})
+		}
+	}
+	w := a.WebOf(r)
+	if row.Dir && !w.OK() {
+		return
+	}
+	m.Separator()
+	if !row.Dir && m.Item(i18n.T("用默认应用打开")).Chosen() {
+		openWithDefault(a, full)
+	}
+	if w.OK() && m.Item(i18n.Tf("在 %s 打开", w.Site())).Disabled(row.Code == '?' || row.Code == 'A').Chosen() {
+		a.OpenWeb(w.File(r.WebRef(), row.Path, row.Dir && !isLink))
 	}
 }
 
@@ -709,7 +728,6 @@ func chosenMenu(a *app.App, m menu, at app.TreeRow, rows []app.TreeRow) {
 	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
 		a.RevealRows(rows)
 	}
-	m.Separator()
 	if m.Item(i18n.Tn("复制 %d 个路径", n)).Chosen() {
 		copyText(app.RowPaths(rows, false))
 	}
@@ -720,7 +738,7 @@ func chosenMenu(a *app.App, m menu, at app.TreeRow, rows []app.TreeRow) {
 	clipItems(a, m, at, rows)
 	m.Separator()
 	shortcut(whyItem(m, i18n.T("重命名…"), i18n.T("一次只能重命名一项")), "tree.rename")
-	if shortcut(m.Item(i18n.Tn("把 %d 项移到废纸篓…", n)), "tree.trash").Disabled(app.HasRoot(rows)).Chosen() {
+	if shortcut(m.Item(i18n.Tn("把 %d 项移到废纸篓…", n)).Danger(), "tree.trash").Disabled(app.HasRoot(rows)).Chosen() {
 		a.TrashRows(rows)
 	}
 }
@@ -729,7 +747,7 @@ func chosenMenu(a *app.App, m menu, at app.TreeRow, rows []app.TreeRow) {
 func chosenChangeMenu(a *app.App, m menu, rows []app.ChangeRow) {
 	n := len(rows)
 	ns, nu := app.CountChanges(rows, app.CanStage), app.CountChanges(rows, app.CanUnstage)
-	if m.Item(i18n.Tn("查看 %d 个 Diff", n)).Shortcut(0, wui.KeyEnter).Chosen() {
+	if m.Item(i18n.Tn("查看 %d 个文件的 diff", n)).Shortcut(0, wui.KeyEnter).Chosen() {
 		a.OpenDiffs(rows)
 	}
 	m.Separator()
@@ -739,14 +757,13 @@ func chosenChangeMenu(a *app.App, m menu, rows []app.ChangeRow) {
 	if m.Item(i18n.Tn("取消暂存 %d 项", nu)).Disabled(nu == 0).Chosen() {
 		a.UnstageChanges(rows)
 	}
-	if m.Item(i18n.Tn("丢弃 %d 项改动…", ns)).Disabled(ns == 0).Chosen() {
+	if m.Item(i18n.Tn("丢弃 %d 项改动…", ns)).Disabled(ns == 0).Danger().Chosen() {
 		a.DiscardChanges(rows)
 	}
 	m.Separator()
 	if m.Item(i18n.T("在 Finder 中显示")).Disabled(n > 10).Chosen() { // 每个目录一个访达窗口，多了只是一串窗口
 		a.RevealChanges(rows)
 	}
-	m.Separator()
 	if m.Item(i18n.Tn("复制 %d 个路径", n)).Chosen() {
 		copyText(app.ChangePaths(rows, false))
 	}
@@ -767,14 +784,14 @@ func stageItems(a *app.App, m menu, r *app.Repo, ch git.Change, tree bool) {
 		if m.Item(i18n.T("暂存")).Chosen() {
 			a.Stage(r, ch.Path)
 		}
-		if m.Item(i18n.T("丢弃改动…")).Chosen() {
+		if m.Item(i18n.T("丢弃改动…")).Danger().Chosen() {
 			a.Discard(r, ch)
 		}
 	case git.Untracked:
 		if m.Item(i18n.T("暂存（git add）")).Chosen() {
 			a.Stage(r, ch.Path)
 		}
-		if !tree && m.Item(i18n.T("删除文件…")).Chosen() {
+		if !tree && m.Item(i18n.T("删除文件…")).Danger().Chosen() {
 			a.Discard(r, ch)
 		}
 	case git.Conflict:
@@ -791,20 +808,20 @@ func changeMenu(a *app.App, m menu, r *app.Repo, ch git.Change) {
 		if m.Item(i18n.T("查看此版本")).Disabled(ch.Code == 'D').Chosen() {
 			a.OpenVersion(r, ch)
 		}
-		if m.Item(i18n.T("在编辑器中打开当前文件")).Chosen() {
+		if m.Item(i18n.T("打开当前文件")).Chosen() {
 			a.OpenFile(r, ch.Path, true)
 		}
 	} else if ch.Kind == git.Conflict {
 		if m.Item(i18n.T("在编辑器中解决冲突")).Chosen() {
 			a.OpenConflict(r, ch, true)
 		}
-		if m.Item(i18n.T("查看 Diff（HEAD ↔ 工作区）")).Chosen() {
+		if m.Item(i18n.T("查看 diff（HEAD ↔ 工作区）")).Chosen() {
 			a.OpenDiff(r, ch, true)
 		}
 		if m.Item(i18n.T("两边的 diff")).Chosen() {
 			a.OpenStagesDiff(r, ch.Path)
 		}
-	} else if m.Item(i18n.T("在编辑器中打开")).Disabled(ch.Code == 'D').Chosen() {
+	} else if m.Item(i18n.T("打开")).Disabled(ch.Code == 'D').Chosen() {
 		a.OpenFile(r, ch.Path, true)
 	}
 	if m.Item(i18n.T("查看文件历史")).Disabled(ch.Kind == git.Untracked).Chosen() {
@@ -818,6 +835,13 @@ func changeMenu(a *app.App, m menu, r *app.Repo, ch git.Change) {
 	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
 		a.InFinder(full)
 	}
+	if m.Item(i18n.T("复制路径")).Chosen() {
+		copyText(full)
+	}
+	if m.Item(i18n.T("复制仓库内路径")).Chosen() {
+		copyText(ch.Path)
+	}
+	m.Separator()
 	if m.Item(i18n.T("用默认应用打开")).Disabled(ch.Code == 'D').Chosen() {
 		openWithDefault(a, full)
 	}
@@ -833,13 +857,6 @@ func changeMenu(a *app.App, m menu, r *app.Repo, ch git.Change) {
 		if m.Item(i18n.Tf("在 %s 打开", w.Site())).Disabled(!ok).Chosen() {
 			a.OpenWeb(u)
 		}
-	}
-	m.Separator()
-	if m.Item(i18n.T("复制路径")).Chosen() {
-		copyText(full)
-	}
-	if m.Item(i18n.T("复制仓库内路径")).Chosen() {
-		copyText(ch.Path)
 	}
 }
 
@@ -888,7 +905,11 @@ func commitMenu(a *app.App, m menu, r *app.Repo, cm git.Commit) {
 	why := app.ResetWhy(r, cm)
 	m.Submenu(withWhy(i18n.T("重置到这个提交"), why), func(m menu) {
 		for _, mode := range []app.ResetMode{app.ResetSoft, app.ResetMixed, app.ResetHard} {
-			if chosen(m.Item(mode.Label())) {
+			it := m.Item(mode.Label())
+			if mode == app.ResetHard {
+				it.Danger()
+			}
+			if chosen(it) {
 				a.ResetTo(r, cm, mode) // 三档都先问
 			}
 		}
@@ -931,7 +952,7 @@ func stashMenu(a *app.App, m menu, r *app.Repo, s git.Stash) {
 		a.StashPopRef(r, s)
 	}
 	m.Separator()
-	if m.Item(i18n.T("丢弃贮藏…")).Chosen() {
+	if m.Item(i18n.T("丢弃贮藏…")).Danger().Chosen() {
 		a.StashDrop(r, s)
 	}
 	m.Separator()
@@ -1079,6 +1100,7 @@ func pathItems(a *app.App, m menu, d *docs.Doc) {
 	if d.Abs == "" {
 		return
 	}
+	m.Separator()
 	if m.Item(i18n.T("在 Finder 中显示")).Chosen() {
 		a.InFinder(d.Abs)
 	}

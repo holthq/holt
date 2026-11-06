@@ -84,7 +84,7 @@ func TestMergeBar(t *testing.T) {
 	}
 }
 
-// Git 栏单击冲突行开编辑器（带冲突条）；右键"查看 Diff（HEAD ↔ 工作区）"、"两边的 diff"各开一个 Diff；
+// Git 栏单击冲突行开编辑器（带冲突条）；右键"查看 diff（HEAD ↔ 工作区）"、"两边的 diff"各开一个 Diff；
 // 指针在行上时右边的 ✓ 是"标记为已解决"，还有标记就先问。
 func TestConflictRowOpensEditor(t *testing.T) {
 	a, r, tt, wait := mergeUI(t, "1\n2\n3\n", "1\n我的\n3\n", "1\n他们的\n3\n")
@@ -108,12 +108,12 @@ func TestConflictRowOpensEditor(t *testing.T) {
 	tt.RightClickAt(x, y)
 	tt.Frame()
 	menu := shownMenu(t, tt)
-	for _, want := range []string{"在编辑器中解决冲突", "查看 Diff（HEAD ↔ 工作区）", "两边的 diff", "标记为已解决"} {
+	for _, want := range []string{"在编辑器中解决冲突", "查看 diff（HEAD ↔ 工作区）", "两边的 diff", "标记为已解决"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("冲突行的右键菜单里没有 %q: %q", want, menu)
 		}
 	}
-	if err := chooseMenu(t, tt, "查看 Diff（HEAD ↔ 工作区）"); err != nil {
+	if err := chooseMenu(t, tt, "查看 diff（HEAD ↔ 工作区）"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

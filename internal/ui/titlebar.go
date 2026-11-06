@@ -438,7 +438,7 @@ func syncOf(a *app.App, r *app.Repo) syncState {
 
 // pushMenu 是推送按钮的右键菜单：强制推送、同步。
 func pushMenu(a *app.App, m menu, r *app.Repo) {
-	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Chosen() {
+	if whyItem(m, i18n.T("强制推送（--force-with-lease）…"), app.PushForceWhy(r)).Danger().Chosen() {
 		a.PushForce(r)
 	}
 	if whyItem(m, i18n.T("同步（拉取再推送）"), app.SyncWhy(r)).Chosen() {
