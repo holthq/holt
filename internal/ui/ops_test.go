@@ -52,13 +52,13 @@ func TestGitOps(t *testing.T) {
 	if err := rightClickRow(tt, "a.txt"); err != nil {
 		t.Fatal(err)
 	}
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	for _, want := range []string{"在编辑器中打开", "暂存", "丢弃改动…", "在 Finder 中显示", "复制仓库内路径"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("变更右键菜单里没有 %q: %v", want, menu)
 		}
 	}
-	if err := tt.ChooseMenuItem("暂存"); err != nil {
+	if err := chooseMenu(t, tt, "暂存"); err != nil {
 		t.Fatal(err)
 	}
 	wait("暂存完成", func() bool { return idle(r)() && r.Status.Staged == 1 })
@@ -136,11 +136,11 @@ func TestGitOps(t *testing.T) {
 
 	// 标题栏的分支胶囊：列出 main（当前）和 feature，切到 feature
 	mustClickRow(t, tt, "分支 main")
-	menu = tt.Menu()
+	menu = shownMenu(t, tt)
 	if !slices.Contains(menu, "main") || !slices.Contains(menu, "feature") || !slices.Contains(menu, "新建分支…") {
 		t.Fatalf("分支菜单: %v", menu)
 	}
-	if err := tt.ChooseMenuItem("feature"); err != nil {
+	if err := chooseMenu(t, tt, "feature"); err != nil {
 		t.Fatal(err)
 	}
 	wait("切到 feature", func() bool { return idle(r)() && r.Status.Branch == "feature" })
@@ -156,14 +156,14 @@ func TestGitOps(t *testing.T) {
 
 	// "Git 操作"菜单 → 新建分支… → 对话框里敲名字回车
 	mustClickRow(t, tt, "Git 操作")
-	menu = tt.Menu()
+	menu = shownMenu(t, tt)
 	for _, want := range []string{"抓取（fetch --prune）（没有远程）", "推送并设置上游（没有上游，也没有 origin）", "暂存全部",
 		"贮藏改动（stash）（没有可贮藏的改动）", "新建分支…", "运行 git 命令…"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("Git 菜单里没有 %q: %v", want, menu)
 		}
 	}
-	if err := tt.ChooseMenuItem("新建分支…"); err != nil {
+	if err := chooseMenu(t, tt, "新建分支…"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -229,7 +229,7 @@ func TestGitOps(t *testing.T) {
 	if err := rightClickRow(tt, "u.txt"); err != nil {
 		t.Fatal(err)
 	}
-	if err := tt.ChooseMenuItem("删除文件…"); err != nil {
+	if err := chooseMenu(t, tt, "删除文件…"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()

@@ -75,10 +75,11 @@ func whySub(m menu, label, why string, build func(menu)) menuItem {
 	return m.Submenu(label, build).Why(why)
 }
 
-// 菜单的样子：项的字号同侧栏，快捷键淡色右对齐；高亮是强调色。
+// 菜单的样子：字号 13，快捷键、子菜单箭头淡色右对齐；悬停是淡淡的一层填充（字色不变），不是实心的强调色块。
 const (
-	gmenuRadius  = 6
-	gmenuItemRad = 4
+	gmenuRadius  = 8
+	gmenuItemRad = 5
+	gmenuFont    = 13
 )
 
 // menuPress 给文件树里的元素装上右键菜单：右键按下打开 build 建的菜单（owner 是它对着的东西，那一行画描边），
@@ -121,10 +122,32 @@ func menuPress(a *app.App, c *wui.Context, el wui.Element, owner any, build func
 	})
 }
 
+// menuOwner 是文件树以外的菜单对着的东西（比较用，要可比较）：哪一类 + 哪个仓库 / 哪一项。
+type menuOwner struct{ Kind, Key string }
+
+// ctxMenu 给 el 装上 Grove 画的右键菜单（文件树以外的地方用它代替 ContextMenu）：和文件树的行一样，
+// 右键按下打开、按住拖到项上松开选它，菜单开着时在别处右键换成那里的。el 不能再挂别的 HandleInput。
+func ctxMenu(a *app.App, c *wui.Context, el wui.Element, owner menuOwner, build func(menu)) {
+	menuPress(a, c, el, owner, build, nil)
+}
+
+// openMenuBelow 在按钮 b（上一帧的位置）左下角下面打开 build 建的 Grove 菜单（按钮的菜单用它代替 Menu）。
+// 下面放不下往上翻、窗口都放不下就滚（PopMenu.layout）。
+func openMenuBelow(a *app.App, c *wui.Context, b wui.Rect, owner menuOwner, build func(menu)) {
+	root := c.Root().Bounds()
+	gmenuMeasure(a, c)
+	a.TreeTip.Dismiss()
+	a.Menu.Open(owner, build, b.X, b.Y+b.H+2, root.W, root.H, false, c.Now())
+	c.Invalidate()
+}
+
 // menuZ 是 owner 那块盖在谁上面：空白处（列表）0、行 1、合并行的一段 2，钉在顶上的再加 2（盖着底下滚过去的行）。
 func menuZ(owner any) int {
 	o, ok := owner.(treeOwner)
-	if !ok || o.Blank {
+	if !ok { // 文件树以外的（Git 栏、标签……）：不受文件树列表的裁剪
+		return app.MenuZFree
+	}
+	if o.Blank {
 		return 0
 	}
 	z := 1
@@ -165,7 +188,7 @@ func openTreeMenuByKey(a *app.App, c *wui.Context, rows []app.TreeRow, list wui.
 // gmenuMeasure 设好量字的函数（按菜单的字号）。
 func gmenuMeasure(a *app.App, c *wui.Context) {
 	a.Menu.Measure = func(s string) float32 {
-		w, _ := c.MeasureText(0, wui.Span{Text: s, Size: sideFont})
+		w, _ := c.MeasureText(0, wui.Span{Text: s, Size: gmenuFont})
 		return w
 	}
 }
@@ -257,23 +280,13 @@ func gmenuView(a *app.App, c *wui.Context) {
 	})
 }
 
-// gmenuHot 是高亮项的底和字：实心的强调色（文件树实心选中的那块），字是白的。强调色太亮、白字不到 4.5:1 时
-// （深色主题的强调色都是调亮了的）往黑里调到够为止，和系统菜单一样是深一些的强调色底、白字。
-// 浅色主题里配深字也够 4.5:1 的（石墨之类）照旧。
+// gmenuHot 是高亮项（悬停、键盘挪到、开着子菜单的）的底和字：底是字色 8% 左右的淡填充，字色不变
+// （实心的强调色块太重，侧栏里的行也是淡填充）。深色主题里同样的比例看着更淡，提一点。
 func gmenuHot(t *wui.Theme) (bg, fg wui.Color) {
-	bg, fg = t.Accent, t.AccentText
-	white, black := wui.RGBA(255, 255, 255, 1), wui.RGBA(0, 0, 0, 1)
-	if contrast(white, bg) >= 4.5 {
-		return bg, white
+	if t.Dark {
+		return t.Text.Alpha(0.1), t.Text
 	}
-	if !t.Dark && contrast(fg, bg) >= 4.5 {
-		return bg, fg
-	}
-	base := bg
-	for k := float32(0.05); k <= 1 && contrast(white, bg) < 4.5; k += 0.05 {
-		bg = base.Mix(black, k)
-	}
-	return bg, white
+	return t.Text.Alpha(0.08), t.Text
 }
 
 // contrast 是两个颜色的对比度（WCAG 的算法，1–21），不看透明度。
@@ -319,19 +332,20 @@ func gmenuPanel(c *wui.Context, t *wui.Theme, l app.MenuLevel, open int) wui.Ele
 			for i, it := range l.Items {
 				if it.Sep {
 					wui.Column(c).Height(app.MenuSepH).Shrink(0).Justify(wui.Center).Padding(0, 6).Children(func() {
-						wui.Column(c).Height(1).Background(t.Border.Alpha(0.8))
+						wui.Column(c).Height(1).Background(t.Border.Alpha(0.5))
 					})
 					continue
 				}
 				hot := l.Hot == i || open == i
-				gmenuItem(c, t, it, hot)
+				gmenuItem(c, t, it, hot, l.TextL())
 			}
 		})
 	})
 	return panel
 }
 
-func gmenuItem(c *wui.Context, t *wui.Theme, it app.MenuEntry, hot bool) {
+// gmenuItem 画一项；textL 是字左边留的（这一层有勾选项时留出勾的位置，见 MenuLevel.TextL）。
+func gmenuItem(c *wui.Context, t *wui.Theme, it app.MenuEntry, hot bool, textL float32) {
 	fg, muted := t.Text, t.TextMuted
 	row := wui.Row(c).Height(app.MenuItemH).Shrink(0).AlignItems(wui.Center).Radius(gmenuItemRad).
 		Padding(0, app.MenuTextR, 0, 0).Label(it.Label)
@@ -342,7 +356,7 @@ func gmenuItem(c *wui.Context, t *wui.Theme, it app.MenuEntry, hot bool) {
 	case hot:
 		bg, text := gmenuHot(t)
 		row.Background(bg)
-		fg, muted = text, text.Alpha(0.75)
+		fg = text
 	}
 	switch {
 	case it.HasSub:
@@ -353,14 +367,14 @@ func gmenuItem(c *wui.Context, t *wui.Theme, it app.MenuEntry, hot bool) {
 		row.Role(wui.RoleMenuItem)
 	}
 	row.Children(func() {
-		wui.Row(c).Width(app.MenuTextL).Shrink(0).Justify(wui.Center).Children(func() {
+		wui.Row(c).Width(textL).Shrink(0).Justify(wui.Center).Children(func() {
 			if it.Checked {
 				wui.Icon(c, iconCheck).FontSize(iconInline).TextColor(fg)
 			}
 		})
-		wui.Text(c, it.Label).FontSize(sideFont).TextColor(fg).SingleLine().Grow(1).MinWidth(0)
+		wui.Text(c, it.Label).FontSize(gmenuFont).TextColor(fg).SingleLine().Grow(1).MinWidth(0)
 		if it.Keys != "" {
-			wui.Text(c, it.Keys).FontSize(sideFont).TextColor(muted).SingleLine().Shrink(0).Margin(0, 0, 0, app.MenuKeysGap)
+			wui.Text(c, it.Keys).FontSize(gmenuFont).TextColor(muted).SingleLine().Shrink(0).Margin(0, 0, 0, app.MenuKeysGap)
 		}
 		if it.HasSub {
 			wui.Row(c).Width(app.MenuArrowW).Shrink(0).Justify(wui.End).Children(func() {

@@ -329,20 +329,20 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 `files.Tree` 由 `git ls-files` 建（带模式位，`LsFilesModes`，认得出符号链接和子模块），未跟踪的文件来自 status。普通文件夹用 `Walk`。树里每个仓库是一段，段头贴顶；展开的目录记在会话 `dirs` 里。
 
-文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）是 Grove 自己画的（issue #48），不用系统菜单
+文件树的右键菜单（`ui/sidebar.go` 的 `treeMenu` / `rowMenu`、仓库行、钉在顶上的行、压缩目录的每一段）、Git 栏段头的右键菜单和分支菜单、标题栏分支胶囊的菜单是 Grove 自己画的（issue #48、#58），不用系统菜单
 （窗口靠下时会折成带滚动箭头的，见 `docs/mygo-pitfalls.md`），也不用 mygo 的 `PopoverMenu`（不能按住右键拖到项上松开、子菜单没有延迟和安全三角、
 灰项说不了原因、点外面那一下会落到底下）：
 
-- 状态机是 `app.PopMenu`（`app/popmenu.go`，每个窗口一个 `App.TreeMenu`），不碰界面：项由建菜单的函数经 `app.MenuSink` 收集（每帧重收，灰不灰跟着状态），
+- 状态机是 `app.PopMenu`（`app/popmenu.go`，每个窗口一个 `App.Menu`），不碰界面：项由建菜单的函数经 `app.MenuSink` 收集（每帧重收，灰不灰跟着状态），
   位置、命中、子菜单延迟（`MenuSubDelay` 0.2 s）、安全三角、灰项提示（`MenuTipDelay` 0.5 s）、按住拖松开（`MenuHoldMin` 0.15 s 或动过）、键盘都在里面，
   `popmenu_test.go` 直接喂事件测（Tester 按不住右键）。选中一项后再跑一遍建菜单的函数，选中那项的 `Chosen()` 报真（和 mygo 的菜单一样）。
-- `ui/gmenu.go` 喂事件和画：`treeMenuPress` 给树里的元素挂 `HandleInput`，右键按下打开菜单，按住时的移动和松开（归按下的那个元素）转给菜单；
+- `ui/gmenu.go` 喂事件和画：`menuPress` 给树里的元素挂 `HandleInput`（文件树以外的用 `ctxMenu`，按钮的菜单用 `openMenuBelow` 在按钮下面开），右键按下打开菜单，按住时的移动和松开（归按下的那个元素）转给菜单；
   `gmenuView`（`root` 里、`pending` 之前）执行选中的项、画各层面板，开着时在 Overlay 里铺一层全窗口的接收层：点外面关菜单并吞掉这一下，
-  滚动、Esc、失去焦点关，键盘也是它接。接收层盖着整个窗口，事件到不了底下的元素，所以 `treeMenuPress` 每帧把挂了菜单的元素
+  滚动、Esc、失去焦点关，键盘也是它接。接收层盖着整个窗口，事件到不了底下的元素，所以 `menuPress` 每帧把挂了菜单的元素
   （位置、`menuZ` 算的叠放次序、建菜单的函数）登记给 `PopMenu.AddTarget`：开着时在别处右键（`Down` 的 button 1，⌃点当右键），
-  按登记的找到那一块（列表空白处兼作裁剪），关掉旧的、在指针处开新的；左键和别的键只关、吞掉。文件树有键盘时 ⇧F10 / 菜单键由
+  按登记的找到那一块（文件树列表的空白处兼作裁剪；文件树以外的 Z 从 `MenuZFree` 起，不受裁剪），关掉旧的、在指针处开新的；左键和别的键只关、吞掉。文件树有键盘时 ⇧F10 / 菜单键由
   列表的 `HandleInput` 接（`openTreeMenuByKey`，用 `TreeSpans` 里光标行的位置），`PopMenu.OpenByKey` 开、第一项高亮；
-  没选就关了，`App.MenuByKey` 让键盘回到文件树。高亮项的底是实心强调色，白字不够 4.5:1 时往黑里调（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
+  没选就关了，`App.MenuByKey` 让键盘回到文件树。样子：字号 13、项高 24、面板圆角 8、内边距 4、项圆角 5，最小宽 180；勾选位只在这一层有勾选项时留（`MenuLevel.TextL`），没有时字左边留 10；高亮项是字色 8% 的淡填充、字色不变（`gmenuHot`）。面板是 `RoleMenu`、项是 `RoleMenuItem`，测试的 `shownMenu` / `chooseMenu` / `closeMenu` 照旧认。
 - 建菜单的函数（`menus.go`）都收 `menu` 接口（`app.MenuSink`），系统菜单（`ContextMenu` / `Menu`）经 `nativeMenu(m)` 适配，所以两边共用；
   灰项说原因用 `whyItem` / `whySub`：系统菜单括在标签后面（`withWhy`），Grove 画的悬停提示。
 
@@ -573,7 +573,7 @@ shell 按需启动：首次需要显示（底栏开着、当前仓库是它、�
 
 同一仓库在两个窗口中打开时，各自拥有独立的监听和终端。
 
-外面交进来的路径（命令行参数、第二个实例转过来的、`open -a Grove`、拖到程序坞图标上）都进 `Route`：工作区文件开新窗口（开着就置于前台）；文件和目录交给前台窗口的 `OpenArgs`。`OpenArg` 对目录的处理：已在工作区里的仓库跳到那一段；不在的先问要不要加进来（只记进会话，不改 `.code-workspace`）；空工作区的窗口直接把目录当工作区打开。
+外面交进来的路径（命令行参数、第二个实例转过来的、`open -a Grove`、拖到程序坞图标上，`OnOpenFile` 分不出来，冷启动时攒着的在 `Restored` 里一起派）都进 `Route`：工作区文件开新窗口（开着就置于前台）；目录走 `routeDir`：已经是哪个窗口的工作区就叫到前面，是哪个开着的窗口里的仓库（或它的 git 根是）就叫到前面并跳到那个仓库，前台窗口是空工作区就在它里面开，别的一个目录开一个新窗口；文件交给前台窗口的 `OpenArgs`。拖进窗口里的（`OnFileDrop`）不走 `Route`，直接交给那个窗口的 `OpenArgs`。`OpenArg` 对目录的处理：已在工作区里的仓库跳到那一段；不在的先问要不要加进来（只记进会话，不改 `.code-workspace`）；空工作区的窗口直接把目录当工作区打开。
 
 ### 启动
 

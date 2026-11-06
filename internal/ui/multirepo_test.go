@@ -1,6 +1,7 @@
 package ui
 
 import (
+	"slices"
 	"testing"
 
 	wui "github.com/egoist/mygo/ui"
@@ -232,4 +233,46 @@ func TestHistoryAllRepos(t *testing.T) {
 	if st, _ := workspace.LoadState(stateDir); st.HistAll {
 		t.Error("state.json 没记下切回当前仓库")
 	}
+}
+
+// Git 栏段头的分支名点开那个仓库的分支菜单：不折叠段落、不切当前仓库（别的仓库就地切）；
+// 仓库右键菜单（文件树和 Git 栏共用）有"分支"子菜单，顶层不超过 14 项。
+func TestGitBarBranchEntry(t *testing.T) {
+	_, _, _, ws := testutil.ThreeRepos(t)
+	a, tt, wait := newUI(t, ws, "")
+	a.St.BottomBar = false
+	a.Exec("view.git")
+	for _, r := range a.Repos {
+		a.RefreshRepo(r, app.WhyManual)
+	}
+	wait("三个仓库的状态", loaded(a))
+	alpha, beta := a.Repos[0], a.Repos[1]
+	a.UseRepo(alpha)
+	tt.Frame()
+	open := beta.GitOpen()
+	if err := tt.Click(i18n.Tf("切换 %s 的分支", "beta")); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	m := shownMenu(t, tt)
+	if !slices.Contains(m, "新建分支…") {
+		t.Fatalf("点分支名该开分支菜单：%q", m)
+	}
+	if beta.GitOpen() != open || a.Current() != alpha {
+		t.Errorf("点分支名不该折叠段落、不该切当前仓库：展开 %v→%v，当前 %s", open, beta.GitOpen(), a.Current().Name)
+	}
+	if o, ok := a.Menu.Owner.(menuOwner); !ok || o.Key != beta.Root {
+		t.Errorf("菜单该对着 beta：%+v", a.Menu.Owner)
+	}
+	closeMenu(t, tt)
+
+	if err := rightClickRow(tt, "beta（仓库）"); err != nil {
+		t.Fatal(err)
+	}
+	tt.Frame()
+	m = shownMenu(t, tt)
+	if n := len(slices.DeleteFunc(slices.Clone(m), func(s string) bool { return s == "-" })); n > 14 || !slices.Contains(m, "分支") || !slices.Contains(m, "更多") {
+		t.Errorf("仓库菜单（%d 项）：%q", n, m)
+	}
+	closeMenu(t, tt)
 }

@@ -463,7 +463,9 @@ func branchButton(a *app.App, c *wui.Context, r *app.Repo) {
 		wui.Text(c, label).FontSize(11).FontWeight(500).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0).Margin(0, 0, textNudge, 0)
 		wui.Icon(c, iconChevron).FontSize(iconInline).TextColor(t.TextMuted)
 	})
-	b.Menu(func(m *wui.Menu) { branchMenu(a, nativeMenu(m), r) })
+	if b.Clicked() {
+		openMenuBelow(a, c, b.Bounds(), menuOwner{"branch", r.Root}, func(m menu) { branchMenu(a, m, r) })
+	}
 }
 
 // copyText 把文字放进剪贴板；测试里换成记下来的（测试不碰剪贴板）。

@@ -184,7 +184,8 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 		bg = windowBg(t)
 	}
 	el := wui.Row(c).Height(34).Padding(0, 4, 0, 2).Gap(6).AlignItems(wui.Center).Background(bg).Cursor(wui.CursorPointer).
-		BorderWidth(1, 0, 0, 0).BorderColor(t.Border.Alpha(0.6)).ContextMenu(func(m *wui.Menu) { repoMenu(a, nativeMenu(m), r, false) })
+		BorderWidth(1, 0, 0, 0).BorderColor(t.Border.Alpha(0.6))
+	ctxMenu(a, c, el, menuOwner{"repoHeader", r.Root}, func(m menu) { repoMenu(a, m, r, false) })
 	underBackdrop(a, c, el)
 	if el.Clicked() {
 		a.ToggleGitRepo(r)
@@ -204,8 +205,18 @@ func repoHeader(a *app.App, c *wui.Context, r *app.Repo) {
 			name.TextColor(t.Text.Alpha(0.85))
 		}
 		if r.Loaded && r.Err == nil && !r.Plain {
-			// 段头挤的时候分支先缩到只剩图标，再轮到仓库名（"全部暂存"一直在，右边少了一格）
-			wui.Row(c).Gap(3).AlignItems(wui.Center).MinWidth(iconInline).Shrink(1000).Children(func() {
+			// 分支名点开这个仓库的分支菜单（别的仓库就地切，不用先切当前仓库）；点它不折叠段落。
+			// 段头挤的时候分支先缩到只剩图标（只剩图标也能点），再轮到仓库名（"全部暂存"一直在，右边少了一格）
+			tip := i18n.Tf("切换 %s 的分支", r.Name)
+			br := wui.ButtonBase(c).Gap(3).AlignItems(wui.Center).MinWidth(iconInline).Shrink(1000).Padding(1, 3).Margin(0, -3).
+				Radius(4).Cursor(wui.CursorPointer).Label(tip).Tooltip(tip)
+			if br.Hovered() {
+				br.Background(toolFill(t, 0.08))
+			}
+			if br.Clicked() {
+				openMenuBelow(a, c, br.Bounds(), menuOwner{"branch", r.Root}, func(m menu) { branchMenu(a, m, r) })
+			}
+			br.Children(func() {
 				wui.Icon(c, iconBranch).FontSize(iconInline).TextColor(t.TextMuted).Shrink(0)
 				wui.Text(c, r.Status.Branch).FontSize(sideSub).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 			})

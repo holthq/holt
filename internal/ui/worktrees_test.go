@@ -78,13 +78,13 @@ func TestWorktreeBlock(t *testing.T) {
 	tt.Advance(time.Second)
 	mustClick(t, tt, i18n.Tf("分支 %s", "main"))
 	elsewhere := "wt/feat · " + i18n.Tf("在 %s 检出", "proj-feat")
-	if menu := tt.Menu(); !slices.Contains(menu, elsewhere) {
+	if menu := shownMenu(t, tt); !slices.Contains(menu, elsewhere) {
 		t.Fatalf("分支菜单里没有 %q：%q", elsewhere, menu)
 	}
-	if err := tt.ChooseMenuItem(elsewhere); err == nil || !strings.Contains(err.Error(), "disabled") {
+	if err := chooseMenu(t, tt, elsewhere); err == nil || !strings.Contains(err.Error(), "disabled") {
 		t.Errorf("在别处检出的分支应该灰着：%v", err)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	// 右键"在工作区中打开"：多一段，段头有"工作树"标签，状态栏写"· 工作树"，原来那行写"已打开"
 	tt.Advance(time.Second)

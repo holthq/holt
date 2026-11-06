@@ -298,29 +298,25 @@ func abs(f float64) float64 {
 	return f
 }
 
-// 高亮项的字和底至少 4.5:1：每个强调色、浅色深色都量（深色主题的强调色调亮了，白字不够时底往黑里调）。
-// 浅色主题里本来就够的不动（青色的浅色白字只有 4.2:1，也调深一点）。
+// 高亮项是淡填充（字色的 8%–10%，不超过 12%）、字色不变；叠在面板底上之后字和底至少 4.5:1，浅色深色都量。
 func TestGroveMenuHotContrast(t *testing.T) {
-	white := wui.RGBA(255, 255, 255, 1)
-	for name, k := range accentColors {
-		for _, dark := range []bool{false, true} {
-			th := &wui.Theme{Dark: dark, Accent: k.light, AccentText: white}
-			if dark {
-				th.Accent = k.dark
-				if k.darkText.A > 0 {
-					th.AccentText = k.darkText
-				}
-			}
-			bg, fg := gmenuHot(th)
-			if r := contrast(fg, bg); r < 4.5 {
-				t.Errorf("%s dark=%v：高亮项 %v 上的字 %v 只有 %.2f:1", name, dark, bg, fg, r)
-			}
-			if dark && fg != white {
-				t.Errorf("%s 深色：高亮项该是白字：%v", name, fg)
-			}
-			if !dark && contrast(th.AccentText, th.Accent) >= 4.5 && bg != th.Accent {
-				t.Errorf("%s 浅色：强调色本来就够，不该改底：%v → %v", name, th.Accent, bg)
-			}
+	for _, dark := range []bool{false, true} {
+		th := wui.LightTheme()
+		if dark {
+			th = wui.DarkTheme()
+		}
+		bg, fg := gmenuHot(th)
+		if fg != th.Text {
+			t.Errorf("dark=%v：高亮项的字该不变色：%v", dark, fg)
+		}
+		if bg.A == 0 || bg.A > 31 {
+			t.Errorf("dark=%v：高亮项该是淡填充：%v", dark, bg)
+		}
+		// 叠在面板底上之后，字照样够 4.5:1
+		panel := gmenuBg(th)
+		hot := panel.Mix(wui.RGBA(bg.R, bg.G, bg.B, 1), float32(bg.A)/255)
+		if r := contrast(fg, hot); r < 4.5 {
+			t.Errorf("dark=%v：高亮项 %v 上的字 %v 只有 %.2f:1", dark, hot, fg, r)
 		}
 	}
 }

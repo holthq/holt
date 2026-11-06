@@ -48,15 +48,15 @@ func TestGitRefsMenus(t *testing.T) {
 
 	// 分支下拉底下：新建分支、改名、删除分支、删除远程分支（有上游，没有"发布"）
 	mustClickRow(t, tt, "分支 main")
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	i := slices.Index(menu, "新建分支…")
 	if i < 0 || !slices.Equal(menu[i:], []string{"新建分支…", "重命名当前分支…", "删除分支", "删除远程分支"}) {
 		t.Fatalf("分支菜单: %q", menu)
 	}
-	if err := tt.ChooseMenuItem("删除分支", "main"); err == nil {
+	if err := chooseMenu(t, tt, "删除分支", "main"); err == nil {
 		t.Error("删除分支里不该有当前分支")
 	}
-	if err := tt.ChooseMenuItem("删除分支", "feature"); err != nil {
+	if err := chooseMenu(t, tt, "删除分支", "feature"); err != nil {
 		t.Fatal(err)
 	}
 	wait("删分支的问话", func() bool { return a.ConfirmOpen })
@@ -70,8 +70,8 @@ func TestGitRefsMenus(t *testing.T) {
 
 	// 新建标签（打在 HEAD）→ 推送 → 删除时勾"同时删除 origin 上的"
 	mustClickRow(t, tt, "分支 main")
-	if err := tt.ChooseMenuItem("标签", "新建标签…"); err != nil {
-		t.Fatalf("新建标签: %v；菜单=%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "标签", "新建标签…"); err != nil {
+		t.Fatalf("新建标签: %v；菜单=%q", err, shownMenu(t, tt))
 	}
 	tt.Frame()
 	if !tt.HasText("打在 main 的 HEAD 上；写了信息是附注标签，不写是轻量标签。") || !tt.Focused("标签名") {
@@ -85,12 +85,12 @@ func TestGitRefsMenus(t *testing.T) {
 	mustClickRow(t, tt, "新建")
 	wait("打标签", func() bool { return idle(r)() && hasTag("v2") })
 	mustClickRow(t, tt, "分支 main")
-	if err := tt.ChooseMenuItem("标签", "推送标签到 origin", "v2"); err != nil {
-		t.Fatalf("推送标签: %v；菜单=%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "标签", "推送标签到 origin", "v2"); err != nil {
+		t.Fatalf("推送标签: %v；菜单=%q", err, shownMenu(t, tt))
 	}
 	wait("推送标签", func() bool { return idle(r)() && slices.Equal(remoteRefs("refs/tags"), []string{"refs/tags/v2"}) })
 	mustClickRow(t, tt, "分支 main")
-	if err := tt.ChooseMenuItem("标签", "删除标签", "v2"); err != nil {
+	if err := chooseMenu(t, tt, "标签", "删除标签", "v2"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -103,7 +103,7 @@ func TestGitRefsMenus(t *testing.T) {
 
 	// 改名：上游取消，菜单里多了"发布到 origin"，点了在远程上新建 trunk
 	mustClickRow(t, tt, "分支 main")
-	if err := tt.ChooseMenuItem("重命名当前分支…"); err != nil {
+	if err := chooseMenu(t, tt, "重命名当前分支…"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
@@ -113,8 +113,8 @@ func TestGitRefsMenus(t *testing.T) {
 	wait("改名", func() bool { return idle(r)() && cur() == "trunk" && app.Upstream(r) == "" })
 	tt.Frame()
 	mustClickRow(t, tt, "分支 trunk")
-	if err := tt.ChooseMenuItem("发布到 origin（推送并设置上游）"); err != nil {
-		t.Fatalf("发布: %v；菜单=%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "发布到 origin（推送并设置上游）"); err != nil {
+		t.Fatalf("发布: %v；菜单=%q", err, shownMenu(t, tt))
 	}
 	wait("发布", func() bool { return idle(r)() && app.Upstream(r) == "origin/trunk" })
 	if got := remoteRefs("refs/heads"); !slices.Equal(got, []string{"refs/heads/feature", "refs/heads/main", "refs/heads/trunk"}) {
@@ -123,7 +123,7 @@ func TestGitRefsMenus(t *testing.T) {
 
 	// 删除远程分支 origin/feature（本地的 feature 前面删了）；origin/main 是裸远程的 HEAD，git 会拒绝删
 	mustClickRow(t, tt, "分支 trunk")
-	if err := tt.ChooseMenuItem("删除远程分支", "origin/feature"); err != nil {
+	if err := chooseMenu(t, tt, "删除远程分支", "origin/feature"); err != nil {
 		t.Fatal(err)
 	}
 	wait("删远程分支的问话", func() bool { return a.ConfirmOpen })

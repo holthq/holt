@@ -39,15 +39,15 @@ func TestGitDailyMenus(t *testing.T) {
 
 	// 分支下拉：两个子菜单在"新建分支…"上面；合并不问
 	mustClickRow(t, tt, "分支 main")
-	menu := tt.Menu()
+	menu := shownMenu(t, tt)
 	im, ir, in := slices.Index(menu, "合并到当前分支"), slices.Index(menu, "把当前分支变基到"), slices.Index(menu, "新建分支…")
 	if im < 0 || ir != im+1 || in < ir {
 		t.Fatalf("分支菜单: %q", menu)
 	}
-	if err := tt.ChooseMenuItem("合并到当前分支", "main"); err == nil {
+	if err := chooseMenu(t, tt, "合并到当前分支", "main"); err == nil {
 		t.Error("子菜单里不该有当前分支")
 	}
-	if err := tt.ChooseMenuItem("合并到当前分支", "feature"); err != nil {
+	if err := chooseMenu(t, tt, "合并到当前分支", "feature"); err != nil {
 		t.Fatal(err)
 	}
 	wait("合并", func() bool { return idle(r)() && r.Status.Ahead == 3 })
@@ -59,7 +59,7 @@ func TestGitDailyMenus(t *testing.T) {
 	}
 	// feature 已经并进来了：变基到它不问、只说一声
 	mustClickRow(t, tt, "分支 main")
-	if err := tt.ChooseMenuItem("把当前分支变基到", "feature"); err != nil {
+	if err := chooseMenu(t, tt, "把当前分支变基到", "feature"); err != nil {
 		t.Fatal(err)
 	}
 	wait("不用变基", func() bool { return tt.HasText("main 已经在 feature 上面了，不用变基") })
@@ -72,10 +72,10 @@ func TestGitDailyMenus(t *testing.T) {
 		t.Fatalf("右键推送按钮: %v；texts=%q", err, tt.Texts())
 	}
 	tt.Frame()
-	if menu := tt.Menu(); !slices.Equal(menu, []string{"强制推送（--force-with-lease）…", "同步（拉取再推送）"}) {
+	if menu := shownMenu(t, tt); !slices.Equal(menu, []string{"强制推送（--force-with-lease）…", "同步（拉取再推送）"}) {
 		t.Errorf("推送按钮右键: %q", menu)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	// 状态栏的 ↑3：点了同步（拉取 ff-only 没东西，再推送）
 	mustClickRow(t, tt, "同步 ↑3")
@@ -97,24 +97,24 @@ func TestGitDailyMenus(t *testing.T) {
 		t.Fatalf("右键合并提交: %v", err)
 	}
 	tt.Frame()
-	menu = tt.Menu()
+	menu = shownMenu(t, tt)
 	for _, want := range []string{"拣选这个提交（就是 HEAD）", "还原这个提交（合并提交，到终端里 revert -m）", "重置到这个提交（就是 HEAD）"} {
 		if !slices.Contains(menu, want) {
 			t.Errorf("合并提交的右键菜单没有 %q: %q", want, menu)
 		}
-		if err := tt.ChooseMenuItem(want); err == nil || !strings.Contains(err.Error(), "disabled") {
+		if err := chooseMenu(t, tt, want); err == nil || !strings.Contains(err.Error(), "disabled") {
 			t.Errorf("%q 应灰着: %v", want, err)
 		}
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	if err := rightClickRow(tt, "main two"); err != nil {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if menu := tt.Menu(); !slices.Contains(menu, "拣选这个提交（HEAD 里已经有了）") || !slices.Contains(menu, "还原这个提交…") {
+	if menu := shownMenu(t, tt); !slices.Contains(menu, "拣选这个提交（HEAD 里已经有了）") || !slices.Contains(menu, "还原这个提交…") {
 		t.Errorf("main two 的右键菜单: %q", menu)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 
 	// 还原先问，确认后多一个 Revert 提交
 	mustRightClickRow(t, tt, "main three", "还原这个提交…")

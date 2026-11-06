@@ -34,10 +34,10 @@ func TestOngoingBanner(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if err := tt.ChooseMenuItem("继续合并"); err == nil || !strings.Contains(err.Error(), "disabled") {
-		t.Errorf("有冲突时右键里的继续合并应是灰的: %v；菜单=%q", err, tt.Menu())
+	if err := chooseMenu(t, tt, "继续合并"); err == nil || !strings.Contains(err.Error(), "disabled") {
+		t.Errorf("有冲突时右键里的继续合并应是灰的: %v；菜单=%q", err, shownMenu(t, tt))
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	mustClick(t, tt, "继续合并") // 灰的：点了什么都不做（图标按钮，读屏名是"继续合并"）
 	if r.Busy != "" || len(r.Queue) != 0 || a.Toast != "" {
 		t.Fatalf("灰的继续被点了: busy %q toast %q", r.Busy, a.Toast)
@@ -84,10 +84,10 @@ func TestOngoingBanner(t *testing.T) {
 		t.Fatal(err)
 	}
 	tt.Frame()
-	if menu := strings.Join(tt.Menu(), "|"); !strings.Contains(menu, "继续变基") || !strings.Contains(menu, "跳过这个提交…") || !strings.Contains(menu, "中止变基…") {
+	if menu := strings.Join(shownMenu(t, tt), "|"); !strings.Contains(menu, "继续变基") || !strings.Contains(menu, "跳过这个提交…") || !strings.Contains(menu, "中止变基…") {
 		t.Errorf("右键菜单: %s", menu)
 	}
-	tt.CloseMenu()
+	closeMenu(t, tt)
 	mustClick(t, tt, "跳过")
 	mustText(t, tt, "跳过 rebase 停在的这个提交？")
 	if r.Busy != "" {
