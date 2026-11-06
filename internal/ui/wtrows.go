@@ -29,36 +29,6 @@ func amberText(t *wui.Theme) wui.Color {
 	return wui.Hex("#8A5000")
 }
 
-// accentSolid 是强调色实心按钮（合并到 main）的底。
-func accentSolid(t *wui.Theme) wui.Color {
-	if t.Dark {
-		return wui.Hex("#5F7E9F")
-	}
-	return wui.Hex("#4E6E8E")
-}
-
-// accentIconButton 把 b 画成强调色实心的方按钮（合并到 main）：边长 wtBtnSize+2、圆角 6、白色图标，
-// 悬停 / 按下变色；dim 时灰着（Opacity 0.4）、点了没反应。b 由调用方给（Box，或要能用键盘按到的 ButtonBase）。
-// 返回这一帧点没点。
-func accentIconButton(c *wui.Context, b wui.Element, ic *wui.SVG, label, tip string, dim bool) bool {
-	b.Size(wtBtnSize+2, wtBtnSize+2).Radius(6).AlignItems(wui.Center).Justify(wui.Center).Shrink(0).
-		Label(label).Cursor(wui.CursorPointer)
-	tooltip(c, b, tip)
-	bg := accentSolid(c.Theme())
-	switch {
-	case dim:
-		b.Opacity(0.4)
-	case b.Pressed():
-		bg = bg.Mix(wui.Hex("#000000"), 0.12)
-	case b.Hovered():
-		bg = bg.Mix(wui.Hex("#FFFFFF"), 0.1)
-	}
-	b.Background(bg).Children(func() {
-		wui.Icon(c, ic).FontSize(iconRow).TextColor(wui.Hex("#FFFFFF"))
-	})
-	return !dim && b.Clicked()
-}
-
 // wtStateName 是工作树状态的名字（悬停提示、读屏）。
 func wtStateName(s app.WtState) string {
 	switch s {
@@ -155,19 +125,15 @@ func wtSummaryRow(a *app.App, row wui.ListRow, cr app.ChangeRow, g *gitFrame) {
 			}
 		}
 		wui.Spacer(c).Grow(1)
-		review := squareButton(c.Key("review"), iconEye, i18n.T("审查"), i18n.T("审查：在主区看它比主分支多出的改动（main...分支）"),
+		squareButton(c.Key("review"), iconEye, i18n.T("审查"), i18n.T("审查：在主区看它比主分支多出的改动（main...分支）"),
 			wtBtnSize+2, iconRow, false, func() { g.do(func() { a.ReviewWorktree(r, w) }) })
-		review.Background(t.Text.Alpha(0.07))
 		into := r.Status.Branch
 		if into == "" {
 			into = "main"
 		}
-		why := app.MergeWorktreeWhy(r, w)
-		tip := i18n.Tf("合并到 %s…", into)
-		if why != "" {
-			tip = i18n.Tf("合并到 %s：%s", into, why)
-		}
-		if accentIconButton(c, wui.Box(c.Key("merge")), iconMerge, i18n.Tf("合并到 %s…", into), tip, why != "") {
+		// 合并：普通图标按钮、强调色的图标（不再是实心的方底）；不能合并时灰着、提示里写原因
+		label := i18n.Tf("合并到 %s…", into)
+		if iconActionSize(c.Key("merge"), wtBtnSize+2, iconMerge, label, label, app.MergeWorktreeWhy(r, w), t.Accent) {
 			g.do(func() { a.MergeWorktree(r, w) })
 		}
 	})

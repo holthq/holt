@@ -38,7 +38,7 @@ func TestOngoingBanner(t *testing.T) {
 		t.Errorf("有冲突时右键里的继续合并应是灰的: %v；菜单=%q", err, tt.Menu())
 	}
 	tt.CloseMenu()
-	mustClick(t, tt, "继续") // 灰的：点了什么都不做
+	mustClick(t, tt, "继续合并") // 灰的：点了什么都不做（图标按钮，读屏名是"继续合并"）
 	if r.Busy != "" || len(r.Queue) != 0 || a.Toast != "" {
 		t.Fatalf("灰的继续被点了: busy %q toast %q", r.Busy, a.Toast)
 	}
@@ -57,7 +57,7 @@ func TestOngoingBanner(t *testing.T) {
 	if !a.CanRun(app.Find("git.continue")) {
 		t.Error("冲突解决了 Git 菜单里的继续应能点")
 	}
-	mustClick(t, tt, "继续")
+	mustClick(t, tt, "继续合并")
 	wait("继续合并", func() bool { return idle(r)() && r.Extra.Ongoing == git.NoOp })
 	tt.Frame()
 	if shows(tt, "合并中：Merge branch 'feature'") || shows(tt, "放弃") {

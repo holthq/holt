@@ -29,7 +29,7 @@ func sidebar(a *app.App, c *wui.Context) {
 		wui.Row(c).Height(headerHeight+4).Padding(0, 8).Gap(4).AlignItems(wui.Center).Shrink(0).Children(func() {
 			seg := segIconTabs(c, &mode, seg{iconFiles, i18n.T("文件"), app.Tip(i18n.T("文件"), "view.files")},
 				seg{iconSearch, i18n.T("搜索"), app.Tip(i18n.T("搜索"), "view.search")}, seg{iconBranch, "Git", app.Tip("Git", "view.git")},
-				seg{iconOutline, i18n.T("大纲"), i18n.T("当前文件的大纲")}).Grow(1)
+				seg{iconOutline, i18n.T("大纲"), i18n.T("当前文件的大纲")}) // 靠左一组，不铺满
 			if seg.Changed() {
 				a.ShowSidebar(sidebarModes[mode])
 			}

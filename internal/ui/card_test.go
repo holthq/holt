@@ -136,8 +136,15 @@ func TestCardGeometry(t *testing.T) {
 	if got := p.run(int((tab.X+tab.W+12)*s), lineY, 1, 0, 8); got != n('l', 8) {
 		t.Errorf("当前标签右边的卡片头底下应有描边：%s", got)
 	}
-	if got := p.run(int(tab.X*s), int((tab.Y+tab.H/2)*s), 1, 0, s+2); got != n('l', s)+"cc" {
-		t.Errorf("当前标签的左边应是 1 pt 的描边、里面是卡片底：%s", got)
+	// 通栏的标签：第一个贴着卡片左边（左边是卡片自己的描边、没有自己的线），右边一条 1 pt 的分隔线
+	if got := p.run(int(tab.X*s)-s, int((tab.Y+tab.H/2)*s), 1, 0, s+2); got != n('l', s)+"cc" {
+		t.Errorf("当前标签应贴着卡片左边的描边、里面是卡片底：%s", got)
+	}
+	if got := p.run(int((tab.X+tab.W)*s)-s-2, int((tab.Y+tab.H/2)*s), 1, 0, 2+s); got != "cc"+n('l', s) {
+		t.Errorf("当前标签的右边应是 1 pt 的分隔线：%s", got)
+	}
+	if left := side.X + side.W + 1; tab.X != left { // 缝的右边是卡片，再里面 1 pt 描边
+		t.Errorf("第一个标签应从卡片左边的描边里面（%.1f）起，在 %.1f", left, tab.X)
 	}
 
 	// WORKBENCH_SHOT=目录 时把量的几处裁出来（4 倍）：编辑器卡片左上角、当前标签和标签条、终端分屏的缝

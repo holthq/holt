@@ -110,6 +110,8 @@ type Repo struct {
 	Terms      []*TermTab       // 底栏里这个仓库的终端标签（第一次要显示时才建，见 terminals.go）
 	EdTerms    []*TermTab       // 开在编辑器区的终端标签：各是一个 docs.Term 标签，底栏的标签条、TermSel 不算它们
 	TermSel    int              // 当前的终端标签
+	TermStrip  ui.ScrollState   // 底栏终端标签条的横向滚动（界面按它画底边的细滚动条）
+	TermShown  *TermTab         // 上次滚到看得见的终端标签：换了当前标签才再滚一次（同 Group.TabShown）
 	termNum    int              // 开过几个终端标签（默认名"终端 n"用）
 	termsInit  bool             // Terms 建过了
 	savedTerms *workspace.Terms // 会话里记着的终端标签，initTerms 用

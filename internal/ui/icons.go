@@ -119,3 +119,14 @@ var (
 	iconSearchDoc = icon(`<path d="M14 2v4a2 2 0 0 0 2 2h4"/><path d="M4.268 21a2 2 0 0 0 1.727 1H18a2 2 0 0 0 2-2V7l-5-5H6a2 2 0 0 0-2 2v3"/><path d="m9 18-1.5-1.5"/><circle cx="5" cy="14" r="3"/>`)  // 搜索编辑器（file-search）
 	iconPlay      = icon(`<polygon points="6 3 20 12 6 21 6 3"/>`)                                                                                                                                       // 运行任务（play）
 )
+
+// 面板里的动作按钮改成只有图标（#56）：冲突条、进行中横幅、提交框的 amend 开关。
+var (
+	iconAmend       = icon(`<path d="M13 21h8"/><path d="m15 5 4 4"/><path d="M21.174 6.812a1 1 0 0 0-3.986-3.987L3.842 16.174a2 2 0 0 0-.5.83l-1.321 4.352a.5.5 0 0 0 .623.622l4.353-1.32a2 2 0 0 0 .83-.497z"/>`) // 修改上一次提交（pencil-line）
+	iconTakeOurs    = icon(`<path d="M5 3h14"/><path d="m18 13-6-6-6 6"/><path d="M12 7v14"/>`)                                                                                                                     // 用我的（arrow-up-to-line）
+	iconTakeTheirs  = icon(`<path d="M12 17V3"/><path d="m6 11 6 6 6-6"/><path d="M19 21H5"/>`)                                                                                                                     // 用他们的（arrow-down-to-line）
+	iconTakeBoth    = icon(`<path d="M12 22v-6"/><path d="M12 8V2"/><path d="M4 12H2"/><path d="M10 12H8"/><path d="M16 12h-2"/><path d="M22 12h-2"/><path d="m15 19-3-3-3 3"/><path d="m15 5-3 3-3-3"/>`)          // 两个都要（fold-vertical）
+	iconChevronsUp  = icon(`<path d="m17 11-5-5-5 5"/><path d="m17 18-5-5-5 5"/>`)                                                                                                                                  // 全部用我的
+	iconChevronsDn  = icon(`<path d="m7 6 5 5 5-5"/><path d="m7 13 5 5 5-5"/>`)                                                                                                                                     // 全部用他们的
+	iconSkipForward = icon(`<polygon points="5 4 15 12 5 20 5 4"/><line x1="19" x2="19" y1="5" y2="19"/>`)                                                                                                          // 跳过（skip-forward）
+)

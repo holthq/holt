@@ -331,14 +331,20 @@ func replaceField(a *app.App, c *wui.Context) {
 			a.ReplaceAll()
 		}
 	})
-	label := i18n.Tf("全部替换（%d 处）", n)
-	wui.Row(c).Gap(4).AlignItems(wui.Center).Children(func() { // 右边的“预览”开第一个文件的替换预览
-		if wui.PrimaryButton(c, label).FontSize(11.5).Tooltip(app.Tip(i18n.T("全部替换…"), "search.replaceAll")).
-			Disabled(n == 0 || !s.CanReplace()).Grow(1).MinWidth(0).Clicked() {
+	// 一行字说有几处，右边两个图标：全部替换（强调色）、预览（开第一个文件的替换预览）
+	why := ""
+	switch {
+	case n == 0:
+		why = i18n.T("没有要替换的")
+	case !s.CanReplace():
+		why = i18n.T("等搜索完成")
+	}
+	wui.Row(c).Gap(4).AlignItems(wui.Center).Children(func() {
+		wui.Text(c, i18n.Tn("%d 处", n)).FontSize(11).TextColor(c.Theme().TextMuted).SingleLine().Ellipsis("…").Grow(1).MinWidth(0).Margin(0, 0, 0, 2)
+		if iconAction(c.Key("replaceAll"), iconReplace, i18n.Tf("全部替换（%d 处）", n), app.Tip(i18n.T("全部替换…"), "search.replaceAll"), why, c.Theme().Accent) {
 			a.ReplaceAll()
 		}
-		if wui.Button(c, i18n.T("预览")).FontSize(11.5).Tooltip(i18n.T("先在一个 diff 标签里看第一个文件换完的样子，不写盘")).
-			Disabled(n == 0 || !s.CanReplace()).Shrink(0).Clicked() {
+		if iconAction(c.Key("preview"), iconEye, i18n.T("预览"), i18n.T("先在一个 diff 标签里看第一个文件换完的样子，不写盘"), why, wui.Transparent) {
 			a.PreviewReplaceFirst()
 		}
 	})

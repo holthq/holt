@@ -180,8 +180,11 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 行的身份是 `ChangeRow.Key()`（仓库 + 组 + 路径），选中 `GitSel`、悬停 `GitHover`、多选 `GitChosen` 都按键记，因此刷新后即使行的位置变化，仍会保持选中原来的项目。多选的操作（`StageChanges` / `UnstageChanges` / `DiscardChanges` / `OpenDiffs`）先按仓库分组（`byRepo`），再加入各自的队列；一次打开超过 20 个 Diff 时先要求确认。
 变更行悬停（或列表有键盘时选中）出的行内按钮（`ui/gitbar.go` 的 `changeActions` / `stageActions`）用 `ActChanges`：指针所在的行在两行以上的多选里时作用于选中的全部，否则只有这一行；按钮的动作经 `gitFrame.do` 留到列表建完再做。列表有焦点时的空格 / ⌘⌫ 是 `changes.toggleStage` / `changes.discard`（上下文 `GitList`，由列表自己接键，命令面板也能用），作用于 `KeyChanges`。暂存 / 取消暂存 / 丢弃会让选中的那行挪走时，`markGitAfter` 先记下它后面（没有就是前面）第一个不在选中里的行，状态重读后 `syncChangeSel` 跟不上当前标签时停在那一行。
 
-提交框每个仓库一个（`CommitOpen` / `CommitMsg`），在段头（和工作树块头）下面、改动分组上面；`ShowCommit` 把段头滚到顶上（`ui.Start`），贴顶的段头不挡它；有已暂存的改动、写了信息、在修改上一次提交、合并的冲突都解决了，或者用户点开了“提交…”时展开（`CommitShown`）。⌘↩ 提交键盘所在的那个。提交按钮是和"撤销上次提交"一样的普通图标按钮（`rowToolSize` 见方、`toolStyle`，没有底色，悬停才有淡底；`ButtonBase` 所以 Tab 按得到），"提交 N 个文件" / "修改提交"只进读屏和提示，
-不能提交（`CanCommit`）时画灰、点了不提交，但不调 `Disabled`（mygo 的 `Disabled` 不出悬停提示），提示里写原因（`CommitWhy`）。最近 30 条提交信息（所有仓库共用）存在 `St.CommitMsgs`，提交框里 ↑↓ 翻。
+提交框每个仓库一个（`CommitOpen` / `CommitMsg`），在段头（和工作树块头）下面、改动分组上面；`ShowCommit` 把段头滚到顶上（`ui.Start`），贴顶的段头不挡它；有已暂存的改动、写了信息、在修改上一次提交、合并的冲突都解决了，或者用户点开了“提交…”时展开（`CommitShown`）。⌘↩ 提交键盘所在的那个。提交按钮是和"撤销上次提交"一样的普通图标按钮（`iconAction`：`rowToolSize` 见方、`toolStyle`，没有底色，悬停才有淡底；`ButtonBase` 所以 Tab 按得到），"提交 N 个文件" / "修改提交"只进读屏和提示；
+左边"修改上一次提交"是图标开关（`filterToggleOf`，`rowToolSize` 见方，开着是强调色），提交中（`Committing`）画灰、点了不切；
+不能提交（`CanCommit`）时画灰、点了不提交，但不调 `Disabled`（mygo 的 `Disabled` 不出悬停提示），提示里写原因（`CommitWhy`）。
+面板里的动作（冲突条、进行中横幅、替换预览条、Diff 选行条和块按钮、搜索的全部替换、变基向导、终端退出浮条）都用同一个 `iconAction`
+（`ui/widgets.go`）：只有图标，读屏名是原来按钮上的字，`why` 不空时画灰、提示里写原因、点了没反应。段头的"全部暂存"有可暂存的改动就一直画，不看悬停。最近 30 条提交信息（所有仓库共用）存在 `St.CommitMsgs`，提交框里 ↑↓ 翻。
 
 ### 合并的历史
 
@@ -462,7 +465,9 @@ agent 记号：`git.AgentOf` 认提交正文里的 `Co-Authored-By:` trailer（�
 
 ### 编辑器组
 
-`app/groups.go`。主区能左右 / 上下分成几组，可以嵌套，每组一条标签条。拆分树是 `EdNode`（叶子是一组，否则是左右或上下的两半和比例），存进会话的 `layout`。
+`app/groups.go`。主区能左右 / 上下分成几组，可以嵌套，每组一条标签条。标签条（`ui/tabs.go` 的 `tabStrip`）和底栏的终端标签（`ui/bottom.go`）共用 `scrollStrip`：横向滚动、自己在底边画 2 pt 的细条，
+滚动位置分别在 `Group.TabStrip` 和 `Repo.TermStrip`，换了当前标签滚到看得见（`Group.TabShown` / `Repo.TermShown`）。每个标签是 `panelTab`：
+通栏平铺、同高 `headerHeight`、没有圆角，右边一条 `cardLine`，当前的用卡身底色盖住卡片头底下那条线；第一个贴着卡片左边（卡片头左 padding 0）。拆分树是 `EdNode`（叶子是一组，否则是左右或上下的两半和比例），存进会话的 `layout`。
 
 当前有焦点的组，其标签保存在 `a.Docs` / `a.DocSel` 里，所以“当前标签”的代码不用管组；别的组的标签放在组自己那里，换组时两边对调（`swapTo`）。要遍历所有标签用 `AllDocs()`。
 

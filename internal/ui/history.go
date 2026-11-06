@@ -356,7 +356,7 @@ func moreRow(c *wui.Context, shown int, loading bool, tip string, more func()) {
 	t := c.Theme()
 	wui.Row(c).Padding(6, 10).Gap(8).AlignItems(wui.Center).Shrink(0).BorderWidth(1, 0, 0, 0).BorderColor(t.Border).Children(func() {
 		wui.Textf(c, i18n.T("已显示 %d 条"), shown).FontSize(11).TextColor(t.TextMuted).Grow(1).Tooltip(tip)
-		if wui.Button(c, i18n.Tf("再读 %s 条", strconv.Itoa(git.LogPage))).Disabled(loading).Clicked() {
+		if linkButton(c, i18n.Tf("再读 %s 条", strconv.Itoa(git.LogPage)), "").Clicked() && !loading {
 			more()
 		}
 	})

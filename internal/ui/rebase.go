@@ -156,18 +156,25 @@ func rebaseFooter(a *app.App, c *wui.Context, d *docs.Doc) {
 		})
 		if !p.Stopped {
 			why := app.RebaseProblem(p)
-			tip := i18n.T("先问一次，再跑 git rebase -i --autostash")
-			if why != "" {
-				tip = why
-			}
-			if wui.PrimaryButton(c, i18n.T("开始变基")).Disabled(why != "").Tooltip(tip).Clicked() {
+			if iconAction(c.Key("start"), iconPlay, i18n.T("开始变基"), i18n.T("先问一次，再跑 git rebase -i --autostash"), why, t.Accent) {
 				a.StartRebase(d)
 			}
-			if wui.Button(c, i18n.T("重置")).Disabled(p.Running || !p.Changed()).Tooltip(i18n.T("换回全是 pick、原来的顺序")).Clicked() {
+			resetWhy := ""
+			switch {
+			case p.Running:
+				resetWhy = i18n.T("正在变基")
+			case !p.Changed():
+				resetWhy = i18n.T("还没改过")
+			}
+			if iconAction(c.Key("reset"), iconUndo, i18n.T("重置"), i18n.T("换回全是 pick、原来的顺序"), resetWhy, wui.Transparent) {
 				a.ResetRebase(p)
 			}
 		}
-		if wui.Button(c, i18n.T("关闭")).Disabled(p.Running).Tooltip(i18n.T("关掉向导（什么都不改）")).Clicked() {
+		closeWhy := ""
+		if p.Running {
+			closeWhy = i18n.T("正在变基")
+		}
+		if iconAction(c.Key("close"), iconClose, i18n.T("关闭"), i18n.T("关掉向导（什么都不改）"), closeWhy, wui.Transparent) {
 			a.CloseDoc(d)
 		}
 	})

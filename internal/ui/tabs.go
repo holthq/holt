@@ -229,8 +229,8 @@ func termDocTools(a *app.App, c *wui.Context, d *docs.Doc) {
 // 点别的组的这些按钮先把键盘换到那组，打开的东西也落在那组。rows：文件树的行拖着停在这组上、松手会开。
 func tabBar(a *app.App, c *wui.Context, g *app.Group, d *docs.Doc, rows bool) {
 	in := func(fn func()) func() { return func() { a.FocusGroup(g); fn() } }
-	bar := cardHeader(c).Padding(0, 6, 0, 6).Gap(4)
-	if rows { // 文件树的行拖着停在这组上：同文件树里能放的目录行
+	bar := cardHeader(c).Padding(0, 6, 0, 0).Gap(4) // 左边 0：第一个标签贴着卡片左边
+	if rows {                                       // 文件树的行拖着停在这组上：同文件树里能放的目录行
 		bar.Background(c.Theme().Accent.Alpha(0.12))
 	}
 	bar.Children(func() {
@@ -281,22 +281,31 @@ func tabBar(a *app.App, c *wui.Context, g *app.Group, d *docs.Doc, rows bool) {
 // stripHidden 是标签条的滚动区比标签条高出、裁掉的那一截：mygo 横向滚动条的轨道（条宽 6，上下各 3）。
 const stripHidden = 12
 
-// tabStrip 是横向滚动的标签。mygo 的横向滚动条 6 pt 宽、盖在标签的字上，宽度是整个窗口一份的主题设置、单改不了这一个：
-// 所以滚动区比标签条高出 stripHidden、连同里面的滚动条裁掉，自己在底边画一条 2 pt 的细条，指针在标签条上才有（VS Code 那样）。
+// tabStrip 是一组横向滚动的编辑器标签，占满标签条除了右端按钮以外的地方。
 func tabStrip(a *app.App, c *wui.Context, g *app.Group) {
-	t := c.Theme()
 	ds, sel := a.GroupDocs(g)
-	box := wui.Box(c.Key("stripBox")).Grow(1).MinWidth(0).Height(headerHeight).Clip()
+	scrollStrip(c, &g.TabStrip, true, func() {
+		// 画的是一份拷贝：右键菜单里关标签、拖标签放下都在这一圈里改组里的标签
+		for i, x := range slices.Clone(ds) {
+			tab(a, c.Key(x), g, i, x, i == sel)
+		}
+	})
+}
+
+// scrollStrip 是卡片头里横向滚动的一排标签（编辑器、底栏的终端）。mygo 的横向滚动条 6 pt 宽、盖在标签的字上，宽度是整个窗口
+// 一份的主题设置、单改不了这一个：所以滚动区比标签条高出 stripHidden、连同里面的滚动条裁掉，自己在底边画一条 2 pt 的细条，
+// 指针在标签条上才有（VS Code 那样）。grow：占满剩下的地方；不然只有标签那么宽（标签少时后面的东西紧跟着最后一个标签），
+// 挤不下了再缩、滚。
+func scrollStrip(c *wui.Context, s *wui.ScrollState, grow bool, fn func()) {
+	t := c.Theme()
+	box := wui.Box(c.Key("stripBox")).MinWidth(0).Shrink(1).Height(headerHeight).Clip()
+	if grow {
+		box.Grow(1)
+	}
 	hover := box.Hovered()
 	box.Children(func() {
-		wui.ScrollHorizontal(c.Key("strip")).TrackScroll(&g.TabStrip).Height(headerHeight+stripHidden).Shrink(0).Padding(0, 0, stripHidden, 0).
-			Gap(2).AlignItems(wui.Center).Children(func() {
-			// 画的是一份拷贝：右键菜单里关标签、拖标签放下都在这一圈里改组里的标签
-			for i, x := range slices.Clone(ds) {
-				tab(a, c.Key(x), g, i, x, i == sel)
-			}
-		})
-		s := &g.TabStrip
+		wui.ScrollHorizontal(c.Key("strip")).TrackScroll(s).Height(headerHeight+stripHidden).Shrink(0).Padding(0, 0, stripHidden, 0).
+			AlignItems(wui.Center).Children(fn)
 		if w := s.Bounds(c).W; hover && s.MaxX > 0 && w > 0 {
 			thumb := max(w*w/(w+s.MaxX), 24)
 			wui.Box(c.Key("thumb")).Absolute().Bottom(0).Left((w - thumb) * min(s.X/s.MaxX, 1)).Width(thumb).Height(2).Radius(1).
@@ -348,12 +357,13 @@ func tab(a *app.App, c *wui.Context, g *app.Group, i int, d *docs.Doc, active bo
 		if r := a.RepoOf(d); r != nil && r != a.Current() {
 			wui.Text(c, r.Name+" /").FontSize(11).TextColor(t.TextMuted).SingleLine().Shrink(0).Margin(0, 0, textNudge, 0)
 		}
-		title := wui.Text(c, d.Title).FontSize(12).SingleLine().Shrink(0).Margin(0, 0, textNudge, 0)
+		fg := panelTabColor(c, el, active)
+		if active && g != a.Grp && !hover { // 别的组的当前标签也是灰的：键盘不在那儿
+			fg = t.TextMuted
+		}
+		title := panelTabText(c, d.Title, fg)
 		if !d.Pinned {
 			title.Italic()
-		}
-		if !active || g != a.Grp { // 别的组的当前标签也是灰的：键盘不在那儿
-			title.TextColor(t.TextMuted)
 		}
 		if d.Copy > 0 { // 镜像：和正本共用改动
 			tip := i18n.Tf("同一个文件的第 %d 份，改动是同一份", d.Copy+1)
@@ -945,13 +955,19 @@ func replaceBar(a *app.App, c *wui.Context, d *docs.Doc) {
 		BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
 		wui.Icon(c, ic).FontSize(iconRow).TextColor(fg)
 		wui.Text(c, msg).FontSize(11.5).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
-		if stale && a.Search.CanReplace() && linkButton(c, i18n.T("重新生成"), i18n.T("按现在的搜索结果和替换词再生成这个预览")).Clicked() {
+		if stale && a.Search.CanReplace() && iconAction(c.Key("regen"), iconRefresh, i18n.T("重新生成"), i18n.T("按现在的搜索结果和替换词再生成这个预览"), "", wui.Transparent) {
 			a.RegenPreview(d)
 		}
 		n := a.PreviewCount(d)
-		if wui.Button(c, i18n.Tf("替换这个文件（%d 处）", n)).FontSize(11.5).Shrink(0).
-			Tooltip(i18n.T("换掉这个文件里没排除的几处（开着的改编辑器里的，没开的直接写盘），换完关掉预览")).
-			Disabled(stale || n == 0).Clicked() {
+		why := ""
+		switch {
+		case stale:
+			why = i18n.T("搜索结果变了，这个预览是旧的")
+		case n == 0:
+			why = i18n.T("没有要替换的")
+		}
+		if iconAction(c.Key("replace"), iconReplace, i18n.Tf("替换这个文件（%d 处）", n),
+			i18n.T("换掉这个文件里没排除的几处（开着的改编辑器里的，没开的直接写盘），换完关掉预览"), why, t.Accent) {
 			a.ReplaceFromPreview(d)
 		}
 	})
@@ -961,26 +977,19 @@ func replaceBar(a *app.App, c *wui.Context, d *docs.Doc) {
 // 已暂存的能取消暂存这一块。写操作走 git apply，丢弃先问。
 func hunkActions(a *app.App, c *wui.Context, bar wui.Element, d *docs.Doc, h *editor.DiffHunkActions, stage, unstage, discard bool) {
 	t := c.Theme()
-	bar.Row().Gap(4)
+	// 浮在 diff 上：外层一块 Surface 底和描边，里面是图标（iconAction），不再各自是按钮的样子
+	bar.Row().Gap(0).Padding(1).Radius(6).Background(t.Surface).Border(1, t.Border)
 	bar.Children(func() {
-		button := func(key, label, tip string, danger bool) bool {
-			b := wui.ButtonBase(c.Key(key)).Padding(0, 7).Height(d.DiffSt.Font.Size+5).Radius(4).
-				Background(t.Surface).Border(1, t.Border).Label(label).Tooltip(tip)
-			b.Children(func() {
-				txt := wui.Text(c, label).FontSize(10.5)
-				if danger {
-					txt.TextColor(t.Danger)
-				}
-			})
-			return b.Clicked()
+		button := func(key string, ic *wui.SVG, label, tip string, fg wui.Color) bool {
+			return iconAction(c.Key(key), ic, label, tip, "", fg)
 		}
-		if stage && button("stage", i18n.T("暂存这一块"), i18n.T("只把这一块改动加进暂存区（git apply --cached）"), false) {
+		if stage && button("stage", iconPlus, i18n.T("暂存这一块"), i18n.T("只把这一块改动加进暂存区（git apply --cached）"), wui.Transparent) {
 			a.StageHunk(d, h.Hunk)
 		}
-		if unstage && button("unstage", i18n.T("取消暂存这一块"), i18n.T("把这一块改动移出暂存区，工作区不动（git apply --cached -R）"), false) {
+		if unstage && button("unstage", iconMinus, i18n.T("取消暂存这一块"), i18n.T("把这一块改动移出暂存区，工作区不动（git apply --cached -R）"), wui.Transparent) {
 			a.UnstageHunk(d, h.Hunk)
 		}
-		if discard && button("discard", i18n.T("丢弃这一块"), i18n.T("把工作区里这一块恢复成暂存区的样子（会先问）"), true) {
+		if discard && button("discard", iconUndo, i18n.T("丢弃这一块"), i18n.T("把工作区里这一块恢复成暂存区的样子（会先问）"), t.Danger) {
 			a.DiscardHunk(d, h.Hunk)
 		}
 	})
@@ -990,24 +999,24 @@ func hunkActions(a *app.App, c *wui.Context, bar wui.Element, d *docs.Doc, h *ed
 // 放在底下，选行时上面的行不会往下挪。
 func linesBar(a *app.App, c *wui.Context, d *docs.Doc, n int, stage, unstage, discard bool) {
 	t := c.Theme()
-	button := func(label, tip string) bool {
-		return wui.Button(c, label).FontSize(11.5).Tooltip(tip).Clicked()
+	button := func(ic *wui.SVG, label, tip string) bool {
+		return iconAction(c.Key(label), ic, label, tip, "", wui.Transparent)
 	}
-	wui.Row(c).Padding(4, 10).Gap(6).AlignItems(wui.Center).Shrink(0).Background(bannerFill(t)).
+	wui.Row(c).Padding(4, 10).Gap(4).AlignItems(wui.Center).Shrink(0).Background(bannerFill(t)).
 		BorderWidth(1, 0, 0, 0).BorderColor(t.Border).Children(func() {
 		wui.Text(c, i18n.Tn("选中 %d 行", n)).FontSize(11.5).FontWeight(600).SingleLine().Shrink(0)
 		wui.Text(c, i18n.T("⇧ 点行号扩大选择")).FontSize(11).TextColor(t.TextMuted).SingleLine().Ellipsis("…").MinWidth(0)
 		wui.Spacer(c).Grow(1)
-		if stage && button(i18n.T("暂存选中的行"), i18n.T("只把选中的这几行改动加进暂存区（git apply --cached）")) {
+		if stage && button(iconPlus, i18n.T("暂存选中的行"), i18n.T("只把选中的这几行改动加进暂存区（git apply --cached）")) {
 			a.StageLines(d)
 		}
-		if unstage && button(i18n.T("取消暂存选中的行"), i18n.T("把选中的这几行改动移出暂存区，工作区不动（git apply --cached）")) {
+		if unstage && button(iconMinus, i18n.T("取消暂存选中的行"), i18n.T("把选中的这几行改动移出暂存区，工作区不动（git apply --cached）")) {
 			a.UnstageLines(d)
 		}
-		if discard && button(i18n.T("丢弃选中的行…"), i18n.T("把工作区里选中的这几行恢复成暂存区的样子（会先问）")) {
+		if discard && button(iconUndo, i18n.T("丢弃选中的行…"), i18n.T("把工作区里选中的这几行恢复成暂存区的样子（会先问）")) {
 			a.DiscardLines(d)
 		}
-		if button(i18n.T("取消选择"), i18n.T("取消选中的行（Esc）")) {
+		if button(iconClose, i18n.T("取消选择"), i18n.T("取消选中的行（Esc）")) {
 			app.ClearSelectedLines(d)
 		}
 	})

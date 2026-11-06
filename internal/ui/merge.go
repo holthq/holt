@@ -18,34 +18,36 @@ import (
 func mergeBar(a *app.App, c *wui.Context, d *docs.Doc, blocks []docs.ConflictBlock, flagged bool) {
 	t := c.Theme()
 	r := a.RepoOf(d)
-	button := func(label, tip string) bool {
-		return wui.Button(c, label).FontSize(11.5).Tooltip(tip).Clicked()
+	// 都是图标按钮（iconAction）：读屏名和测试按的名字是原来按钮上的字。我的绿、他们的强调色，和编辑器里两块的底色一样。
+	ours, theirs, plain := t.Success, t.Accent, wui.Transparent
+	button := func(ic *wui.SVG, label, tip string, fg wui.Color) bool {
+		return iconAction(c.Key(label), ic, label, tip, "", fg)
 	}
 	stagesDiff := func() {
-		if flagged && button(i18n.T("两边的 diff"), stagesTip(r)) {
+		if flagged && button(iconDiff, i18n.T("两边的 diff"), stagesTip(r), plain) {
 			a.OpenStagesDiff(r, d.Rel)
 		}
 	}
-	wui.Row(c).Padding(5, 10).Gap(6).Wrap().AlignItems(wui.Center).Shrink(0).Background(t.Danger.Alpha(0.12)).
+	wui.Row(c).Padding(5, 10).Gap(2).Wrap().AlignItems(wui.Center).Shrink(0).Background(t.Danger.Alpha(0.12)).
 		BorderWidth(0, 0, 1, 0).BorderColor(t.Border).Children(func() {
-		wui.Icon(c, iconAlert).FontSize(iconRow).TextColor(t.Danger)
+		wui.Icon(c, iconAlert).FontSize(iconRow).TextColor(t.Danger).Margin(0, 4, 0, 0)
 		if len(blocks) == 0 {
 			wui.Text(c, i18n.T("冲突标记都处理完了")).FontSize(11.5).SingleLine().Ellipsis("…").Grow(1).MinWidth(0)
-			if button(i18n.T("标记为已解决"), i18n.T("保存并 git add：这个文件的冲突算解决了；冲突都解决了就在 Git 栏的横幅上继续")) {
+			if button(iconCheck, i18n.T("标记为已解决"), i18n.T("保存并 git add：这个文件的冲突算解决了；冲突都解决了就在 Git 栏的横幅上继续"), plain) {
 				a.MarkResolved(d)
 			}
 			stagesDiff()
 			return
 		}
 		i := a.CurrentConflict(d)
-		wui.Text(c, i18n.Tf("第 %d / %d 处冲突", i+1, len(blocks))).FontSize(11.5).FontWeight(600).SingleLine().Shrink(0)
-		if button(i18n.T("用我的"), app.Tip(i18n.T("留下我们这边（<<<<<<< 和 ======= 之间）"), "merge.ours")) {
+		wui.Text(c, i18n.Tf("第 %d / %d 处冲突", i+1, len(blocks))).FontSize(11.5).FontWeight(600).SingleLine().Shrink(0).Margin(0, 4, 0, 0)
+		if button(iconTakeOurs, i18n.T("用我的"), app.Tip(i18n.T("留下我们这边（<<<<<<< 和 ======= 之间）"), "merge.ours"), ours) {
 			a.ResolveConflict(d, i, docs.TakeOurs)
 		}
-		if button(i18n.T("用他们的"), app.Tip(i18n.T("留下他们那边（======= 和 >>>>>>> 之间）"), "merge.theirs")) {
+		if button(iconTakeTheirs, i18n.T("用他们的"), app.Tip(i18n.T("留下他们那边（======= 和 >>>>>>> 之间）"), "merge.theirs"), theirs) {
 			a.ResolveConflict(d, i, docs.TakeTheirs)
 		}
-		if button(i18n.T("两个都要"), app.Tip(i18n.T("我的在前、他们的在后；⌥点是他们的在前"), "merge.both")) {
+		if button(iconTakeBoth, i18n.T("两个都要"), app.Tip(i18n.T("我的在前、他们的在后；⌥点是他们的在前"), "merge.both"), plain) {
 			how := docs.TakeBoth
 			if c.Modifiers()&wui.Alt != 0 {
 				how = docs.TakeBothReversed
@@ -55,10 +57,10 @@ func mergeBar(a *app.App, c *wui.Context, d *docs.Doc, blocks []docs.ConflictBlo
 		rowButton(c, iconChevronUp, i18n.T("上一处冲突"), app.Tip(i18n.T("上一处冲突"), "merge.prev"), func() { a.GoToConflict(d, -1) })
 		rowButton(c, iconChevron, i18n.T("下一处冲突"), app.Tip(i18n.T("下一处冲突"), "merge.next"), func() { a.GoToConflict(d, 1) })
 		wui.Spacer(c).Grow(1)
-		if button(i18n.T("全部用我的"), i18n.T("每处冲突都留下我们这边，先问一声")) {
+		if button(iconChevronsUp, i18n.T("全部用我的"), i18n.T("每处冲突都留下我们这边，先问一声"), ours) {
 			a.ResolveAll(d, docs.TakeOurs)
 		}
-		if button(i18n.T("全部用他们的"), i18n.T("每处冲突都留下他们那边，先问一声")) {
+		if button(iconChevronsDn, i18n.T("全部用他们的"), i18n.T("每处冲突都留下他们那边，先问一声"), theirs) {
 			a.ResolveAll(d, docs.TakeTheirs)
 		}
 		stagesDiff()

@@ -2170,7 +2170,6 @@
   "分离 HEAD，没有分支": "Detached HEAD, no branch",
   "可合并": "Ready to merge",
   "合并到 %s…": "Merge into %s…",
-  "合并到 %s：%s": "Merge into %s: %s",
   "和上游比：↓ 落后、↑ 领先": "Compared with upstream: ↓ behind, ↑ ahead",
   "在 %s 里跑 git merge %s。停在冲突上时有横幅，可以中止。": "In %s, runs git merge %s. If it stops on conflicts, a banner lets you abort.",
   "审查": "Review",
@@ -2197,5 +2196,11 @@
   "工作树组、顶上的“需要你”条和段头的工作树数；关着时都不出现，也不再盯各工作树的目录（默认关）": "The worktree group, the “Needs you” bar at the top and the worktree count on repo headers; when off none of these appear and worktree folders are no longer watched (off by default)",
   "贮藏组和段头的贮藏数；关着时贮藏还在，贮藏、弹出贮藏照常能用（默认关）": "The stash group and the stash count on repo headers; when off your stashes are kept and Stash / Pop Stash still work (off by default)",
   "正在提交": "committing",
-  "还没写提交信息": "no commit message"
+  "还没写提交信息": "no commit message",
+  "%d 处": "%d matches",
+  "%d 处|1": "%d match",
+  "正在变基": "rebasing",
+  "没有要替换的": "nothing to replace",
+  "等搜索完成": "wait for the search to finish",
+  "还没改过": "nothing changed yet"
 }

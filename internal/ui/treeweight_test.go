@@ -80,9 +80,18 @@ func TestTreeCurrentNotBold(t *testing.T) {
 	if len(cur) < 2 { // 树里一行、标签上一个
 		t.Fatalf("gamma.md 只画了 %d 处，想要树里和标签上都有", len(cur))
 	}
+	// 标签上的字都是 500（编辑器、终端标签一个样，不分当前不当前）；树里那一行要和别的行一样
+	same := 0
 	for _, w := range cur {
-		if w != other[0] {
+		switch w {
+		case other[0]:
+			same++
+		case 500:
+		default:
 			t.Fatalf("当前文件 gamma.md 的字重 %v，别的行 beta.go 是 %d：当前文件不该加粗", cur, other[0])
 		}
+	}
+	if same == 0 {
+		t.Fatalf("当前文件 gamma.md 的字重 %v，别的行 beta.go 是 %d：树里那一行不该加粗", cur, other[0])
 	}
 }

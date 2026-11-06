@@ -37,23 +37,23 @@ func bottomBar(a *app.App, c *wui.Context) {
 	}
 	card(c, panel, func() {
 		t := c.Theme()
-		cardHeader(c).Padding(0, 6, 0, 6).Gap(2).Children(func() {
-			// 标签多了往左挤，标题行右边的按钮总在。
-			wui.Row(c.Key("tabs")).Height(headerHeight).Gap(2).AlignItems(wui.Center).Shrink(1).MinWidth(0).Clip().Children(func() {
-				if r != nil {
+		cardHeader(c).Padding(0, 6, 0, 0).Gap(2).Children(func() { // 左边 0：第一个标签贴着卡片左边
+			// 终端标签多了横向滚动（同编辑器的标签条），标签少时「+」紧跟着最后一个；输出、问题固定在后面，标题行右边的按钮总在。
+			if r != nil {
+				scrollStrip(c.Key("tabs"), &r.TermStrip, false, func() {
 					for i, tt := range slices.Clone(a.TermTabs(r)) { // 拷贝：右键菜单、拖标签在这一圈里改顺序
 						termTab(a, c.Key(termTabKey{r.Root, tt.Num}), r, tt, onTerm && i == r.TermSel)
 					}
-					newTermButton(a, c, r)
-					wui.Box(c).Size(1, 14).Background(t.Border).Shrink(0).Margin(0, 4)
-				}
-				out := i18n.T("输出")
-				if n := len(a.Output); n > 0 {
-					out += " " + strconv.Itoa(n)
-				}
-				bottomTab(a, c, app.BottomOutput, iconOutput, out)
-				bottomTab(a, c, app.BottomProblems, iconAlert, problemsTabLabel(a))
-			})
+				})
+				newTermButton(a, c, r)
+			}
+			out := i18n.T("输出")
+			if n := len(a.Output); n > 0 {
+				out += " " + strconv.Itoa(n)
+			}
+			bottomTab(a, c, app.BottomOutput, iconOutput, out, len(a.Output), r != nil)
+			_, errs, warns := a.ProblemList()
+			bottomTab(a, c, app.BottomProblems, iconAlert, problemsTabLabel(a), errs+warns, false)
 			// shell 的标题只拿标签和按钮剩下的地方（Basis 0）：长标题（user@host:很长的路径）先省略，标签不让
 			// 双击标题行的空白处（标签和按钮以外）最大化 / 还原底栏
 			var blank wui.Element
@@ -140,6 +140,10 @@ func termTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab, active bo
 	b := panelTab(c, active).Label(label).Tooltip(i18n.T("双击改名"))
 	fg := panelTabColor(c, b, active)
 	hover := b.Hovered()
+	if active && r.TermShown != tt { // 换了当前终端标签：滚到看得见（同编辑器的 g.TabShown）
+		r.TermShown = tt
+		b.ScrollIntoView()
+	}
 	b.ContextMenu(func(m *wui.Menu) { termTabMenu(a, m, r, tt) })
 	// 拖标签换位置（只在这个仓库的终端标签之间）
 	ts := a.TermTabs(r)
@@ -157,7 +161,7 @@ func termTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab, active bo
 		}
 		wui.Icon(c, iconTerminal).FontSize(iconRow).TextColor(fg)
 		agentMark(c, a.TabAgent(tt))
-		wui.Text(c, label).FontSize(12).FontWeight(500).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0).MaxWidth(180)
+		panelTabText(c, label, fg)
 		if n := len(tt.Panes()); n > 1 {
 			wui.Text(c, strconv.Itoa(n)).FontSize(10).TextColor(t.TextMuted).SingleLine().Padding(0, 4).Radius(999).
 				Background(t.Text.Alpha(0.07)).Tooltip(i18n.Tf("分成 %d 格", n))
@@ -192,7 +196,7 @@ func termTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab, active bo
 func renameTab(a *app.App, c *wui.Context, r *app.Repo, tt *app.TermTab) {
 	t := c.Theme()
 	e := &a.Rename
-	panelTab(c, true).Padding(0, 6, 1, 6).Children(func() {
+	panelTab(c, true).Padding(0, 6).Children(func() {
 		wui.Icon(c, iconTerminal).FontSize(iconRow).TextColor(t.Text)
 		in := wui.TextInput(c.Key("name"), &e.Text).Label(i18n.T("终端标签的名字")).Placeholder(r.TermLabel(&app.TermTab{Num: tt.Num})).
 			FontSize(12).TextColor(t.Text).Width(140).
@@ -405,15 +409,15 @@ func exitedBar(a *app.App, c *wui.Context, r *app.Repo, tab *app.TermTab, p *app
 	case p.Daemon():
 		msg = i18n.Tf("shell 已退出，退出码 %d；会话还在后台进程里，重新启动会换一个", p.ExitCode)
 	}
-	wui.Row(c.Key("exited")).Absolute().Left(8).Right(8).Bottom(8).Padding(6, 10).Gap(8).AlignItems(wui.Center).Radius(8).
+	wui.Row(c.Key("exited")).Absolute().Left(8).Right(8).Bottom(8).Padding(6, 6, 6, 10).Gap(4).AlignItems(wui.Center).Radius(8).
 		Background(t.Background).Border(1, t.Border).Shadow(0, 4, 12, 0, wui.RGBA(0, 0, 0, 0.18)).Children(func() {
 		wui.Icon(c, iconTerminal).FontSize(iconRow).TextColor(t.TextMuted)
 		wui.Text(c, msg).FontSize(12).TextColor(t.Text).SingleLine().Ellipsis("…").MinWidth(0).Tooltip(msg)
 		wui.Spacer(c).Grow(1)
-		if wui.Button(c, i18n.T("重新启动")).Tooltip(i18n.T("重新启动终端")).Clicked() {
+		if iconAction(c.Key("restart"), iconRefresh, i18n.T("重新启动"), i18n.T("重新启动终端"), "", wui.Transparent) {
 			a.RestartPane(r, p)
 		}
-		if wui.Button(c, i18n.T("关闭")).Tooltip(i18n.T("关闭终端")).Clicked() {
+		if iconAction(c.Key("close"), iconClose, i18n.T("关闭"), i18n.T("关闭终端"), "", wui.Transparent) {
 			a.ClosePane(r, tab, p)
 		}
 	})
@@ -468,19 +472,21 @@ func termFind(a *app.App, c *wui.Context, p *app.TermPane) {
 	})
 }
 
-// bottomTab 是底栏标题行里的一个标签（输出、问题）。
-func bottomTab(a *app.App, c *wui.Context, which int, ic *wui.SVG, label string) {
+// bottomTab 是底栏标题行里的一个只有图标的紧凑标签（输出、问题）：有条数时图标后面跟着数字。读屏名和提示是
+// "输出 3" / "问题 2" 这样的全名。left：前面是「+」，左边也画一条分隔线。
+func bottomTab(a *app.App, c *wui.Context, which int, ic *wui.SVG, label string, n int, left bool) {
 	active := a.BottomTab == which
-	b := panelTab(c, active)
-	if active {
-		b.Padding(0, 9, 1, 9) // 顶上 1 px 描边：底下也多 1，字不动
-	} else {
-		b.Padding(0, 10)
+	b := panelTab(c, active).Padding(0, 10).Gap(4).Label(label)
+	if left {
+		b.BorderWidth(0, 1, 0, 1)
 	}
+	tooltip(c, b, label)
 	fg := panelTabColor(c, b, active)
 	b.Children(func() {
 		wui.Icon(c, ic).FontSize(iconRow).TextColor(fg)
-		wui.Text(c, label).FontSize(12).FontWeight(500).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0)
+		if n > 0 {
+			wui.Text(c, strconv.Itoa(n)).FontSize(12).FontWeight(500).TextColor(fg).SingleLine().FontFeatures("tnum").Margin(0, 0, textNudge, 0)
+		}
 	})
 	if b.Clicked() {
 		a.BottomTab = which

@@ -17,7 +17,6 @@ const (
 	statusHeight = 22 // 状态栏
 
 	cardRadius = 8 // 卡片（编辑器组、底栏、右栏）的圆角
-	tabRadius  = 6 // 卡片头里当前标签顶上两角的圆角
 	rowRadius  = 5 // 侧栏、右栏列表里选中行的圆角
 	cardGap    = 6 // 卡片之间、卡片和侧栏 / 标题栏 / 状态栏 / 窗口右边之间露出材质的缝，也是拖着改大小的地方
 	splitGap   = 4 // 同一张卡片里分出来的格（终端分屏）之间的缝
@@ -40,6 +39,7 @@ const (
 const (
 	toolSize    = 28
 	rowToolSize = 20
+	segIconW    = 30 // segIconTabs 每段的宽（侧栏顶上的四个图标靠左一组）
 )
 
 // textNudge 是标题栏、标签条上的字底下多留的边距：字在行里居中时墨迹的中心比图标低 0.5–0.75 pt
@@ -127,16 +127,61 @@ func toggleButton(c *wui.Context, ic *wui.SVG, tip string, on bool, fn func()) {
 	}
 }
 
+// iconAction 是面板里的动作按钮（冲突条、进行中横幅、提交框、替换条、终端退出浮条……）：只有图标，rowToolSize 见方，
+// 平时没有底、悬停一层淡底（toolStyle）。用 ButtonBase，能用 Tab 按到（squareButton 的 Box 不行）；label 是读屏名和
+// 测试按它点的名字，和原来文字按钮上的字一样。why 不空时画灰、提示里写原因、点了没反应——不调 Disabled（mygo 的
+// Disabled 不显示悬停提示）。fg 不是 Transparent 时图标平时用这个颜色（强调色、绿……）。返回能不能算点了。
+func iconAction(c *wui.Context, ic *wui.SVG, label, tip, why string, fg wui.Color) bool {
+	return iconActionSize(c, rowToolSize, ic, label, tip, why, fg)
+}
+
+// iconActionSize 是 iconAction，热区 size 见方（工作树行上的和旁边的按钮一样 wtBtnSize+2）。
+func iconActionSize(c *wui.Context, size float32, ic *wui.SVG, label, tip, why string, fg wui.Color) bool {
+	full := label
+	if why != "" {
+		full = withWhy(label, why)
+	}
+	if tip != "" && tip != label {
+		full += "\n" + tip
+	}
+	b := wui.ButtonBase(c).Size(size, size).Label(label)
+	tooltip(c, b, full)
+	col := toolStyle(c, b, false, why != "")
+	if why == "" && fg != wui.Transparent {
+		col = fg
+	}
+	b.Children(func() {
+		wui.Icon(c, ic).FontSize(iconRow).TextColor(col)
+	})
+	return b.Clicked() && why == ""
+}
+
 // filterToggle 是筛选开关（历史的 所有分支 / 提交图，搜索的 Aa ab .* 和包含 / 排除）：22 见方、没有边，
 // 开着是强调色的浅底和强调色（面板开关 toggleButton 是浅底 + 字色，不动），关着是次级色、悬停一层淡底。
 // 还是切换按钮（读屏念"开 / 关"）；fn 用给它的颜色画里面（图标，或几个等宽字）。返回开关，Changed() 报点了。
 func filterToggle(c *wui.Context, key string, on *bool, label, tip string, fn func(fg wui.Color)) wui.Element {
+	return filterToggleOf(c, key, on, label, tip, 22, false, fn)
+}
+
+// filterToggleOf 是 filterToggle 的本体：size 见方（提交框那一排用 rowToolSize，和旁边的按钮一样高）；
+// off 时画灰、点了 *on 不变（Changed 照报，调用的人自己看 off），悬停提示还在（不调 Disabled，mygo 的 Disabled 不显示提示）。
+func filterToggleOf(c *wui.Context, key string, on *bool, label, tip string, size float32, off bool, fn func(fg wui.Color)) wui.Element {
 	t := c.Theme()
-	b := wui.ToggleBase(c.Key(key), on).Size(22, 22).Label(label).AlignItems(wui.Center).Justify(wui.Center).Radius(5).Shrink(0).
+	if off { // 点了也不改 *on：给 ToggleBase 一份拷贝
+		v := *on
+		on = &v
+	}
+	b := wui.ToggleBase(c.Key(key), on).Size(size, size).Label(label).AlignItems(wui.Center).Justify(wui.Center).Radius(5).Shrink(0).
 		Cursor(wui.CursorPointer)
 	tooltip(c, b, tip)
 	fg := t.TextMuted
 	switch {
+	case off:
+		fg = t.TextMuted.Alpha(0.4)
+		if *on {
+			b.Background(toolFill(t, 0.06))
+		}
+		b.Cursor(wui.CursorDefault)
 	case *on:
 		b.Background(t.Accent.Alpha(0.14))
 		fg = t.Accent
@@ -226,7 +271,13 @@ func segTabsOf(c *wui.Context, sel *int, iconOnly bool, segs []seg) wui.Element 
 	p.Track.Height(26).Padding(2).Gap(2).Radius(7).Background(t.Text.Alpha(0.055)).AlignItems(wui.Stretch).MinWidth(0)
 	p.Track.Children(func() {
 		for i, sg := range segs {
-			s := p.Segment(i).Grow(1).Basis(0).MinWidth(0).Radius(5).AlignItems(wui.Center).Justify(wui.Center).Cursor(wui.CursorPointer)
+			s := p.Segment(i).MinWidth(0).Radius(5)
+			if iconOnly { // 只有图标的一组靠左、每段固定宽，不铺满（#56）
+				s.Width(segIconW).Shrink(0)
+			} else {
+				s.Grow(1).Basis(0)
+			}
+			s.AlignItems(wui.Center).Justify(wui.Center).Cursor(wui.CursorPointer)
 			tooltip(c, s, sg.tip)
 			if iconOnly {
 				s.Label(sg.label)
@@ -257,24 +308,30 @@ func segTabsOf(c *wui.Context, sel *int, iconOnly bool, segs []seg) wui.Element 
 	return p.Track
 }
 
-// panelTab 是卡片头里的一个标签（编辑器标签、终端标签、输出）：当前的标签高 32、和卡身同色、顶上两角圆 6、
-// 左上右三边描线，盖住卡片头底下那条线（标签"长"在卡身上）；别的标签 26 高、没有底色，悬停时一层淡底。
-// 两种标签的字都在卡片头的中线上。返回整个标签，调用的人接着加内容、Label、右键菜单、点击。
+// panelTab 是卡片头里的一个标签（编辑器标签、终端标签、输出 / 问题）：通栏平铺，所有标签一样高（headerHeight）、
+// 没有圆角，相邻的靠右边一条 1 px 的 cardLine 分开（第一个贴着卡片左边，卡片自己有描边，不画左边线）。
+// 当前标签是卡身底色，盖住卡片头底下那条线（标签"长"在卡身上）；别的没有底色，悬停一层淡底。
+// 两种标签的内边距一样，字在同一条线上。返回整个标签，调用的人接着加内容、Label、右键菜单、点击。
 func panelTab(c *wui.Context, active bool) wui.Element {
 	t := c.Theme()
-	b := wui.Row(c).Gap(6).AlignItems(wui.Center).Shrink(0).Cursor(wui.CursorPointer)
-	if active {
-		// 描边占 1：左右少 1 的内边距，底下多 1，字和别的标签一样在 x、y 上不动
-		b.Height(headerHeight).Padding(0, 3, 1, 9).Radius(tabRadius, tabRadius, 0, 0).Background(t.Background).
-			BorderWidth(1, 1, 0, 1).BorderColor(cardLine(t))
-	} else {
-		b.Height(headerHeight-6).Padding(0, 4, 0, 10).Radius(rowRadius)
-		if b.Hovered() {
-			b.Background(t.Text.Alpha(0.05))
-		}
+	b := wui.Row(c).Height(headerHeight).Padding(0, 4, 0, 10).Gap(6).AlignItems(wui.Center).Shrink(0).Cursor(wui.CursorPointer).
+		BorderWidth(0, 1, 0, 0).BorderColor(cardLine(t))
+	switch {
+	case active:
+		b.Background(t.Background)
+	case b.Hovered():
+		b.Background(t.Text.Alpha(0.05))
 	}
 	return b
 }
+
+// panelTabText 是卡片头标签里的标题：12 / 500、单行，长了省略（最多 panelTabMaxW 宽）。
+func panelTabText(c *wui.Context, s string, fg wui.Color) wui.Element {
+	return wui.Text(c, s).FontSize(12).FontWeight(500).TextColor(fg).SingleLine().Ellipsis("…").MinWidth(0).MaxWidth(panelTabMaxW).Margin(0, 0, textNudge, 0)
+}
+
+// panelTabMaxW 是标签标题最宽多少，长名字省略。
+const panelTabMaxW = 200
 
 // panelTabColor 是卡片头标签里文字和图标的颜色：当前的和悬停的字深，别的 TextMuted。
 func panelTabColor(c *wui.Context, b wui.Element, active bool) wui.Color {
