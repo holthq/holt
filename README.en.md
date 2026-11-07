@@ -23,6 +23,7 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
 `holt-<version>-arm64.dmg` and drag Holt into Applications.
 
 - macOS 13 or later, Apple Silicon (arm64).
+- After installing, later versions show up in the app automatically (or use Check for Updates in the app menu).
 - The app is ad-hoc signed and not notarized by Apple: the first time, **right-click Holt → Open** (or run
   `xattr -dr com.apple.quarantine /Applications/Holt.app`). After that, double-clicking works normally.
 **Other platforms (preview, runtime not verified)**

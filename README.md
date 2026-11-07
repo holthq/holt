@@ -19,6 +19,7 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 最新版本在 [Releases](https://github.com/holthq/holt/releases)：下载 `holt-<版本>-arm64.dmg`，打开后把 Holt 拖进「应用程序」。
 
 - 需要 macOS 13 或更新版本，Apple Silicon（arm64）。
+- 装好之后，以后的版本会在应用里自动提示更新（也可以随时从应用菜单「检查更新…」）。
 - 安装包是 ad-hoc 签名、没有经过 Apple 公证：第一次打开请**右键点 Holt → 打开**，或者运行
   `xattr -dr com.apple.quarantine /Applications/Holt.app`。之后正常双击即可。
 **其他平台（预览版，运行时未验证）**
