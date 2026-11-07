@@ -74,6 +74,14 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 
 改键在设置窗口的“快捷键”页（录键时 `SetKeyRecording`，菜单暂时不接键）；也能直接在编辑器里改 `keybindings.json`，保存时（`keybindingsSaved`）重读，无法解析的条目提示一次，并列在设置页（`KeyErrors`）；整个文件无法读取时（`keyBroken`），设置页停止写入，避免覆盖原文件。写文件是原子的（`writeFileAtomic`）。
 
+### 自动更新
+
+`cmd/workbench/main.go` 里用 `mygo.Use(native.New(updater.Options{Icon: …}))` 注册 mygo 的 updater（原生更新窗口，
+图标用 `appicon.Draw(256)` 编成 PNG）。启动 10 秒后、之后每天在后台检查 GitHub Releases 上的签名更新；
+`mygo.json` 的 `updates` 给出公钥和 `github: holthq/holt`，更新档案和 manifest 由 `mygo build` 用私钥签好发到 Release。
+应用菜单和关于窗口的「检查更新…」（`app.checkUpdate` → `App.CheckUpdates` → `App.OpenUpdates`）打开同一个窗口。
+签名密钥、构建和上传顺序见 [release.md](release.md)。
+
 ## 工作区、设置、会话和状态文件
 
 ### 工作区
