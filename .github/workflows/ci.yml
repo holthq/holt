@@ -52,16 +52,13 @@ jobs:
       - name: go test
         run: go test -count=1 ./...
 
-      - name: 构建 Holt.app
-        run: go tool mygo build -skip-dmg -skip-notarize -sign -
-
-      - name: 打包成 zip
-        run: ditto -c -k --keepParent build/darwin-arm64/Holt.app Holt-darwin-arm64.zip
+      - name: 构建 Holt.app 和 DMG
+        run: go tool mygo build -skip-notarize -sign -
 
       - uses: actions/upload-artifact@v4
         with:
-          name: Holt-darwin-arm64
-          path: Holt-darwin-arm64.zip
+          name: Holt-darwin-arm64-dmg
+          path: build/darwin-arm64/*.dmg
           retention-days: 14
 
   race:

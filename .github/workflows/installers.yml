@@ -1,0 +1,93 @@
+# 三端的安装包：macOS 的 DMG、Linux 的 deb / tar.gz（install.sh）、Windows 的 setup exe（NSIS）。
+# 手动触发，或者推 v* 标签时跑；产物挂在 Actions 的 artifact 里，发版时下载下来传到 Release。
+# 配了 MYGO_UPDATER_PRIVATE_KEY 时，每个平台还会多出更新档案和 update-<平台>.json（自动更新用）。
+name: Installers
+
+on:
+  workflow_dispatch:
+  push:
+    tags: ["v*"]
+
+permissions:
+  contents: read
+
+env:
+  GOTOOLCHAIN: auto
+
+jobs:
+  macos:
+    name: macOS DMG
+    runs-on: macos-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: go tool mygo build -platform darwin/arm64 -sign - -skip-notarize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holt-darwin-arm64
+          path: |
+            build/darwin-arm64/*.dmg
+            build/darwin-arm64/*.tar.gz
+            build/darwin-arm64/update-*.json
+          if-no-files-found: error
+
+  linux:
+    name: Linux ${{ matrix.arch }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: go tool mygo build -platform linux/${{ matrix.arch }} -skip-notarize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holt-linux-${{ matrix.arch }}
+          path: |
+            build/linux-${{ matrix.arch }}/*.deb
+            build/linux-${{ matrix.arch }}/*.tar.gz
+            build/linux-${{ matrix.arch }}/update-*.json
+          if-no-files-found: error
+
+  windows:
+    name: Windows ${{ matrix.arch }}
+    runs-on: windows-latest
+    timeout-minutes: 30
+    strategy:
+      fail-fast: false
+      matrix:
+        arch: [amd64, arm64]
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: go.mod
+          cache: true
+      - name: Build
+        env:
+          MYGO_UPDATER_PRIVATE_KEY: ${{ secrets.MYGO_UPDATER_PRIVATE_KEY }}
+        run: go tool mygo build -platform windows/${{ matrix.arch }} -skip-notarize
+      - uses: actions/upload-artifact@v4
+        with:
+          name: holt-windows-${{ matrix.arch }}
+          path: |
+            build/windows-${{ matrix.arch }}/*-setup-*.exe
+            build/windows-${{ matrix.arch }}/*.tar.gz
+            build/windows-${{ matrix.arch }}/update-*.json
+          if-no-files-found: error
