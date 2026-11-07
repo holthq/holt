@@ -19,8 +19,9 @@ license and the original author's copyright notice.
 
 ## Download
 
-The latest version is on the [Releases](https://github.com/holthq/holt/releases) page: download
-`holt-<version>-arm64.dmg` and drag Holt into Applications.
+The latest version is on the [Releases](https://github.com/holthq/holt/releases) page: `holt-<version>-arm64.dmg`
+for macOS, `holt_<version>_<arch>.deb` or `holt-<version>-linux-<arch>.tar.gz` for Linux, and
+`holt-setup-<version>-<arch>.exe` for Windows.
 
 - macOS 13 or later, Apple Silicon (arm64).
 - After installing, later versions show up in the app automatically (or use Check for Updates in the app menu).
@@ -30,7 +31,7 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
 
 - Linux: `holt-<version>-linux-amd64.tar.gz` / `-arm64.tar.gz` (extract and run `./install.sh`, which installs into
   `~/.local`), or `holt_<version>_amd64.deb` / `holt_<version>_arm64.deb` (`sudo dpkg -i …`).
-- Windows: `Holt-<version>-windows-amd64.zip` / `-arm64.zip`; unzip and run `Holt.exe`.
+- Windows: `holt-setup-<version>-amd64.exe` / `-arm64.exe`; run the installer and open Holt from the Start menu.
 - These build and pass CI, but have not been verified on real machines yet. On Windows the terminal daemon (`termd`)
   is a stub, so terminals only run inside the window.
 

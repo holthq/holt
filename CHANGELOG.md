@@ -14,6 +14,8 @@
   更新包用 Ed25519 签名，公钥编进应用，下载后校验签名；文件对不上就退回整包下载。
 - 「检查更新」不再自己读 releases 页面（删掉 `internal/update` 和那段自绘的检查逻辑），交给 mygo 的 updater：
   后台检查、签名校验、下载和重启都在那里。
+- 三端的 Release 只发安装包：macOS 的 DMG、Linux 的 `.deb` / 带 `install.sh` 的 `.tar.gz`、Windows 的 setup `.exe`
+  （`installers.yml` 在 GitHub 的 macOS / Ubuntu / Windows runner 上构建），不再发 zip。
 - 依赖升级：mygo 从 `v0.7.5-0.20261106080026` 升到 `v0.8.1`，regexp2 2.12.0、purego 0.11.3、x/image / x/net 等跟着升；
   全套测试和 `-race` 通过。
 

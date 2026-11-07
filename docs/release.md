@@ -29,6 +29,13 @@
 5. 合入 main 后，在该提交上打 `v<版本>` 标签；
 6. 构建 app 和 DMG（去掉 `-skip-dmg`），把 DMG 和 app 的 zip 发到 GitHub Releases（见下）。
 
+## 三端安装包
+
+`.github/workflows/installers.yml` 在 GitHub 的 runner 上构建三端的安装包：macOS 的 DMG、Linux 的 `.deb` 和
+带 `install.sh` 的 `.tar.gz`、Windows 的 setup `.exe`（NSIS；Windows runner 上 `mygo build` 会自己下 NSIS）。
+手动触发，或者推 `v*` 标签时跑，产物在 Actions 的 artifact 里，发版时下载下来传到 Release；
+Windows 的安装包不在 macOS 上构建（这里的 `makensis` 在 macOS 26+ 上会 abort），也不发 zip。
+
 ## 发布 GitHub Release
 
 ```bash

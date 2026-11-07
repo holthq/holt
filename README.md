@@ -16,7 +16,8 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 
 ## 下载
 
-最新版本在 [Releases](https://github.com/holthq/holt/releases)：下载 `holt-<版本>-arm64.dmg`，打开后把 Holt 拖进「应用程序」。
+最新版本在 [Releases](https://github.com/holthq/holt/releases)：下载 `holt-<版本>-arm64.dmg`（macOS）、
+`holt_<版本>_<arch>.deb` 或 `holt-<版本>-linux-<arch>.tar.gz`（Linux）、`holt-setup-<版本>-<arch>.exe`（Windows）。
 
 - 需要 macOS 13 或更新版本，Apple Silicon（arm64）。
 - 装好之后，以后的版本会在应用里自动提示更新（也可以随时从应用菜单「检查更新…」）。
@@ -26,7 +27,7 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 
 - Linux：`holt-<版本>-linux-amd64.tar.gz` / `-arm64.tar.gz`（解压后 `./install.sh`，装到 `~/.local`），
   或者 `holt_<版本>_amd64.deb` / `holt_<版本>_arm64.deb`（`sudo dpkg -i …`）。
-- Windows：`Holt-<版本>-windows-amd64.zip` / `-arm64.zip`，解压后运行 `Holt.exe`。
+- Windows：`holt-setup-<版本>-amd64.exe` / `-arm64.exe`，装好后从开始菜单打开。
 - 这两端能编译、CI 全绿，但还没在真机上验证过；Windows 的终端后台进程（termd）是桩，终端只在窗口里跑。
 
 ## 三条原则
