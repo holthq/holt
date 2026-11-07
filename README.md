@@ -45,7 +45,7 @@ Holt 是 [Grove](https://github.com/lemoeade/grove) 的 fork：界面和内核�
 | ![编辑器分屏](docs/screenshots/split-editors.png) | ![终端](docs/screenshots/terminals.png) |
 
 - **工作区**：支持打开 `.code-workspace` 文件或文件夹，也支持多窗口。文件树支持跨仓库多选和拖动，可以撤销上一次文件操作。
-- **编辑器**：将标签拖到边缘即可分屏。支持大纲、粘性滚动、代码片段和 Markdown 预览（含 Mermaid 和公式），
+- **编辑器**：将标签拖到边缘即可分屏。支持大纲、粘性滚动、代码片段和 Markdown 预览（含 Mermaid 和公式；GitHub README 常见的 HTML 排版、图片徽章也会画出来），
   也支持 GB18030、Big5 等编码。保存时可运行 gofmt、prettier 等格式化工具，以及 go vet、eslint 等检查工具。
 - **Git**：支持按块或按行暂存，在编辑器中解决冲突，以及查看单个仓库的提交图或所有仓库按时间合并的历史。合并、变基（含交互式变基）、
   cherry-pick、贮藏、工作树和子模块操作都可以在界面中完成。Git 栏每个仓库的段头上都有拉取和推送按钮，并显示领先 / 落后的提交数；

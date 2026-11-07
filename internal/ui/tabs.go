@@ -568,6 +568,7 @@ type previewGen struct {
 // 视图只滚到刚好露出它，记号比视图高，标题就到了最上面；没有这个标题就提示。
 func markdownPreview(a *app.App, c *wui.Context, d *docs.Doc) {
 	o := a.MarkdownOptions(d)
+	o.HTML = func(c *wui.Context, src string) { mdHTMLBlock(a, c, d, o, src) } // 块级 HTML（GitHub README 的排版）
 	o.Block = nil
 	name := d.Anchor
 	src := d.MarkdownSource()

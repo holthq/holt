@@ -134,3 +134,12 @@ open -n -a build/darwin-arm64/Holt.app --env WORKBENCH_STATE=<目录> --env WORK
 ## 验收标准
 
 验收标准由上述计时、内存和行为测试检查。所有测试通过，并完成必要的手动测试后，才算验收完成。内存要求为空闲 ≤ 100 MB，硬上限 300 MB。
+
+## 竞态检测
+
+界面测试在 `-race` 下慢很多（这台机器上整套 `internal/ui` 要十分钟以上，默认的 10 分钟测试超时会误报），
+跑的时候带上 `-timeout 30m`：
+
+```sh
+GOTOOLCHAIN=auto go test -race -timeout 30m ./...
+```

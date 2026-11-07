@@ -76,7 +76,7 @@ jobs:
           go-version-file: go.mod
           cache: true
       - name: go test -race
-        run: go test -count=1 -race ./internal/...
+        run: go test -count=1 -race -timeout 30m ./internal/...
 
   cross:
     # Linux / Windows 先保证能编译（含测试文件）：termd 在 Windows 上还是桩，运行时没有 CI。

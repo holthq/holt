@@ -55,7 +55,7 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
 - **Workspace**: open a `.code-workspace` file or a folder, with support for multiple windows. Select and drag files
   across repos in the file tree, and undo the last file operation.
 - **Editor**: drag a tab to an edge to split the editor. Includes an outline, sticky scroll, snippets and Markdown
-  previews with Mermaid and math. Supports encodings such as GB18030 and Big5. Run formatters like gofmt and prettier,
+  previews with Mermaid and math, which also render the HTML that GitHub READMEs use (centered blocks, badges, images). Supports encodings such as GB18030 and Big5. Run formatters like gofmt and prettier,
   or checks like go vet and eslint, on save.
 - **Git**: stage changes by hunk or line and resolve conflicts in the editor. View a commit graph for one repo, or the
   history of all repos merged by time; commits co-authored by a coding agent are marked and can be filtered. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
