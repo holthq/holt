@@ -21,6 +21,8 @@
 package main
 
 import (
+	"bytes"
+	"image/png"
 	"io"
 	"log"
 	"os"
@@ -28,9 +30,12 @@ import (
 	"time"
 
 	"github.com/egoist/mygo"
+	"github.com/egoist/mygo/plugins/updater"
+	"github.com/egoist/mygo/plugins/updater/native"
 	wui "github.com/egoist/mygo/ui"
 
 	"github.com/holthq/holt/internal/app"
+	"github.com/holthq/holt/internal/appicon"
 	"github.com/holthq/holt/internal/askpass"
 	"github.com/holthq/holt/internal/crash"
 	"github.com/holthq/holt/internal/fonts"
@@ -41,6 +46,15 @@ import (
 	"github.com/holthq/holt/internal/version"
 	"github.com/holthq/holt/internal/workspace"
 )
+
+// updaterIcon 是更新窗口左上角的图标：和应用图标同一套画法，编成 PNG。
+func updaterIcon() []byte {
+	var b bytes.Buffer
+	if err := png.Encode(&b, appicon.Draw(256)); err != nil {
+		return nil
+	}
+	return b.Bytes()
+}
 
 func main() {
 	app.Launched = time.Now() // 启动计时（日志里的“就绪”行）
@@ -148,6 +162,8 @@ func main() {
 	mygo.App.OnOpenFile(func(path string) { deliver([]string{path}, "") })
 	mygo.App.OnSecondInstance(func(args []string, wd string) { deliver(app.Args(args), wd) })
 
+	// 自动更新：后台检查、更新窗口、下载和重启（包在 updater 里，原生窗口）。窗口的图标用应用自己画的那张。
+	mygo.Use(native.New(updater.Options{Icon: updaterIcon()}))
 	mygo.App.SetLanguages(i18n.Locale()) // 界面语言不跟系统走，由设置里的"语言"定（读完设置后 OnSettings 再设一次）
 	mygo.App.WhenReady(func() {
 		fonts.Load()
@@ -251,6 +267,7 @@ func main() {
 			a.OnSettings = onSettings
 			a.OpenSettings = func() { openSettings(a) }
 			a.OpenAbout = func() { openAbout(a) }
+			a.OpenUpdates = func() { updater.CheckForUpdates() }
 		}
 		// 每个工作台窗口：位置按槽位记（StateKey）；新开的（不是启动时开回来的）错开 from 24 pt、一样大。
 		wins.NewWindow = func(a, from *app.App) {

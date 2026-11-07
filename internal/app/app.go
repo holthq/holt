@@ -284,6 +284,7 @@ type App struct {
 	stashShowOn   bool                        // 上次套上的"在 Git 栏显示贮藏"
 	OpenSettings  func()                      // 打开设置窗口（⌘,；main 里给）
 	OpenAbout     func()                      // 打开关于窗口（main 里给）
+	OpenUpdates   func()                      // 打开 mygo 的更新窗口（main 里接 updater.CheckForUpdates；测试里为 nil）
 	SettingsWin   *mygo.Window                // 开着的设置窗口（main 里给，导出 / 导入的面板挂在它上面）；没开、测试里为 nil
 	ShowPath      func(path string) error     // 用访达 / 默认程序打开目录或文件（关于窗口的日志目录、许可）；默认 mygo.Shell.OpenPath，测试里换掉
 	OnRecent      func(path string)           // 记进系统的"最近使用"（main 里给；用另一份 state.json 时和测试里没有）

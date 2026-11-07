@@ -2204,17 +2204,9 @@
   "等搜索完成": "wait for the search to finish",
   "还没改过": "nothing changed yet",
   "检查更新…": "Check for Updates…",
-  "开发版不检查更新": "Development builds don't check for updates",
-  "正在检查更新…": "Checking for updates…",
-  "检查更新失败": "Update check failed",
-  "发现新版本 %s": "Version %s is available",
-  "现在是 %s。要打开发布页吗？": "You have %s. Open the release page?",
-  "打开发布页": "Open Release Page",
-  "打不开网页": "Couldn't open the page",
-  "已是最新版本（%s）": "You're up to date (%s)",
   "Grove 的 fork，MIT 许可，原作者的版权行照旧。": "A fork of Grove, MIT-licensed, with the original copyright notice.",
   "检查更新": "Check for Updates",
-  "查 GitHub 上最新的 release，和这个版本比": "Check the latest release on GitHub against this version",
   "图片 %s：HTTP %d": "Image %s: HTTP %d",
-  "图片 %s 超过 %d MB": "Image %s is larger than %d MB"
+  "图片 %s 超过 %d MB": "Image %s is larger than %d MB",
+  "打开更新窗口：看看有没有新版本，下载并安装": "Open the update window: see if a new version is out, download and install it"
 }

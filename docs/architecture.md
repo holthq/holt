@@ -40,7 +40,6 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 | `internal/fonts/` | 编辑器 / 终端等宽字体的选择和内置字体注册；`app` 渲染 Markdown 时也会使用，因此不放在 `ui` 中 |
 | `internal/i18n/` | 文案表：`T` / `Tf` / `Tn` / `List`，`zh-CN.json`（测试从代码里收）、`en.json`；`Set` / `Lang` / `Locale` |
 | `internal/version/` | 版本号：`App`（`mygo build` 用 ldflags 编进来，`go run` 和测试里是 `dev`）、`Mygo()`、`Go()`、`Platform()`、`String()` |
-| `internal/update/` | 检查更新：`Latest` 打开 `releases/latest`、跟着跳到 `releases/tag/<标签>` 取版本（不走 API；测试里换成 httptest，不联网），`Newer` 按版本号逐段比；界面侧在 `app/update.go` |
 | `internal/crash/` | 日志目录：`workbench.log`（满 1 MB 轮换）和崩溃日志 |
 | `internal/appicon/` | 应用图标：内嵌的 1024 位图（`icon.png`），`Draw` 按面积平均缩出各个尺寸；`-update` 重新生成 `assets/icon.png`，关于窗口用同一套绘制代码 |
 | `internal/testutil/` | 测试用：临时仓库（`TempRepo` / `NewRepo` / `ThreeRepos` / `SubmoduleRepo`）、后台回调队列 `Queue`、推帧等待、`Budget` / `Race`、`WaitTermReady` |

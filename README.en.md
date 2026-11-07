@@ -40,8 +40,9 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
 - **You decide when to make changes**: automatic refreshes only run read-only Git commands, with
   `GIT_OPTIONAL_LOCKS=0` to leave the index unchanged. Staging, committing, pushing and other write operations require
   your input. Operations that could cause data loss ask for confirmation first.
-- **No automatic uploads**: Holt only connects to the network when you start a Git fetch / pull / push / clone, click
-  Check for Updates, or a preview loads a remote image. There is no telemetry, and your code is never uploaded.
+- **No automatic uploads**: Holt only connects to the network when you start a Git fetch / pull / push / clone, when it
+  checks for updates in the background, or when a preview loads a remote image. There is no telemetry, and your code is
+  never uploaded.
 
 ## Features
 
@@ -76,7 +77,8 @@ The latest version is on the [Releases](https://github.com/holthq/holt/releases)
   and ⌘T to jump to symbols; ⇧⌘[ / ⇧⌘] switch to the previous / next tab and ⌃Tab goes back to the last used tab.
 - **Local history**: each save keeps a snapshot to help recover content you changed or deleted by mistake.
 - **Other features**: Chinese and English UI (Chinese by default; change it in Settings), light and dark themes,
-  customizable shortcuts, and Check for Updates in the app menu and the About window (reads releases from GitHub).
+  customizable shortcuts, and auto-updates: it checks signed GitHub releases in the background once a day, shows the
+  release notes and installs from the update window (Check for Updates in the app menu and About window too).
 
 ## Platform support
 
@@ -112,7 +114,7 @@ Settings and sessions are saved in `~/Library/Application Support/Holt/`. Logs a
 
 - No LSP support, so there's no code completion or go-to-definition.
 - macOS on Apple Silicon is supported; Linux and Windows are previews that have not been verified on real machines.
-- No automatic updates (use Check for Updates in the app menu) and no plugin system.
+- No plugin system.
 
 ## Feedback
 

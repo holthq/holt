@@ -63,7 +63,7 @@ func AboutView(a *app.App, licenses string) func(c *wui.Context) {
 					aboutRow(c, i18n.T("日志"), dir)
 				})
 				wui.Row(c).Gap(8).Margin(8, 0, 0, 0).Children(func() {
-					if wui.Button(c, i18n.T("检查更新")).Tooltip(i18n.T("查 GitHub 上最新的 release，和这个版本比")).Clicked() {
+					if wui.Button(c, i18n.T("检查更新")).Tooltip(i18n.T("打开更新窗口：看看有没有新版本，下载并安装")).Clicked() {
 						a.CheckUpdates()
 					}
 					if wui.Button(c, i18n.T("打开日志目录")).Disabled(a.LogDir == "").

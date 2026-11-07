@@ -44,6 +44,28 @@ gh release create v<版本> \
 发布说明从 `CHANGELOG.md` 的 `## v<版本>` 小节抄，开头写清系统要求（macOS 13+、Apple Silicon）和
 Gatekeeper 要右键打开（ad-hoc 签名、没有公证）。
 
+### 自动更新的签名密钥
+
+更新包用 Ed25519 签名，公钥编在应用里（`mygo.json` 的 `updates.publicKey`），私钥只在发版机器和 CI 上：
+
+- 生成：`go tool mygo keygen`，默认写到 `~/Library/Application Support/mygo/update-keys/`
+  （`mygo-update.key` 是私钥，`mygo-update.pub` 是公钥）。
+- 私钥**不要进仓库**：丢了，装好的应用就再也收不到更新；泄露了，别人就能给你的用户发假更新。
+  备份到密码管理器；CI 里放在 `MYGO_UPDATER_PRIVATE_KEY` secret 里。
+- 发版构建要带上私钥，才会多出更新档案和 manifest：
+
+  ```bash
+  MYGO_UPDATER_PRIVATE_KEY="$(cat ~/Library/Application\ Support/mygo/update-keys/mygo-update.key)" \
+    GOTOOLCHAIN=auto go tool mygo build -platform darwin/arm64,linux/amd64,linux/arm64,windows/amd64,windows/arm64 \
+      -sign - -skip-notarize -skip-installer
+  ```
+
+  每个平台目录下会多出 `update-<平台>.json`（manifest）和 `holt-<版本>-<平台>.tar.gz`（更新档案），
+  可能还有 `*-to-*-<平台>.delta`（增量更新）。应用读的是
+  `https://github.com/holthq/holt/releases/latest/download/update-<平台>.json`。
+- 上传时**先传档案和增量，最后传 manifest**，应用就不会看到指向不存在文件的清单；`SHA256SUMS` 和安装脚本也一起传。
+- `mygo build -upload` 会替你把它们传到 GitHub 的 draft release（需要 `GH_TOKEN` / `GITHUB_TOKEN`，以及上面的私钥）。
+
 ## 构建
 
 ```bash
