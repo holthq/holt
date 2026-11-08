@@ -199,6 +199,8 @@ type App struct {
 	syms      symIndex      // 工作区符号的索引（"#"，symindex.go）
 	snips     *snippets.Set // 读好的代码片段（snippets.go）：第一次用时读
 	snipCheck time.Time     // 上次看片段目录变了没有
+	lang      langState     // 语言服务器（lang.go）：按仓库根 + 语言起，每个窗口一份
+	LangOff   bool          // 测试用：不起语言服务器（界面测试不能碰开发机上真的 gopls / clangd）
 	taskVer   int           // 哪个仓库的 Tasks 重扫了就加一（面板 "!" 跟着重算）
 
 	// 列表
@@ -352,6 +354,7 @@ type App struct {
 	Clones      []*Clone    // 正在跑的克隆（clone.go），侧栏顶上一个一行
 	CloneDlg    CloneDialog // "克隆仓库"对话框
 
+	Run       RunState // 底栏输出里跑着的那条命令（命令面板 "$ 命令"，run.go）
 	Output    []LogEntry
 	BottomTab int
 	Probs     Problems     // 检查报的问题（lint.go）：所有仓库一起，换工作区时不带过去
@@ -393,6 +396,7 @@ func New(wsPath, stateDir string) (*App, error) {
 	a := newApp(wsPath, roots, st)
 	a.StateDir = stateDir
 	a.defaults()
+	a.lang.cmdKey = a.langCommandKey()
 	if failed {
 		a.Toast = i18n.T("最近的工作区都打不开了")
 	}
@@ -460,8 +464,9 @@ func (a *App) Start() {
 	a.startLocalHistory()
 }
 
-// Close 关掉所有终端和文件监听、取消还在跑的 git 命令、停掉还没搜完的搜索（窗口关了之后）。
+// Close 关掉所有终端和文件监听、取消还在跑的 git 命令、停掉还没搜完的搜索、关掉语言服务器（窗口关了之后）。
 func (a *App) Close() {
+	a.stopLangs()
 	a.stopAgents()
 	a.stopWatching()
 	a.Search.stop()

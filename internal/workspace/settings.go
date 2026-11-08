@@ -80,6 +80,9 @@ type Settings struct {
 	LintOnSave bool              `json:"lintOnSave,omitempty"` // 保存后跑外部检查命令，问题标进编辑器、列进问题面板，默认关
 	Linters    map[string]string `json:"linters,omitempty"`    // 每种语言的检查命令：没有或 "" 是内置默认，"-" 是不检查
 
+	// 语言服务器（app/lang.go）：每种语言的 LSP 命令，没有或 "" 是内置默认，"-" 是不用
+	LanguageServers map[string]string `json:"languageServers,omitempty"`
+
 	// 语言
 	Lang string `json:"lang,omitempty"` // "" 中文、"en" 英文
 }
@@ -248,6 +251,11 @@ func (s *Settings) Clamp() {
 	}
 	s.TermProfiles = s.Profiles()
 	s.WebHosts = slices.DeleteFunc(s.WebHosts, func(h WebHost) bool { return !contains(WebKinds, h.Kind) || len(h.Host) > 255 })
+	for k, v := range s.LanguageServers {
+		if strings.TrimSpace(k) == "" || len(k) > 64 || len(v) > 1024 || strings.ContainsAny(k+v, "\x00\n") {
+			delete(s.LanguageServers, k)
+		}
+	}
 }
 
 func contains(list []string, v string) bool {

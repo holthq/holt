@@ -57,7 +57,9 @@ for macOS, `holt_<version>_<arch>.deb` or `holt-<version>-linux-<arch>.tar.gz` f
   across repos in the file tree, and undo the last file operation.
 - **Editor**: drag a tab to an edge to split the editor. Includes an outline, sticky scroll, snippets and Markdown
   previews with Mermaid and math, which also render the HTML that GitHub READMEs use (centered blocks, badges, images). Supports encodings such as GB18030 and Big5. Run formatters like gofmt and prettier,
-  or checks like go vet and eslint, on save.
+  or checks like go vet and eslint, on save. Language servers (LSP) provide completion, hovers, ⌘-click / F12 go to
+  definition and diagnostics; gopls, rust-analyzer, clangd, typescript-language-server, pyright and lua-language-server
+  are recognized by default, and the commands can be changed in Settings → Editor → Language Servers.
 - **Git**: stage changes by hunk or line and resolve conflicts in the editor. View a commit graph for one repo, or the
   history of all repos merged by time; commits co-authored by a coding agent are marked and can be filtered. Merge, rebase (including interactive rebase), cherry-pick, stash, worktree and submodule operations
   are available in the UI. Each repo's header in the Git panel has its own Pull and Push buttons, with ahead / behind
@@ -75,6 +77,10 @@ for macOS, `holt_<version>_<arch>.deb` or `holt-<version>-linux-<arch>.tar.gz` f
   and output are saved when you close the window. When an agent such as claude or codex runs in a terminal, its tab
   shows whether it is waiting for you (an amber dot: it rang the bell or sent a notification; gone once you switch in)
   or running (a spinner); more agent commands can be added in Settings.
+- **Running**: type `$ command` in the command palette (or use Run Command in the Terminal menu) to run it in the repo
+  root; its output and exit code go to the Output panel, `path:line:col: message` lines go to the Problems panel and
+  click through to the line, and Stop Running stops it. Tasks (package.json / Makefile / justfile / cargo / go) still
+  run in the repo's own terminal.
 - **Search and navigation**: search and replace across repos. Use ⌘P to find files, ⇧⌘P to open the command palette
   and ⌘T to jump to symbols; ⇧⌘[ / ⇧⌘] switch to the previous / next tab and ⌃Tab goes back to the last used tab.
 - **Local history**: each save keeps a snapshot to help recover content you changed or deleted by mistake.
@@ -114,7 +120,6 @@ Settings and sessions are saved in `~/Library/Application Support/Holt/`. Logs a
 
 ## Known limitations
 
-- No LSP support, so there's no code completion or go-to-definition.
 - macOS on Apple Silicon is supported; Linux and Windows are previews that have not been verified on real machines.
 - No plugin system.
 

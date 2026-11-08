@@ -4,6 +4,14 @@
 
 ## 未发布
 
+- 语言服务器（LSP）支持：新增 `internal/lsp`（JSON-RPC over stdio、全文文档同步、补全 / 悬停 / 跳转定义 / 诊断、
+  UTF-16 / UTF-8 位置换算）和 `app/lang.go` 接线。默认认 gopls、rust-analyzer、clangd、typescript-language-server、
+  pyright、lua-language-server；设置 → 编辑器 → 语言服务器里能改命令，写 `-` 关掉这种语言。补全里语言服务器和代码片段
+  合在一起，诊断和外部检查合在一起显示；命令面板新增“重启语言服务器”（`lsp.restart`）。新增设置键 `languageServers`。
+- 命令面板的 `$ 命令`：在仓库根、login shell 里跑一条命令（不进终端），输出和退出码进底栏的「输出」，
+  `路径:行:列: 信息` 解析进问题面板（点一行跳到那里）。终端菜单和命令面板里有「运行命令…」和「停止运行」；
+  一次只跑一条，输出最多留 512 KB，停止是直接杀掉进程。
+
 ## v0.3.0 — 2026-11-07
 
 - Markdown 预览会把 GitHub README 常见的块级 HTML 画成界面（`<div align="center">`、`<h1>`、`<p>`、`<img>` 徽章、

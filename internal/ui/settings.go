@@ -183,6 +183,9 @@ func SettingsView(a *app.App) func(c *wui.Context) {
 					done()
 				})
 			}},
+			{1, "语言服务器", lspFoot, func(c *wui.Context, _, _ string) {
+				languageServerTable(a, s).draw(c, done)
+			}},
 			{1, "本地历史保留", "", func(c *wui.Context, l, _ string) {
 				days := strconv.Itoa(s.LocalHistoryDays())
 				opts := make([]string, len(workspace.HistoryDayOpts))
@@ -454,6 +457,7 @@ func lintFootText() string {
 const (
 	lintFoot         = "命令读磁盘上存好的文件，用 login shell 在仓库根目录（仓库外的文件：文件所在的目录）跑，60 秒超时；输出（标准输出、标准错误都看）里认 路径:行:列: 信息 和 tsc 的 路径(行,列): error TS…: 信息 两种行，error / warning / note 这些级别词认得，没写算错误。{file} 换成文件的完整路径（只换掉这个文件的问题），{dir} 换成文件所在的目录（仓库里的路径，根目录是 .；换掉这个目录的），都不带时换掉这个仓库这种语言的全部。空着用内置默认（灰字），写 - 就不检查这种语言。"
 	formatterFoot    = "命令从标准输入读文件内容、把格式化好的写到标准输出，用 login shell 在仓库根目录（仓库外的文件：文件所在的目录）跑，10 秒超时；{file} 换成文件的完整路径。空着用内置默认（灰字），写 - 就不格式化这种语言。"
+	lspFoot          = "每种语言一个语言服务器（LSP，stdio），用 login shell 在仓库根目录起；补全、悬停、跳转定义和诊断来自它。空着用内置默认（灰字：gopls、rust-analyzer、clangd、typescript-language-server、pyright、lua-language-server），写 - 就不用这种语言的服务器。改了之后开着的服务器会重启。"
 	termdDesc        = "shell 跑在一个独立的后台进程里，关窗口、退出 Holt 都不断；再打开同一个工作区接回去。多一个常驻进程（约 %d MB）。新开的终端生效"
 	webHostsDesc     = "“在网页打开”的地址怎么拼：github.com、bitbucket.org，主机名里带 gitlab、gitea、forgejo、codeberg 的自己认得；自建的主机名不带这些字时在这里指定，别的按 GitHub 的路径拼"
 	snippetDirDesc   = "一种语言一个 JSON（go.json、python.json…；global.json 所有语言都有），VS Code 的片段格式：认 $1、${1:默认}、$0，不认变量和选择项。文件里的同名片段覆盖内置的；改了自动重读。敲前缀时补全里有，Tab 插入后 Tab / ⇧Tab 在跳位之间走；命令面板“插入片段…”"
@@ -784,6 +788,13 @@ func formatterTable(a *app.App, s *workspace.Settings) toolTable {
 	return toolTable{&s.Formatters, app.DefaultFormatters, app.FormatterLangs, a.ExtraFormatterLangs(),
 		func(l string) string { return i18n.Tf("%s 的格式化命令", l) }, i18n.T("从标准输入读、写到标准输出的命令"),
 		func(l string) string { return i18n.Tf("从格式化表里拿掉 %s", l) }}
+}
+
+// languageServerTable 是语言服务器表：每种语言一行命令，空着用内置默认。
+func languageServerTable(a *app.App, s *workspace.Settings) toolTable {
+	return toolTable{&s.LanguageServers, app.DefaultLanguageServers, app.LanguageServerLangs, a.ExtraLanguageServerLangs(),
+		func(l string) string { return i18n.Tf("%s 的语言服务器命令", l) }, i18n.T("启动语言服务器的命令（stdio）"),
+		func(l string) string { return i18n.Tf("从语言服务器表里拿掉 %s", l) }}
 }
 
 // linterTable 是检查表。

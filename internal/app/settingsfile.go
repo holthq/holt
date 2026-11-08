@@ -303,7 +303,8 @@ var settingLabels = map[string]string{
 	"termCopyOnSelect": "选中即复制", "termProfiles": "其他配置", "agentNames": "agent 命令", "pullMode": "拉取方式", "autoPush": "提交后推送",
 	"showWorktrees": "在 Git 栏显示工作树", "showStashes": "在 Git 栏显示贮藏",
 	"authorName": "作者名字", "authorEmail": "作者邮箱", "inlineBlame": "行内 blame", "webHosts": "网页风格",
-	"formatOnSave": "保存时格式化", "formatters": "格式化命令", "lintOnSave": "保存时检查", "linters": "检查命令", "lang": "界面语言",
+	"formatOnSave": "保存时格式化", "formatters": "格式化命令", "lintOnSave": "保存时检查", "linters": "检查命令",
+	"languageServers": "语言服务器", "lang": "界面语言",
 }
 
 // SettingName 是设置键 key 的名字（过了 i18n）；表里没有的就是键本身。

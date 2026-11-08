@@ -211,6 +211,10 @@
 - `SetDiagnostics(version, ds)` 的 version 是 ds 按哪一版文字算的，编辑器沿那一版之后的编辑历史把位置挪到现在。缓冲区未保留那段历史（重读过、版本对不上）时什么都不设，也不报错。
   所以（`SyncProblems`）：先 `SetDiagnostics(cur, nil)` 清掉，再按记下的版本设；设完 `Diagnostics()` 还是空的，就按现在的文字重算、用现在的版本设。
   位置按跑命令那一刻的文字和版本算（`snapOf` 在保存 / 手动检查时拍下），不要在结果返回时按当前文本计算。
+- 语言服务器的位置是 UTF-16 码元（LSP 默认），不是字节；换偏移用 `internal/lsp.Text`（协商成 `utf-8` 时按字节），别拿 `Position.Character` 直接当字节列。
+  诊断按服务端给的那一版文字算偏移，再交给 `SetDiagnostics(那一版, …)` 让编辑器挪；把 LSP 和外部检查两批合在一起时，各自先按自己的版本设、`Diagnostics()` 读回来，最后用当前版本重设（`app/lang.go`、`app/SyncProblems`）。
+- 补全 / 悬停 / 跳转定义的钩子是 `editor.State` 的字段（`OnCompletion`、`OnHover`、`OnDefinition`），每帧在 `ui/tabs.go` 里设；`OnHover` 的回答用 `St.ShowHover(start, end, 纯文字, nil)` 显示，Markdown 记号要自己去掉。
+  补全列表由编辑器按前缀再过滤一次，服务端给的 `textEdit` 起点和光标前的词不一样时，Holt 只按词替换（`mapCompletions`），做不到服务端那种任意范围替换。
 - 编辑器的 `OnInput` 是 View 那一刻取的，后设置的处理函数会覆盖先前的处理函数。`restingEditor` 自己挂了 `OnInput`，额外的键要串进它的 `keys` 参数（比如 `mergeKeys`），不能在外面再 `.OnInput(...)`。
   返回 true 会消耗该按键事件（⌃⌥1 不会再插个字）；只接 `InputKeyDown`，键按命令注册表比（`ev.Mods == cmd.Mods`，`Key` 或 `KeyUnknown` 时的 `PhysicalKey`）。
   这类本地命令（`Run` 为 nil）不进窗口快捷键、不在面板里。Tester 里 `tt.Key(wui.Ctrl|wui.Alt, wui.Key2)` 能走到它；真窗口里 ⌃⌥ 的键会不会被输入法吃掉要手测。

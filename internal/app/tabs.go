@@ -429,6 +429,7 @@ func (a *App) WriteDoc(d *docs.Doc, tidy bool) error {
 	if n > 0 {
 		a.Toast = i18n.Tn("已保存 %s · 整理了 %d 行", d.Title, n)
 	}
+	a.LangSaved(d)
 	a.refreshSaved(d)
 	return nil
 }
@@ -443,6 +444,7 @@ func (a *App) askUTF8(d *docs.Doc, ue *docs.UnencodableError) {
 				return
 			}
 			a.Toast = i18n.Tf("已按 UTF-8 保存 %s", d.Title)
+			a.LangSaved(d)
 			a.refreshSaved(d)
 		})
 }
@@ -574,6 +576,7 @@ func (a *App) RemoveDoc(d *docs.Doc) {
 		}
 	}
 	a.takeOut(g, d)
+	a.LangClosed(d)
 	if ds, _ := a.GroupDocs(g); len(ds) == 0 {
 		a.collapse(g)
 	}

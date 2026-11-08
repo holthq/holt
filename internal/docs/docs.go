@@ -205,9 +205,11 @@ type Doc struct {
 	FormatWarned bool // 保存时格式化失败已经提示过了：这个标签格式化成功之前不再提示
 	EatText      bool // 编辑器刚接了 ⇧⌥F：macOS 随后送进来的、⌥ 打出的那段字（Ï）吞掉（ui.docKeys）
 
-	// 检查（app/lint.go）：交给编辑器的诊断是哪个缓冲区、这个文件的问题第几版（app.SyncProblems 对着它认要不要重设）
-	ProbBuf *editor.Buffer
-	ProbGen int
+	// 检查（app/lint.go）：交给编辑器的诊断是哪个缓冲区、这个文件的问题第几版（app.SyncProblems 对着它认要不要重设）；
+	// ProbLang 是语言服务器（app/lang.go）那批诊断的版本，两批合在一起交给编辑器
+	ProbBuf  *editor.Buffer
+	ProbGen  int
+	ProbLang int
 
 	// 代码片段（app/snippets.go）：Snip 是插进去的片段在跳位之间走（Tab / ⇧Tab，状态栏“片段 2/3”）；SnipOffer 是给编辑器
 	// 补全的那批里的片段（选没选、选了哪一条事后对着缓冲区认）。按标签记，镜像不共用

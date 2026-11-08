@@ -83,7 +83,7 @@ func paletteList(a *app.App, c *wui.Context) {
 			return i18n.Tf("命令 %s", it.Text)
 		case app.ItemProfile:
 			return i18n.Tf("用 %s 新建终端", it.Text)
-		case app.ItemTask:
+		case app.ItemTask, app.ItemRun:
 			return i18n.Tf("运行 %s", it.Text)
 		case app.ItemSymbol:
 			if it.Loc != "" {
@@ -143,10 +143,13 @@ func paletteRow(a *app.App, row wui.ListRow, it app.PaletteItem) bool {
 			if it.Keys != "" {
 				wui.Text(c, it.Keys).FontSize(11.5).TextColor(muted).SingleLine().Shrink(0)
 			}
-		case app.ItemGit, app.ItemGitHistory, app.ItemTerm:
+		case app.ItemGit, app.ItemGitHistory, app.ItemTerm, app.ItemRun:
 			ic := iconTerminal
-			if it.Kind == app.ItemGitHistory {
+			switch it.Kind {
+			case app.ItemGitHistory:
 				ic = iconHistory
+			case app.ItemRun:
+				ic = iconPlay
 			}
 			wui.Icon(c, ic).FontSize(iconRow).TextColor(muted).Shrink(0)
 			wui.Text(c, it.Text).Font(mono()).FontSize(12.5).TextColor(text).SingleLine().Ellipsis("…").MinWidth(0).Shrink(1)

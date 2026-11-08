@@ -9,10 +9,16 @@ import (
 
 	"github.com/holthq/holt/internal/askpass"
 	"github.com/holthq/holt/internal/testutil"
+	"github.com/holthq/holt/internal/testutil/fakelsp"
 )
 
 // TestMain 分出 askpass 模式：写命令的 GIT_ASKPASS 脚本 exec 的是 os.Executable()，测试里就是这个测试程序。
+// 也分出假语言服务器模式：internal/lsp 的测试和这里都用测试程序自己当服务端。
 func TestMain(m *testing.M) {
+	if os.Getenv(fakelsp.Env) == "1" {
+		fakelsp.Main()
+		return
+	}
 	if len(os.Args) > 1 && os.Args[1] == "askpass" {
 		os.Exit(askpass.Main(os.Args[2:]))
 	}

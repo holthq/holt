@@ -30,6 +30,10 @@ func (a *App) SettingsChanged() {
 		o.reloadExclude()
 		o.dropInlineBlames()
 		o.syncShownGroups()
+		if key := o.langCommandKey(); o.lang.cmdKey != "" && o.lang.cmdKey != key {
+			o.RestartLangServers()
+		}
+		o.lang.cmdKey = o.langCommandKey()
 		o.eachPane(func(_ *Repo, p *TermPane) {
 			if p.Term != nil {
 				p.Term.SetFont(o.TermFont())

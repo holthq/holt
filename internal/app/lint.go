@@ -526,40 +526,52 @@ func (a *App) dropProblems(root string) {
 	}
 }
 
-// SyncProblems 把 d 的问题交给编辑器（每帧，在编辑器画之前）：这个文件的问题变了、或换了缓冲区（开晚了、重读了）才重设。
-// 有记下的那份（跑那一刻的文字、版本）就照它让编辑器沿编辑挪；缓冲区没留那段历史、或没记的，按现在的文字算。
+// SyncProblems 把 d 的问题交给编辑器（每帧，在编辑器画之前）：这个文件的问题变了、语言服务器来了新诊断、
+// 或换了缓冲区（开晚了、重读了）才重设。有记下的那份（跑那一刻的文字、版本）就照它让编辑器沿编辑挪；
+// 缓冲区没留那段历史、或没记的，按现在的文字算。外部检查和语言服务器两批合在一起交给编辑器。
 func (a *App) SyncProblems(d *docs.Doc) {
 	if d.Kind != docs.File || d.Buf == nil || d.Loading {
 		return
 	}
 	p := &a.Probs
 	gen := p.absGen[d.Abs]
-	if d.ProbBuf == d.Buf && d.ProbGen == gen {
+	lrev := 0
+	if ld := a.lang.diags[d.Buf]; ld != nil {
+		lrev = ld.rev
+	}
+	if d.ProbBuf == d.Buf && d.ProbGen == gen && d.ProbLang == lrev {
 		return
 	}
 	first := d.ProbBuf == nil
-	d.ProbBuf, d.ProbGen = d.Buf, gen
+	d.ProbBuf, d.ProbGen, d.ProbLang = d.Buf, gen, lrev
 	ps := a.problemsOf(d.Abs)
-	if first && len(ps) == 0 {
+	ld := a.lang.diags[d.Buf]
+	if first && len(ps) == 0 && (ld == nil || len(ld.ds) == 0) {
 		return
 	}
 	cur := d.Buf.Version()
 	d.St.SetDiagnostics(cur, nil)
-	if len(ps) == 0 {
-		return
-	}
-	if an, ok := p.anchors[d.Buf]; ok {
-		d.St.SetDiagnostics(an.ver, an.ds)
-		if len(d.St.Diagnostics()) > 0 || len(an.ds) == 0 {
-			return
+	var lintDs []editor.Diagnostic
+	if len(ps) > 0 {
+		if an, ok := p.anchors[d.Buf]; ok {
+			d.St.SetDiagnostics(an.ver, an.ds)
+			lintDs = d.St.Diagnostics()
+		}
+		if len(lintDs) == 0 {
+			lintDs = diagnosticsIn(d.Buf.String(), ps)
+			if p.anchors == nil {
+				p.anchors = map[*editor.Buffer]lintAnchor{}
+			}
+			p.anchors[d.Buf] = lintAnchor{cur, lintDs}
 		}
 	}
-	ds := diagnosticsIn(d.Buf.String(), ps)
-	if p.anchors == nil {
-		p.anchors = map[*editor.Buffer]lintAnchor{}
+	var lspDs []editor.Diagnostic
+	if ld != nil && len(ld.ds) > 0 {
+		d.St.SetDiagnostics(cur, nil) // 映射不上时别把上面那批留下当语言服务器的
+		d.St.SetDiagnostics(ld.ver, ld.ds)
+		lspDs = d.St.Diagnostics()
 	}
-	p.anchors[d.Buf] = lintAnchor{cur, ds}
-	d.St.SetDiagnostics(cur, ds)
+	d.St.SetDiagnostics(cur, slices.Concat(lintDs, lspDs))
 }
 
 // diagnosticsIn 把 ps 换成文字 text 里的诊断：行列（从 1 起，列按字节）换成偏移，超出的夹到行尾；End 是从 Start 起的

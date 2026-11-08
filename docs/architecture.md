@@ -3,7 +3,7 @@
 本文按子系统介绍 Holt 当前的结构和实现，供修改代码时参考。各版本的改动记录在根目录的 `CHANGELOG.md`。
 
 ```
-cmd/workbench ──► internal/ui ──► internal/app ──► internal/{git, files, docs, workspace, search, globs, fuzzy, watch,
+cmd/workbench ──► internal/ui ──► internal/app ──► internal/{git, files, docs, lsp, workspace, search, globs, fuzzy, watch,
  （工作台窗口、设置和  （纯界面）       （状态机 + 命令注册表）    graph, outline, history, askpass, termd, tasks,
    关于两个小窗口、                                           snippets, render, fonts}
    单实例、日志）                                            （不碰界面的逻辑；highlight 挂在 docs 底下）
@@ -25,6 +25,7 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 | `internal/askpass/` | 凭据提示的两端：`Main` / `Run` 处理 `Holt askpass <提示>` 子进程（连接套接字、发送一行 JSON、等待回答），`Listen` / `Server` / `Close` 处理应用端；`CleanStale` 清理上次遗留的目录，`Classify` 识别用户名、密码或口令提示 |
 | `internal/files/` | 文件树模型：`git ls-files` 建，普通文件夹用 `Walk`；展开收起、筛选、改动标记、被忽略的文件懒读、符号链接、子模块行、合并目录、增量 `Diff` / `Apply`、空目录 |
 | `internal/docs/` | 打开的文档：各种 `Kind`、读写、外部改动检测、编码、大文件、历史版本、Diff 两侧、冲突块解析、保存整理、按行 diff（`LineEdits`）、交互式变基的计划、光标信息 |
+| `internal/lsp/` | 语言服务器客户端：进程（login shell、进程组）、JSON-RPC 报文框、initialize、全文文档同步、补全 / 悬停 / 跳转定义、诊断、UTF-16 / UTF-8 位置换算、`file://` 地址。不认识标签和界面，接线在 `app/lang.go` |
 | `internal/highlight/` | 大文件的后台高亮：`For(name)` 复制 mygo 的语言定义，只替换 `Highlighter`；一个 goroutine 从头分词并记录每行开头的状态，主线程据此处理可见行 |
 | `internal/search/` | 跨仓库全文搜索和替换的计算：候选、worker、字面 / 整词 / 正则、glob、编码、`advanced.go` 的 regexp2 后备、`replace.go` |
 | `internal/globs/` | 路径 glob（`**` 跨目录，`*` `?` 不跨，`{a,b}`，不分大小写）：`Set.Match` 给搜索的包含 / 排除，`Set.MatchRoot` 给 `files.exclude`，带目录缓存的 `Matcher` |
@@ -81,6 +82,12 @@ cmd/workbench ──► internal/ui ──► internal/app ──► internal/{g
 `mygo.json` 的 `updates` 给出公钥和 `github: holthq/holt`，更新档案和 manifest 由 `mygo build` 用私钥签好发到 Release。
 应用菜单和关于窗口的「检查更新…」（`app.checkUpdate` → `App.CheckUpdates` → `App.OpenUpdates`）打开同一个窗口。
 签名密钥、构建和上传顺序见 [release.md](release.md)。
+
+### 运行命令
+
+命令面板的 `$ 命令` 走 `app/run.go`：在仓库根、login shell 里跑（`App.shell()`），一次只跑一条，
+输出最多留 512 KB；跑完把输出记进底栏「输出」，用 `ParseProblems`（`lint.go`）把 `路径:行:列: 信息` 解析成
+`Problem` 进问题面板（`lang: "build"` 那一组，和检查报的合在一起）。「停止运行」就是取消 `exec.CommandContext`。
 
 ## 工作区、设置、会话和状态文件
 
@@ -473,6 +480,25 @@ Holt 菜单选中的项在下一帧的开头、建树之前执行（`root` 里�
 格式化（`app/format.go`）：⇧⌥F、右键或保存时（`FormatOnSave`）。将缓冲区的 UTF-8 文本传入命令的 stdin，读 stdout，和原文按行比（`docs.LineEdits`，每处收窄到真正不同的那几个字），仅应用有变化的部分，作为一次可撤销操作，并保留光标、折叠和滚动位置。运行期间文本再次变化时，不应用结果。默认命令在 `DefaultFormatters`（按 `editor.Language.Name`），`Settings.Formatters` 能改，`"-"` 关掉；`{file}` 换成引号括好的绝对路径。
 
 检查（`app/lint.go`，界面在 `ui/problems.go`）：保存时（设置“格式化”页的“保存时检查”，默认关）或手动“检查当前文件”。默认命令在 `DefaultLinters`（go vet、tsc、eslint、ruff、cargo check、shellcheck），`LinterOf` 先看设置里的 `Linters`；`{file}` / `{dir}` 两个占位符，`LintTimeout` 60 秒。它读的是磁盘上的文件，所以保存那一刻记下缓冲区的版本（`snapOf`）。输出按 `路径:行:列: 信息` 解析（`ParseProblems`），经 mygo 编辑器的 diagnostics 标在行上（`SyncProblems`：先清掉，再按记下的版本设；对不上版本就用现在的文字重算位置），底栏第三个标签“问题”列出所有仓库的结果（按仓库、文件、行排），状态栏显示错误和警告的数目。
+
+### 语言服务器（LSP）
+
+`internal/lsp` 只做协议和进程：经 login shell（`shell -lc`）起 `gopls`、`clangd`、`rust-analyzer` 这类 stdio 服务端，
+JSON-RPC 按 `Content-Length` 收发，initialize 带全文同步、片段补全、Markdown 悬停和工作区诊断（带版本）能力。
+位置按协商的编码换算（默认 UTF-16 码元，服务端说 `utf-8` 就按字节）；`file://` 地址在 `uri.go` 里来回换。
+进程在单独的进程组，关闭时先 `shutdown` / `exit`，不退就整组杀掉。
+
+`app/lang.go` 是接线：每个仓库根 + 每种语言一个进程（`langDocFor`），命令来自 `Settings.LanguageServers`
+或 `DefaultLanguageServers`（`"-"` 关掉）；第一次画到某个文件时后台起服务器，`LangTick` 把打开的文档 didOpen、
+文字变了发全文 didChange（打字时 120 ms 一次，补全 / 悬停 / 定义 / 保存强制同步），保存发 didSave，标签关掉发 didClose。
+`internal/ui/tabs.go` 每帧把 `St.OnCompletion` / `OnHover` / `OnDefinition` 接到 `App.Completion` / `Hover` / `Definition`；
+补全先给代码片段，服务端回答回来后两批合在一起（LSP 的片段格式交给 mygo 的 `ParseSnippet`，解不开就当普通文字）。
+跳转定义的目标文件开着就用缓冲区文字，否则读盘，换字节行列后走 `OpenAt`。
+
+诊断由服务端推 `textDocument/publishDiagnostics`，按它带的版本找到当时交给服务端的文字快照换成字节偏移，
+存进 `a.lang.diags`。`SyncProblems` 把语言服务器和外部检查两批诊断合在一起交给编辑器（各自按自己的版本让编辑器挪到
+现在，再以当前版本重设），所以两样能同时显示。设置里改了服务器命令会 `RestartLangServers`；命令面板的
+“重启语言服务器”（`lsp.restart`）也一样。换工作区、关窗口时 `stopLangs` 全部关掉，晚回来的回调按 `lang.gen` 丢掉。
 
 ### 大纲和粘性滚动
 

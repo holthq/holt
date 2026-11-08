@@ -25,6 +25,7 @@ func newUI(t *testing.T, ws, stateDir string) (*app.App, *wui.Tester, func(what 
 	if err != nil {
 		t.Skipf("读不了工作区 %s: %v", ws, err)
 	}
+	a.LangOff = true // 界面测试里不起真的语言服务器
 	q := testutil.NewQueue()
 	a.Update = q.Post
 	// 兜底：测试里不开浏览器、不开访达（要看开了什么的测试自己换成记下来的）

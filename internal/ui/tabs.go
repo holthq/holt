@@ -509,7 +509,8 @@ func docContent(a *app.App, c *wui.Context, d *docs.Doc, focused bool) {
 			d.St.LineNumbers, d.St.NoFolding, d.St.SoftWrap = editor.LineNumbersOff, true, false
 		}
 		a.SyncInlineBlame(d, focused) // 设置里开着行内 blame：光标行末尾那一条（只在键盘所在那组的当前标签上）
-		a.SyncProblems(d)             // 检查报的问题：这个文件的变了才重设诊断
+		a.LangTick(d)                 // 语言服务器：打开的文档交给服务端，文字变了发 didChange
+		a.SyncProblems(d)             // 检查报的问题：这个文件的变了才重设诊断（语言服务器的诊断也合在这里）
 		d.St.ContextMenu = func(m *wui.Menu) { docMenu(a, nativeMenu(m), d) }
 		if d.Top > 0 { // 恢复的标签：等编辑器排过一次版（知道每行多高）再滚
 			if _, last := d.St.VisibleLines(); last > 0 {
@@ -520,9 +521,13 @@ func docContent(a *app.App, c *wui.Context, d *docs.Doc, focused bool) {
 			}
 		}
 		a.SnipTick(d) // 代码片段：补全里选了的认出来开始跳位，跳位会话跟着改动挪
-		d.St.OnCompletion = nil
-		if d.Kind == docs.File && d.Editable() {
-			d.St.OnCompletion = func(req editor.CompletionRequest) { a.SnippetCompletions(d, req) }
+		d.St.OnCompletion, d.St.OnHover, d.St.OnDefinition = nil, nil, nil
+		if d.Kind == docs.File && d.Buf != nil && !d.Loading {
+			d.St.OnHover = func(req editor.HoverRequest) { a.Hover(d, req) }
+			d.St.OnDefinition = func(offset int) { a.Definition(d, offset) }
+			if d.Editable() {
+				d.St.OnCompletion = func(req editor.CompletionRequest) { a.Completion(d, req) }
+			}
 		}
 		keys := docKeys(a, d, blocks)
 		if d.Kind == docs.SearchDoc {

@@ -53,6 +53,7 @@ const (
 	ItemGit                           // 跑输入的这条 git 命令
 	ItemGitHistory                    // 跑过的 git 命令：选它把它填回输入框
 	ItemTerm                          // 把输入的这行放进当前仓库的终端（不回车）
+	ItemRun                           // "$ 命令"：在底栏输出里跑这条命令（不进终端）
 	ItemSymbol                        // 当前文件大纲里的一个符号（@）
 	ItemProfile                       // 用这个终端配置新建终端（>term ）
 	ItemTask                          // 在仓库的终端里跑这个任务（!）
@@ -158,6 +159,9 @@ func (a *App) paletteItems(text string) ([]PaletteItem, string) {
 	if rest, ok := strings.CutPrefix(text, "!"); ok {
 		return a.taskItems(strings.TrimSpace(rest))
 	}
+	if rest, ok := strings.CutPrefix(text, "$"); ok {
+		return a.runItems(strings.TrimSpace(rest))
+	}
 	if rest, ok := strings.CutPrefix(text, ">"); ok {
 		rest = strings.TrimLeft(rest, " ")
 		if args, ok := strings.CutPrefix(rest, "git "); ok {
@@ -188,7 +192,7 @@ func (a *App) paletteItems(text string) ([]PaletteItem, string) {
 	case name == "":
 		items := a.recentItems()
 		if len(items) == 0 {
-			return nil, i18n.T("敲文件名在所有仓库里找 · 名字:行号 打开到那一行 · :行号 在当前文件跳行 · @ 当前文件的符号 · 名字@符号 别的文件里的符号 · # 所有仓库里的符号 · > 命令 · >git 运行 git 命令 · ! 运行任务")
+			return nil, i18n.T("敲文件名在所有仓库里找 · 名字:行号 打开到那一行 · :行号 在当前文件跳行 · @ 当前文件的符号 · 名字@符号 别的文件里的符号 · # 所有仓库里的符号 · > 命令 · >git 运行 git 命令 · ! 运行任务 · $ 在输出面板跑命令")
 		}
 		return items, ""
 	}
@@ -417,6 +421,22 @@ func (a *App) commandItems(q string) ([]PaletteItem, string) {
 	return items, ""
 }
 
+// runItems 是 "$ 命令"：在底栏输出里跑这条命令（不进终端），输出和编译错误进底栏。
+func (a *App) runItems(cmd string) ([]PaletteItem, string) {
+	r := a.Current()
+	if r == nil {
+		return nil, i18n.T("列表里没有仓库")
+	}
+	if cmd == "" {
+		return nil, i18n.T("在当前仓库里跑一条命令，输出和编译错误进底栏")
+	}
+	if a.Run.Running {
+		return nil, i18n.T("已经有一条命令在跑，先停掉它") + " · " + a.Run.Cmd
+	}
+	return []PaletteItem{{Kind: ItemRun, Text: i18n.Tf("运行：%s", cmd), Detail: i18n.Tf("在 %s 里跑", r.Name),
+		repo: r, args: cmd}}, ""
+}
+
 // gitItems 是 ">git 参数"：第一项跑这条命令，下面是最近跑过的（匹配参数的）。
 func (a *App) gitItems(args string) ([]PaletteItem, string) {
 	r := a.Current()
@@ -556,6 +576,11 @@ func (a *App) acceptPalette(i int, side bool) {
 	case ItemTerm:
 		a.ClosePalette()
 		a.RunInTerminal(it.args)
+	case ItemRun:
+		a.ClosePalette()
+		if it.repo != nil && !it.repo.gone() {
+			a.RunShell(it.repo, it.args)
+		}
 	case ItemProfile:
 		a.ClosePalette()
 		a.NewTerminalProfile(a.TermRepo(), "", it.args)

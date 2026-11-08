@@ -28,6 +28,7 @@ func newTestAppIn(t *testing.T, ws, stateDir string) (*App, func(what string, co
 	if err != nil {
 		t.Fatal(err)
 	}
+	a.LangOff = true // 测试里不起真的语言服务器
 	q := testutil.NewQueue()
 	a.Update = q.Post
 	wait := func(what string, cond func() bool) {

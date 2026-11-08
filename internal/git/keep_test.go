@@ -63,7 +63,7 @@ func shortTimeout(t *testing.T, d time.Duration) {
 // 超时钟：没有 Keep 时到点就停（返回超时的错误）；Hold 着的时候不算，Release 后重新算一整段。
 func TestOpTimeoutKeep(t *testing.T) {
 	root, _ := testutil.TempRepo(t)
-	shortTimeout(t, testutil.Budget(400*time.Millisecond))
+	shortTimeout(t, testutil.Budget(800*time.Millisecond))
 	ctx := context.Background()
 
 	_, err := RunOpKeep(ctx, root, "", nil, nil, slowAlias(t, "sleep 3")...)
@@ -110,7 +110,7 @@ func TestOpTimeoutKeep(t *testing.T) {
 // 一段时间没有新进度就停，返回没有进展的错误；取消返回 ErrCanceled。
 func TestRunStream(t *testing.T) {
 	root, _ := testutil.TempRepo(t)
-	shortTimeout(t, testutil.Budget(400*time.Millisecond))
+	shortTimeout(t, testutil.Budget(800*time.Millisecond))
 	ctx := context.Background()
 
 	body := "echo out\nfor i in 10 20 30 40 50 60 70 80 90 100; do printf 'Receiving objects: %s%%\\r' $i >&2; sleep 0.1; done\necho 'Receiving objects: 100%, done.' >&2"

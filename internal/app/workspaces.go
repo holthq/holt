@@ -415,6 +415,8 @@ func (a *App) switchTo(p string, roots []string) {
 	}
 	n := newApp(p, roots, st)
 	n.Win, n.Update, n.HasMenu, n.StateDir = a.Win, a.Update, a.HasMenu, a.StateDir
+	n.lang.gen, n.lang.cmdKey = a.lang.gen, a.lang.cmdKey // 旧服务器已经关了；晚回来的回调按 gen 丢掉
+	n.LangOff = a.LangOff
 	n.Rend, n.RenderOpen, n.SettingsWin = a.Rend, a.RenderOpen, a.SettingsWin // 设置窗口跟着进程走、换工作区不关：导出 / 导入的面板还挂在它上面
 	n.Windows, n.Slot, n.LastBar, n.ownStore = a.Windows, a.Slot, a.LastBar, a.ownStore
 	n.Trash, n.OpenURL, n.ShowPath, n.InFinder, n.OpenDialog, n.SaveDialog = a.Trash, a.OpenURL, a.ShowPath, a.InFinder, a.OpenDialog, a.SaveDialog
