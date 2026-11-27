@@ -1197,8 +1197,8 @@ func atRoot(r *Repo, dir string) bool {
 	return err == nil && dir == real
 }
 
-// 认领 shell 的进程号：mygo 的终端不给进程号，只好看应用的子进程里有终端（tty）的那些
-// （git 子进程没有终端），按进程号从小到大分给按启动先后排队的格。认领过的进程号整个进程里不再给别的格
+// 认领 shell 的进程号：mygo 的终端不给进程号，只好找应用的子进程里有独立伪终端的进程组组长，
+// 按进程号从小到大分给按启动先后排队的格。认领过的进程号整个进程里不再给别的格
 // （测试里一个进程有好几个 App）。还没认领到就关掉的格，closeTerm 等它的 shell 退干净，免得被下一个格认走。
 // （试过把记号放进 shell 的环境再用 ps -E 对，本机的 ps 看不到别的进程的环境。）
 var (
@@ -1248,23 +1248,43 @@ func (a *App) claimPids(kids []int) bool {
 	return len(a.pidWait) == 0
 }
 
-// ttyChildren 是应用有终端（tty）的子进程，按进程号排好。
+// ttyChildren 是应用直接启动、带独立伪终端的进程组组长，按进程号排好。
 func ttyChildren() []int {
-	out, err := exec.Command("ps", "-A", "-o", "pid=,ppid=,tty=").Output()
+	out, err := exec.Command("ps", "-A", "-o", "pid=,ppid=,pgid=,tty=").Output()
 	if err != nil {
 		return nil
 	}
-	me := os.Getpid()
-	var kids []int
-	for _, line := range strings.Split(string(out), "\n") {
+	return ttyChildPIDs(string(out), os.Getpid())
+}
+
+func ttyChildPIDs(out string, parent int) []int {
+	type child struct {
+		pid int
+		tty string
+	}
+	var ownTTY string
+	var children []child
+	for line := range strings.SplitSeq(out, "\n") {
 		f := strings.Fields(line)
-		if len(f) < 3 || f[2] == "??" || f[2] == "-" {
+		if len(f) < 4 {
 			continue
 		}
 		pid, _ := strconv.Atoi(f[0])
+		if pid == parent {
+			ownTTY = f[3]
+			continue
+		}
 		ppid, _ := strconv.Atoi(f[1])
-		if ppid == me && pid > 0 {
-			kids = append(kids, pid)
+		pgid, _ := strconv.Atoi(f[2])
+		if ppid == parent && pid > 0 && pgid == pid && f[3] != "??" && f[3] != "?" && f[3] != "-" {
+			children = append(children, child{pid, f[3]})
+		}
+	}
+	// 从命令行启动 Holt 时，ps 等普通子进程也可能有 tty，但不是终端格的伪终端。
+	var kids []int
+	for _, c := range children {
+		if c.tty != ownTTY {
+			kids = append(kids, c.pid)
 		}
 	}
 	slices.Sort(kids)

@@ -24,10 +24,10 @@
 
 1. 改 `mygo.json` 的 `version`；
 2. 把 `CHANGELOG.md` 的 `## 未发布` 改成 `## v<版本> — <日期>`，在上方新增一个空的 `## 未发布`；
-3. `GOTOOLCHAIN=auto go vet ./... && GOTOOLCHAIN=auto go test -count=1 ./... && GOTOOLCHAIN=auto go test -race ./...`；
+3. `GOTOOLCHAIN=auto go vet ./... && GOTOOLCHAIN=auto go test -count=1 ./... && GOTOOLCHAIN=auto go test -race -timeout 30m ./...`；
 4. 按下文构建，在真实窗口中手动检查截图无法验证的部分（菜单、对话框、毛玻璃、拖放、终端）；
 5. 合入 main 后，在该提交上打 `v<版本>` 标签；
-6. 构建 app 和 DMG（去掉 `-skip-dmg`），把 DMG 和 app 的 zip 发到 GitHub Releases（见下）。
+6. 收集三端的安装包和签名更新资产，上传到 GitHub Release 草稿并验证后发布（见下）。
 
 ## 三端安装包
 
@@ -39,13 +39,13 @@ Windows 的安装包不在 macOS 上构建（这里的 `makensis` 在 macOS 26+ 
 ## 发布 GitHub Release
 
 ```bash
-GOTOOLCHAIN=auto go tool mygo build -sign - -skip-notarize      # 出 build/darwin-arm64/Holt.app 和 holt-<版本>-arm64.dmg
+GOTOOLCHAIN=auto go tool mygo build -sign - -skip-notarize      # 本地冒烟：出 Holt.app 和 holt-<版本>-arm64.dmg
 hdiutil verify build/darwin-arm64/holt-<版本>-arm64.dmg
-ditto -c -k --keepParent build/darwin-arm64/Holt.app build/darwin-arm64/Holt-<版本>-arm64.zip
 git tag -a v<版本> -m "Holt <版本>" && git push origin v<版本>
-gh release create v<版本> \
-  build/darwin-arm64/holt-<版本>-arm64.dmg build/darwin-arm64/Holt-<版本>-arm64.zip \
-  --title "Holt <版本>" --notes-file <发布说明>
+# 从该标签的 Installers 运行下载安装包；把下文的更新资产也收齐。
+gh release create v<版本> --verify-tag --draft --title "Holt <版本>" --notes-file <发布说明>
+# 先传安装包和更新档案，再传 manifest；检查草稿资产齐全后发布。
+gh release edit v<版本> --draft=false --latest
 ```
 
 发布说明从 `CHANGELOG.md` 的 `## v<版本>` 小节抄，开头写清系统要求（macOS 13+、Apple Silicon）和
@@ -191,7 +191,6 @@ Claude 会跑 `go test`，等于执行 PR 里的代码，所以别在不认识�
 ## 许可
 
 - 第三方组件的许可证全文位于 `resources/licenses/`（清单见 `README.txt`），可以从关于窗口打开。
-- `ghostty.txt` 目前只有来源说明（libghostty-vt 所用的 Ghostty 提交）和许可证链接。**正式发布前需补入 Ghostty 的
-  LICENSE 全文**（MIT 要求附上原文）。
+- `ghostty.txt` 包含 libghostty-vt 所用 Ghostty 提交的来源和 MIT 许可证全文；更新依赖时同步核对。
 - Holt 使用 MIT 许可证（根目录 `LICENSE`）。如需在 Info.plist 中写入版权信息，在 `mygo.json` 中添加 `copyright`
   字段，对应 `NSHumanReadableCopyright`。

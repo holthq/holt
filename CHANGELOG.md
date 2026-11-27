@@ -4,6 +4,9 @@
 
 ## 未发布
 
+## v0.4.0 — 2026-11-27
+
+- 修复从命令行启动 Holt 时可能认错终端 shell 的问题，恢复关闭前的前台命令确认和终端目录保存。
 - 语言服务器（LSP）支持：新增 `internal/lsp`（JSON-RPC over stdio、全文文档同步、补全 / 悬停 / 跳转定义 / 诊断、
   UTF-16 / UTF-8 位置换算）和 `app/lang.go` 接线。默认认 gopls、rust-analyzer、clangd、typescript-language-server、
   pyright、lua-language-server；设置 → 编辑器 → 语言服务器里能改命令，写 `-` 关掉这种语言。补全里语言服务器和代码片段

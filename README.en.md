@@ -73,8 +73,9 @@ for macOS, `holt_<version>_<arch>.deb` or `holt-<version>-linux-<arch>.tar.gz` f
   git command they run.
   Hovering (or selecting with the keyboard) a changed file shows inline Open File, Discard Changes and Stage / Unstage
   buttons; with the list focused, Space stages / unstages and ⌘⌫ discards, acting on all selected rows.
-- **Terminals**: each repo has its own set of terminals, built on Ghostty's libghostty-vt, with split panes. Layout
-  and output are saved when you close the window. When an agent such as claude or codex runs in a terminal, its tab
+- **Terminals**: each repo has its own set of terminals, built on Ghostty's libghostty-vt, with split panes. Layout,
+  working directories and output are saved when you close the window. If a foreground command is running, Holt asks
+  before closing. When an agent such as claude or codex runs in a terminal, its tab
   shows whether it is waiting for you (an amber dot: it rang the bell or sent a notification; gone once you switch in)
   or running (a spinner); more agent commands can be added in Settings.
 - **Running**: type `$ command` in the command palette (or use Run Command in the Terminal menu) to run it in the repo
